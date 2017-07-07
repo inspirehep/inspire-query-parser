@@ -138,12 +138,12 @@ class Phrase(UnaryRule):
     ])
 
 
-class ExactAuthorOp(LeafRule):
-    grammar = omit(ExactAuthor), omit(optional(':')), attr('value', NormalPhrase)
+class ExactAuthorOp(UnaryRule):
+    grammar = omit(ExactAuthor), omit(optional(':')), attr('op', NormalPhrase)
 
 
-class AuthorCountOp(LeafRule):
-    grammar = omit(AuthorCount), omit(optional(':')), attr('value', re.compile("\d+"))
+class AuthorCountOp(UnaryRule):
+    grammar = omit(AuthorCount), omit(optional(':')), attr('op', re.compile("\d+"))
 
 
 class AuthorCountRangeOp(BinaryRule):
@@ -151,12 +151,12 @@ class AuthorCountRangeOp(BinaryRule):
               attr('left', re.compile("\d+")), omit(Range), attr('right', re.compile("\d+"))
 
 
-class FulltextOp(LeafRule):
-    grammar = omit(Fulltext), omit(optional(':')), attr('value', NormalPhrase)
+class FulltextOp(UnaryRule):
+    grammar = omit(Fulltext), omit(optional(':')), attr('op', NormalPhrase)
 
 
-class ReferenceOp(LeafRule):
-    grammar = omit(Reference), omit(optional(':')), attr('value', [ExactPhrase, NormalPhrase])
+class ReferenceOp(UnaryRule):
+    grammar = omit(Reference), omit(optional(':')), attr('op', [ExactPhrase, NormalPhrase])
 ########################
 
 
