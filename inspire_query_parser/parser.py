@@ -105,22 +105,18 @@ class NormalPhrase(UnaryRule):
     grammar = attr('op', Terminals)
 
 
-class NormalPhraseSpanTail(LeafRule):
-    grammar = [
-        (omit(Range), attr('value', word)),
-        attr('value', None)
-    ]
+class NormalPhraseRange(BinaryRule):
+    grammar = attr('left', Terminals), omit(Range), attr('right', Terminals)
 
 
 class ExactPhrase(LeafRule):
     grammar = omit(Literal('"')), attr('value', word), omit(Literal('"'))
 
 
-class ExactPhraseSpanTail(LeafRule):
-    grammar = [
-        (omit(Range), omit(Literal('"')), attr('value', word), omit(Literal('"'))),
-        attr('value', None)
-    ]
+class ExactPhraseRange(BinaryRule):
+    grammar = omit(Literal('"')), attr('left', Terminals), omit(Literal('"')), \
+              omit(Range), \
+              omit(Literal('"')), attr('right', Terminals), omit(Literal('"'))
 
 
 class PartialPhrase(LeafRule):
@@ -131,12 +127,14 @@ class RegexPhrase(LeafRule):
     grammar = omit(Literal('/^')), attr('value', word), omit(Literal('$/'))
 
 
-class Phrase(ListRule):
-    grammar = attr('children', [
-        (NormalPhrase, NormalPhraseSpanTail),
-        (ExactPhrase, ExactPhraseSpanTail),
-        PartialPhrase,
+class Phrase(UnaryRule):
+    grammar = attr('op', [
         RegexPhrase,
+        PartialPhrase,
+        ExactPhraseRange,
+        ExactPhrase,
+        NormalPhraseRange,
+        NormalPhrase
     ])
 
 
