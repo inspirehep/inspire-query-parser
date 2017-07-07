@@ -4,7 +4,7 @@ import sys
 
 from pypeg2 import parse
 
-from inspire_query_parser.parser import StartRule
+from inspire_query_parser.parser import Query
 from inspire_query_parser.utils.utils import emit_tree_repr
 
 unsupported = {"collection", "refersto", "citedby"}
@@ -15,7 +15,7 @@ if __name__ == '__main__':
         for line in input_file:
 
             try:
-                t = parse(line, StartRule)
+                t = parse(line, Query)
                 # print(emit_tree_repr(t))
 
                 queries_read += 1

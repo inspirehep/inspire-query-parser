@@ -105,41 +105,23 @@ class NormalPhrase(UnaryRule):
     grammar = attr('op', Terminals)
 
 
-class NormalPhraseRange(BinaryRule):
-    grammar = attr('left', Terminals), omit(Range), attr('right', Terminals)
-
-
-class ExactPhrase(LeafRule):
-    grammar = omit(Literal('"')), attr('value', word), omit(Literal('"'))
-
-
 class ExactPhraseRange(BinaryRule):
     grammar = omit(Literal('"')), attr('left', Terminals), omit(Literal('"')), \
               omit(Range), \
               omit(Literal('"')), attr('right', Terminals), omit(Literal('"'))
 
 
-class PartialPhrase(LeafRule):
-    grammar = omit(Literal("'")), attr('value', word), omit(Literal("'"))
+class NormalPhraseRange(BinaryRule):
+    grammar = attr('left', Terminals), omit(Range), attr('right', Terminals)
 
 
-class RegexPhrase(LeafRule):
-    grammar = omit(Literal('/^')), attr('value', word), omit(Literal('$/'))
-
-
-class Phrase(UnaryRule):
-    grammar = attr('op', [
-        RegexPhrase,
-        PartialPhrase,
-        ExactPhraseRange,
-        ExactPhrase,
-        NormalPhraseRange,
-        NormalPhrase
-    ])
+class SpecialPhrase(LeafRule):
+    """Accepting value with either double/single quotes or a regex value (/^.../$)."""
+    grammar = attr('value', re.compile(r"((/\^[^$]*\$/)|('[^']*')|(\"[^\"]*\"))")),
 
 
 class ExactAuthorOp(UnaryRule):
-    grammar = omit(ExactAuthor), omit(optional(':')), attr('op', NormalPhrase)
+    grammar = omit(ExactAuthor), omit(optional(':')), attr('op', NormalPhrase)  # TODO check normal phrase is needed
 
 
 class AuthorCountOp(UnaryRule):
@@ -152,75 +134,175 @@ class AuthorCountRangeOp(BinaryRule):
 
 
 class FulltextOp(UnaryRule):
-    grammar = omit(Fulltext), omit(optional(':')), attr('op', NormalPhrase)
+    grammar = omit(Fulltext), omit(optional(':')), attr('op', NormalPhrase)  # TODO add Partial and Exact phrases
 
 
 class ReferenceOp(UnaryRule):
-    grammar = omit(Reference), omit(optional(':')), attr('op', [ExactPhrase, NormalPhrase])
+    grammar = omit(Reference), omit(optional(':')), attr('op', [re.compile(r"\"[^\"]*\""), NormalPhrase])
 ########################
 
 
-class Statement(UnaryRule):
+class QualifierExpression(BinaryRule):
+    grammar = attr('left', Qualifier), omit(optional(':')), \
+              attr('right', [
+                  ExactPhraseRange,
+                  NormalPhraseRange,
+                  SpecialPhrase,
+                  NormalPhrase
+              ])
+
+
+class NotQuery(UnaryRule):
     pass
 
 
-class QualifierExpression(BinaryRule):
-    grammar = attr('left', Qualifier), omit(optional(':')), attr('right', Phrase)
+class ParenthesizedQuery(UnaryRule):
+    pass
 
 
-class TermExpression(UnaryRule):
-    grammar = attr(
-        'op',
-        [
+class AndQuery(BinaryRule):
+    pass
+
+
+class OrQuery(BinaryRule):
+    pass
+
+AndQuery.grammar = \
+        attr('left', [
+            NotQuery,
+            ParenthesizedQuery,
             AuthorCountRangeOp,
             AuthorCountOp,
             ExactAuthorOp,
             FulltextOp,
             ReferenceOp,
             QualifierExpression,
-            Phrase,
-        ]
-    )
+            ExactPhraseRange,
+            NormalPhraseRange,
+            SpecialPhrase,
+            NormalPhrase,
+        ]), \
+        omit(And), \
+        attr('right', [
+            AndQuery,
+            OrQuery,
+            NotQuery,
+            ParenthesizedQuery,
+            AuthorCountRangeOp,
+            AuthorCountOp,
+            ExactAuthorOp,
+            FulltextOp,
+            ReferenceOp,
+            QualifierExpression,
+            ExactPhraseRange,
+            NormalPhraseRange,
+            SpecialPhrase,
+            NormalPhrase,
+        ])
 
-
-class Expression(UnaryRule):
-    pass
-
-
-class AndQuery(BinaryRule):
-    grammar = attr('left', Expression), omit(And), attr('right', Statement)
-
-
-class OrQuery(BinaryRule):
-    grammar = attr('left', Expression), omit(Or), attr('right', Statement)
+OrQuery.grammar = \
+        attr('left', [
+            NotQuery,
+            ParenthesizedQuery,
+            AuthorCountRangeOp,
+            AuthorCountOp,
+            ExactAuthorOp,
+            FulltextOp,
+            ReferenceOp,
+            QualifierExpression,
+            ExactPhraseRange,
+            NormalPhraseRange,
+            SpecialPhrase,
+            NormalPhrase,
+        ]), \
+        omit(Or), \
+        attr('right', [
+            AndQuery,
+            OrQuery,
+            NotQuery,
+            ParenthesizedQuery,
+            AuthorCountRangeOp,
+            AuthorCountOp,
+            ExactAuthorOp,
+            FulltextOp,
+            ReferenceOp,
+            QualifierExpression,
+            ExactPhraseRange,
+            NormalPhraseRange,
+            SpecialPhrase,
+            NormalPhrase,
+        ])
 # ########################
 
 
 # #### Main productions ####
-class NotQuery(UnaryRule):
-    grammar = omit(Not), attr('op', Statement)
-
-
-class ParenthesizedQuery(UnaryRule):
-    grammar = omit(Literal('(')), attr('op', Statement), omit(Literal(')'))
-
-
-Expression.grammar = attr('op', [
-    NotQuery,
-    ParenthesizedQuery,
-    TermExpression,
-])
-
-
-Statement.grammar = attr('op', [
+NotQuery.grammar = omit(Not), attr('op', [
     AndQuery,
     OrQuery,
-    Expression,
+    NotQuery,
+    ParenthesizedQuery,
+    AuthorCountRangeOp,
+    AuthorCountOp,
+    ExactAuthorOp,
+    FulltextOp,
+    ReferenceOp,
+    QualifierExpression,
+    ExactPhraseRange,
+    NormalPhraseRange,
+    SpecialPhrase,
+    NormalPhrase,
 ])
 
+ParenthesizedQuery.grammar = omit(Literal('(')), attr('op', [
+    AndQuery,
+    OrQuery,
+    NotQuery,
+    ParenthesizedQuery,
+    AuthorCountRangeOp,
+    AuthorCountOp,
+    ExactAuthorOp,
+    FulltextOp,
+    ReferenceOp,
+    QualifierExpression,
+    ExactPhraseRange,
+    NormalPhraseRange,
+    SpecialPhrase,
+    NormalPhrase,
+]), omit(Literal(')'))
 
-class StartRule(UnaryRule):
+
+class Query(UnaryRule):
     grammar = [
-        (omit(Find), attr('op', Statement)),
-        attr('op', Statement),
+        (omit(Find), attr('op', [
+            AndQuery,
+            OrQuery,
+            NotQuery,
+            ParenthesizedQuery,
+            AuthorCountRangeOp,
+            AuthorCountOp,
+            ExactAuthorOp,
+            FulltextOp,
+            ReferenceOp,
+            QualifierExpression,
+            ExactPhraseRange,
+            NormalPhraseRange,
+            SpecialPhrase,
+            NormalPhrase,
+        ])),
+        attr('op', [
+            AndQuery,
+            OrQuery,
+            NotQuery,
+            ParenthesizedQuery,
+            AuthorCountRangeOp,
+            AuthorCountOp,
+            ExactAuthorOp,
+            FulltextOp,
+            ReferenceOp,
+            QualifierExpression,
+            ExactPhraseRange,
+            NormalPhraseRange,
+            SpecialPhrase,
+            NormalPhrase,
+        ]),
     ]
