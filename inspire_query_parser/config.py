@@ -5,7 +5,6 @@ INSPIRE_PARSER_KEYWORDS = (
     "a",
     "journal",
     "experiment",
-    "author-count",
     "first-author",
     "exact-author",
 )

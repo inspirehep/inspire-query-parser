@@ -45,8 +45,8 @@ class ExactAuthor(Keyword):
 
 
 class AuthorCount(Keyword):
-    regex = re.compile(r"authorcount", re.IGNORECASE)
-    grammar = Enum(K("authorcount"), K("AUTHORCOUNT"))
+    regex = re.compile(r"authorcount|author-count|ac", re.IGNORECASE)
+    grammar = Enum(K("authorcount"), K("author-count"), K("ac"), K("AC"), K("AUTHORCOUNT"))
 
 
 class Fulltext(Keyword):
@@ -148,6 +148,11 @@ class AuthorCountOp(LeafRule):
     grammar = omit(AuthorCount), omit(optional(':')), attr('value', re.compile("\d+"))
 
 
+class AuthorCountRangeOp(BinaryRule):
+    grammar = omit(AuthorCount), omit(optional(':')), \
+              attr('left', re.compile("\d+")), omit(Range), attr('right', re.compile("\d+"))
+
+
 class FulltextOp(LeafRule):
     grammar = omit(Fulltext), omit(optional(':')), attr('value', NormalPhrase)
 
@@ -169,6 +174,7 @@ class TermExpression(UnaryRule):
     grammar = attr(
         'op',
         [
+            AuthorCountRangeOp,
             AuthorCountOp,
             ExactAuthorOp,
             FulltextOp,

@@ -61,3 +61,7 @@ if __name__ == '__main__':
 
     # Unicode terminals
     print(emit_tree_repr(parse('a ekström and t γ-radiation', StartRule)))
+
+    # Ranges
+    print(emit_tree_repr(parse("t bar->foo", StartRule)))
+    print(emit_tree_repr(parse("ac 1->10", StartRule)))
