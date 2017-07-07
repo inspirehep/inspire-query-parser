@@ -25,6 +25,11 @@ def recursive_printer(node, level=-INDENTATION):
             else node.__class__.__name__ + " {" + repr(node.value) + "}"
 
         ret_str = emit_symbol_at_level_str(value, new_level) if value != "" else ""
+    elif issubclass(type(node), unicode):
+        value = "" if not repr(node) or repr(node) == "None" \
+            else node.__class__.__name__ + " {" + repr(node) + "}"
+
+        ret_str = emit_symbol_at_level_str(value, new_level) if value != "" else ""
     else:
         ret_str = emit_symbol_at_level_str(node.__class__.__name__, new_level)
         if issubclass(type(node), UnaryOp):
