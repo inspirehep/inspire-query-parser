@@ -8,7 +8,7 @@ def emit_symbol_at_level_str(symbol, level, is_last=False):
     def emit_prefix():
         ret_str = ""
         prefix = ("└── " if is_last else "├── ") if level != 0 else ""
-        for i in range(level):
+        for i in range(level-INDENTATION):
             if i % INDENTATION == 0:
                 ret_str += "│"
             else:
