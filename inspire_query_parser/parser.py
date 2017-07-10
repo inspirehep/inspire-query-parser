@@ -120,6 +120,15 @@ class SpecialPhrase(LeafRule):
     grammar = attr('value', re.compile(r"((/\^[^$]*\$/)|('[^']*')|(\"[^\"]*\"))")),
 
 
+class Phrase(UnaryRule):
+    grammar = attr('op', [
+        ExactPhraseRange,
+        NormalPhraseRange,
+        SpecialPhrase,
+        NormalPhrase,
+    ])
+
+
 class ExactAuthorOp(UnaryRule):
     grammar = omit(ExactAuthor), omit(optional(':')), attr('op', NormalPhrase)  # TODO check normal phrase is needed
 
@@ -144,20 +153,39 @@ class ReferenceOp(UnaryRule):
 
 class QualifierExpression(BinaryRule):
     grammar = attr('left', Qualifier), omit(optional(':')), \
-              attr('right', [
-                  ExactPhraseRange,
-                  NormalPhraseRange,
-                  SpecialPhrase,
-                  NormalPhrase
-              ])
+              attr('right', Phrase)
+
+
+class TermExpression(UnaryRule):
+    grammar = attr('op', [
+        AuthorCountRangeOp,
+        AuthorCountOp,
+        ExactAuthorOp,
+        FulltextOp,
+        ReferenceOp,
+        QualifierExpression,
+        Phrase,
+    ])
+
+
+class Statement(UnaryRule):
+    pass
 
 
 class NotQuery(UnaryRule):
-    pass
+    grammar = omit(Not), attr('op', Statement)
 
 
 class ParenthesizedQuery(UnaryRule):
-    pass
+    grammar = omit(Literal('(')), attr('op', Statement), omit(Literal(')'))
+
+
+class Expression(UnaryRule):
+    grammar = attr('op', [
+        NotQuery,
+        ParenthesizedQuery,
+        TermExpression,
+    ])
 
 
 class AndQuery(BinaryRule):
@@ -167,142 +195,19 @@ class AndQuery(BinaryRule):
 class OrQuery(BinaryRule):
     pass
 
-AndQuery.grammar = \
-        attr('left', [
-            NotQuery,
-            ParenthesizedQuery,
-            AuthorCountRangeOp,
-            AuthorCountOp,
-            ExactAuthorOp,
-            FulltextOp,
-            ReferenceOp,
-            QualifierExpression,
-            ExactPhraseRange,
-            NormalPhraseRange,
-            SpecialPhrase,
-            NormalPhrase,
-        ]), \
-        omit(And), \
-        attr('right', [
-            AndQuery,
-            OrQuery,
-            NotQuery,
-            ParenthesizedQuery,
-            AuthorCountRangeOp,
-            AuthorCountOp,
-            ExactAuthorOp,
-            FulltextOp,
-            ReferenceOp,
-            QualifierExpression,
-            ExactPhraseRange,
-            NormalPhraseRange,
-            SpecialPhrase,
-            NormalPhrase,
-        ])
 
-OrQuery.grammar = \
-        attr('left', [
-            NotQuery,
-            ParenthesizedQuery,
-            AuthorCountRangeOp,
-            AuthorCountOp,
-            ExactAuthorOp,
-            FulltextOp,
-            ReferenceOp,
-            QualifierExpression,
-            ExactPhraseRange,
-            NormalPhraseRange,
-            SpecialPhrase,
-            NormalPhrase,
-        ]), \
-        omit(Or), \
-        attr('right', [
-            AndQuery,
-            OrQuery,
-            NotQuery,
-            ParenthesizedQuery,
-            AuthorCountRangeOp,
-            AuthorCountOp,
-            ExactAuthorOp,
-            FulltextOp,
-            ReferenceOp,
-            QualifierExpression,
-            ExactPhraseRange,
-            NormalPhraseRange,
-            SpecialPhrase,
-            NormalPhrase,
-        ])
+AndQuery.grammar = attr('left', Expression), omit(And), attr('right', Statement)
+
+OrQuery.grammar = attr('left', Expression), omit(Or), attr('right', Statement)
 # ########################
 
 
 # #### Main productions ####
-NotQuery.grammar = omit(Not), attr('op', [
-    AndQuery,
-    OrQuery,
-    NotQuery,
-    ParenthesizedQuery,
-    AuthorCountRangeOp,
-    AuthorCountOp,
-    ExactAuthorOp,
-    FulltextOp,
-    ReferenceOp,
-    QualifierExpression,
-    ExactPhraseRange,
-    NormalPhraseRange,
-    SpecialPhrase,
-    NormalPhrase,
-])
-
-ParenthesizedQuery.grammar = omit(Literal('(')), attr('op', [
-    AndQuery,
-    OrQuery,
-    NotQuery,
-    ParenthesizedQuery,
-    AuthorCountRangeOp,
-    AuthorCountOp,
-    ExactAuthorOp,
-    FulltextOp,
-    ReferenceOp,
-    QualifierExpression,
-    ExactPhraseRange,
-    NormalPhraseRange,
-    SpecialPhrase,
-    NormalPhrase,
-]), omit(Literal(')'))
+Statement.grammar = attr('op', [AndQuery, OrQuery, Expression])
 
 
 class Query(UnaryRule):
     grammar = [
-        (omit(Find), attr('op', [
-            AndQuery,
-            OrQuery,
-            NotQuery,
-            ParenthesizedQuery,
-            AuthorCountRangeOp,
-            AuthorCountOp,
-            ExactAuthorOp,
-            FulltextOp,
-            ReferenceOp,
-            QualifierExpression,
-            ExactPhraseRange,
-            NormalPhraseRange,
-            SpecialPhrase,
-            NormalPhrase,
-        ])),
-        attr('op', [
-            AndQuery,
-            OrQuery,
-            NotQuery,
-            ParenthesizedQuery,
-            AuthorCountRangeOp,
-            AuthorCountOp,
-            ExactAuthorOp,
-            FulltextOp,
-            ReferenceOp,
-            QualifierExpression,
-            ExactPhraseRange,
-            NormalPhraseRange,
-            SpecialPhrase,
-            NormalPhrase,
-        ]),
+        (omit(Find), attr('op', Statement)),
+        attr('op', Statement),
     ]
