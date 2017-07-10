@@ -79,7 +79,7 @@ class Range(object):
 # ########################
 
 
-# #### Leafs #####
+# #### Lowest level operators #####
 class Qualifier(LeafRule):
     grammar = attr('value', re.compile(r"({0})\b".format("|".join(INSPIRE_PARSER_KEYWORDS))))
 
@@ -101,36 +101,36 @@ class Terminals(ListRule):
 TerminalTail.grammar = attr('op', [Terminals, None])
 
 
-class NormalPhrase(UnaryRule):
+class SimpleValue(UnaryRule):
     grammar = attr('op', Terminals)
 
 
-class ExactPhraseRange(BinaryRule):
+class ExactValueRange(BinaryRule):
     grammar = omit(Literal('"')), attr('left', Terminals), omit(Literal('"')), \
               omit(Range), \
               omit(Literal('"')), attr('right', Terminals), omit(Literal('"'))
 
 
-class NormalPhraseRange(BinaryRule):
+class SimpleValueRange(BinaryRule):
     grammar = attr('left', Terminals), omit(Range), attr('right', Terminals)
 
 
-class SpecialPhrase(LeafRule):
+class ComplexValue(LeafRule):
     """Accepting value with either double/single quotes or a regex value (/^.../$)."""
     grammar = attr('value', re.compile(r"((/\^[^$]*\$/)|('[^']*')|(\"[^\"]*\"))")),
 
 
-class Phrase(UnaryRule):
+class Value(UnaryRule):
     grammar = attr('op', [
-        ExactPhraseRange,
-        NormalPhraseRange,
-        SpecialPhrase,
-        NormalPhrase,
+        ExactValueRange,
+        SimpleValueRange,
+        ComplexValue,
+        SimpleValue,
     ])
 
 
 class ExactAuthorOp(UnaryRule):
-    grammar = omit(ExactAuthor), omit(optional(':')), attr('op', NormalPhrase)  # TODO check normal phrase is needed
+    grammar = omit(ExactAuthor), omit(optional(':')), attr('op', SimpleValue)  # TODO check normal phrase is needed
 
 
 class AuthorCountOp(UnaryRule):
@@ -143,20 +143,19 @@ class AuthorCountRangeOp(BinaryRule):
 
 
 class FulltextOp(UnaryRule):
-    grammar = omit(Fulltext), omit(optional(':')), attr('op', NormalPhrase)  # TODO add Partial and Exact phrases
+    grammar = omit(Fulltext), omit(optional(':')), attr('op', SimpleValue)  # TODO add Partial and Exact phrases
 
 
 class ReferenceOp(UnaryRule):
-    grammar = omit(Reference), omit(optional(':')), attr('op', [re.compile(r"\"[^\"]*\""), NormalPhrase])
+    grammar = omit(Reference), omit(optional(':')), attr('op', [re.compile(r"\"[^\"]*\""), SimpleValue])
 ########################
 
 
 class QualifierExpression(BinaryRule):
-    grammar = attr('left', Qualifier), omit(optional(':')), \
-              attr('right', Phrase)
+    grammar = attr('left', Qualifier), omit(optional(':')), attr('right', Value)
 
 
-class TermExpression(UnaryRule):
+class SimpleQuery(UnaryRule):
     grammar = attr('op', [
         AuthorCountRangeOp,
         AuthorCountOp,
@@ -164,7 +163,7 @@ class TermExpression(UnaryRule):
         FulltextOp,
         ReferenceOp,
         QualifierExpression,
-        Phrase,
+        Value,
     ])
 
 
@@ -184,7 +183,7 @@ class Expression(UnaryRule):
     grammar = attr('op', [
         NotQuery,
         ParenthesizedQuery,
-        TermExpression,
+        SimpleQuery,
     ])
 
 
