@@ -8,7 +8,7 @@ from inspire_query_parser.utils.utils import emit_tree_repr
 if __name__ == '__main__':
     # Find keyword combined with other production rules
     print(emit_tree_repr(parse("FIN author:'ellis'", Query)))
-    print(emit_tree_repr(parse('find author "ellis"', Query)))
+    print(emit_tree_repr(parse('Find author "ellis"', Query)))
     print(emit_tree_repr(parse('f author ellis', Query)))
 
     # Invenio like search
