@@ -34,7 +34,7 @@ if __name__ == '__main__':
     print(emit_tree_repr(parse("reference:Ellis", Query)))
     print(emit_tree_repr(parse('reference "Ellis"', Query)))
     print(emit_tree_repr(parse("exactauthor:M.Vanderhaeghen.1", Query)))
-    print(emit_tree_repr(parse('authorcount:42', Query)))
+    print(emit_tree_repr(parse('ac: 42', Query)))
 
     # Only phrases
     print(emit_tree_repr(parse('ellis', Query)))

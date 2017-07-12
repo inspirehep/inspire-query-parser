@@ -40,37 +40,38 @@ class Find(Keyword):
 
 class ExactAuthor(Keyword):
     regex = re.compile(r"exactauthor", re.IGNORECASE)
-    grammar = Enum(K("exactauthor"), K("EXACTAURTHOR"))
 
 
 class AuthorCount(Keyword):
     regex = re.compile(r"authorcount|author-count|ac", re.IGNORECASE)
-    grammar = Enum(K("authorcount"), K("author-count"), K("ac"), K("AC"), K("AUTHORCOUNT"))
 
 
 class Fulltext(Keyword):
     regex = re.compile(r"fulltext", re.IGNORECASE)
-    grammar = Enum(K("fulltext"), K("FULLTEXT"))
 
 
 class Reference(Keyword):
     regex = re.compile(r"reference", re.IGNORECASE)
-    grammar = Enum(K("reference"))
 
 
 class And(Keyword):
+    """
+    The reason for defining a grammar element is for not allowing a terminal symbol to be an AND keyword.
+    """
     regex = re.compile(r"(and|\+|&)", re.IGNORECASE)
     grammar = Enum(K("and"), K("AND"), "+", "&")
 
 
 class Or(Keyword):
+    """
+    The reason for defining a grammar element is for not allowing a terminal symbol to be an OR keyword.
+    """
     regex = re.compile(r"(or|\|)", re.IGNORECASE)
     grammar = Enum(K("or"), K("OR"), "|")
 
 
 class Not(Keyword):
     regex = re.compile(r"(not|-)", re.IGNORECASE)
-    grammar = Enum(K("not"), K("NOT"), "-")
 
 
 class Range(object):
