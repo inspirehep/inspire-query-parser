@@ -16,14 +16,14 @@ if __name__ == '__main__':
 
     # Boolean operator testing
     print(emit_tree_repr(parse("author ellis and title 'boson'", Query)))
-    print(emit_tree_repr(parse("author ellis AND title boson", Query)))
-    print(emit_tree_repr(parse("author ellis | title 'boson'", Query)))
+    print(emit_tree_repr(parse("a ellis AND title boson", Query)))
+    print(emit_tree_repr(parse("au ellis | title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis OR title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis + title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis & title 'boson'", Query)))
 
     # Negation
-    print(emit_tree_repr(parse("author ellis and not title 'boson'", Query)))
+    print(emit_tree_repr(parse("ellis and not title 'boson'", Query)))
     print(emit_tree_repr(parse("-title 'boson'", Query)))
 
     # Nested expressions
