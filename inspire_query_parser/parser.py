@@ -1,10 +1,44 @@
 # coding=utf-8
 from __future__ import unicode_literals, print_function
 
-from pypeg2 import attr, Keyword, Literal, parse, omit, optional, re, Symbol, word, K, Enum, contiguous, maybe_some
+from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguous, maybe_some, some, GrammarValueError
 
 from . import ast
 from .config import INSPIRE_PARSER_KEYWORDS
+
+
+# #### Parser customization ####
+class CaseInsensitiveKeyword(Keyword):
+    """Supports case insensitive keywords
+
+    All subtypes must declare a grammar attribute with an Enum of accepted keywords/literals.
+    """
+    def __init__(self, keyword):
+        """Adds lowercase keyword to the keyword table."""
+        try:
+            self.grammar
+        except AttributeError:
+            raise GrammarValueError(self.__class__.__name__ + " expects a grammar attribute (Enum).")
+        keyword = keyword.lower()
+        if keyword not in Keyword.table:
+            Keyword.table[keyword] = self
+        self.name = keyword
+
+    @classmethod
+    def parse(cls, parser, text, pos):
+        m = cls.regex.match(text)
+        if m:
+            # Check if match is is not in the grammar of the specific keyword class.
+            if m.group(0).lower() not in cls.grammar:
+                result = text, SyntaxError(repr(m.group(0)) + " is not a member of " + repr(cls.grammar))
+            else:
+                result = text[len(m.group(0)):], cls(m.group(0))
+        else:
+            result = text, SyntaxError("expecting match on " + repr(cls.regex))
+        return result
+
+CIKeyword = CaseInsensitiveKeyword
+# ########################
 
 
 class LeafRule(ast.Leaf):
@@ -54,24 +88,31 @@ class Reference(Keyword):
     regex = re.compile(r"reference", re.IGNORECASE)
 
 
-class And(Keyword):
+class And(CIKeyword):
     """
-    The reason for defining a grammar element is for not allowing a terminal symbol to be an AND keyword.
+    The reason for defining an Enum grammar of Keywords is for populating the Keyword.table for checking whether
+    terminal symbols are actually DSL keywords.
     """
     regex = re.compile(r"(and|\+|&)", re.IGNORECASE)
-    grammar = Enum(K("and"), K("AND"), "+", "&")
+    grammar = Enum(K("and"), "+", "&")
 
 
-class Or(Keyword):
+class Or(CIKeyword):
     """
-    The reason for defining a grammar element is for not allowing a terminal symbol to be an OR keyword.
+    The reason for defining an Enum grammar of Keywords is for populating the Keyword.table for checking whether
+    terminal symbols are actually DSL keywords.
     """
     regex = re.compile(r"(or|\|)", re.IGNORECASE)
-    grammar = Enum(K("or"), K("OR"), "|")
+    grammar = Enum(K("or"), "|")
 
 
-class Not(Keyword):
+class Not(CIKeyword):
+    """
+    The reason for defining an Enum grammar of Keywords is for populating the Keyword.table for checking whether
+    terminal symbols are actually DSL keywords.
+    """
     regex = re.compile(r"(not|-)", re.IGNORECASE)
+    grammar = Enum(K("not"), "-")
 
 
 class Range(object):
@@ -90,21 +131,26 @@ class Terminal(LeafRule):
     Some examples include: na61/shine, e-10, SU(2).
     Terminals separation happens with these " ", ",", ".", ":", "，" characters.
     """
-    Symbol.check_keywords = True
-    Symbol.regex = re.compile(r"(\w+(([-/.']\w+)|(\((\w+|\d+)\)))*)", re.UNICODE)
-    grammar = attr('value', Symbol), maybe_some([" ", ",", ".", ":", "，"])
+    regex = re.compile(r"(\w+(([-/.']\w+)|(\((\w+|\d+)\)))*)", re.UNICODE)
+    extras = maybe_some([" ", ",", ".", ":", "，"])
 
+    def __init__(self, value):
+        super(Terminal, self).__init__()
+        self.value = value
 
-class TerminalTail(UnaryRule):
-    """Either some Terminals or epsilon production.
+    @classmethod
+    def parse(cls, parser, text, pos):
+        m = cls.regex.match(text)
+        if m:
+            # Check if token is a DSL keyword
+            if m.group(0).lower() in Keyword.table:
+                return text, SyntaxError("found DSL keyword: " + m.group(0))
 
-    Needed because when PyPeg tries to identify a terminal (Symbol) which is actually a Keyword for the language, e.g.
-    "and", it raises a ValueError and backtracks until it finds the first rule with options, while also discarding the
-    recognized terminal symbols.
-    Having the option at this level and in a separate rule doesn't discard the recognized terminals by choosing an
-    epsilon production.
-    """
-    pass
+            # Extract matched keyword and clean "extras" from resulting text
+            result = parser.parse(text[len(m.group(0)):], cls.extras)[0], cls(m.group(0))
+        else:
+            result = text, SyntaxError("expecting match on " + repr(cls.regex))
+        return result
 
 
 class Terminals(ListRule):
@@ -112,18 +158,18 @@ class Terminals(ListRule):
 
     From this level downwards, automatic whitespace removal is disabled for PyPeg using contiguous setting.
     """
-    grammar = contiguous(attr('children', (Terminal, TerminalTail)))
+    grammar = contiguous(attr('children', (some(Terminal))))
 
 
-TerminalTail.grammar = attr('op', [Terminals, None])
-
-
-class SimpleValue(UnaryRule):
+class SimpleValue(ListRule):
     """Represents terminals as plaintext.
 
     E.g. title top cross section.
     """
-    grammar = attr('op', Terminals)
+    grammar = some(Terminals)
+
+    def __init__(self, args):
+        self.children = args
 
 
 class ComplexValue(LeafRule):
