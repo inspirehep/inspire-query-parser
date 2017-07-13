@@ -34,7 +34,7 @@ class CaseInsensitiveKeyword(Keyword):
             else:
                 result = text[len(m.group(0)):], cls(m.group(0))
         else:
-            result = text, SyntaxError("expecting match on " + repr(cls.regex))
+            result = text, SyntaxError("expecting " + repr(cls.__name__))
         return result
 
 CIKeyword = CaseInsensitiveKeyword
@@ -72,22 +72,6 @@ class Find(Keyword):
     regex = re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE)
 
 
-class ExactAuthor(Keyword):
-    regex = re.compile(r"exactauthor", re.IGNORECASE)
-
-
-class AuthorCount(Keyword):
-    regex = re.compile(r"authorcount|author-count|ac", re.IGNORECASE)
-
-
-class Fulltext(Keyword):
-    regex = re.compile(r"fulltext", re.IGNORECASE)
-
-
-class Reference(Keyword):
-    regex = re.compile(r"reference", re.IGNORECASE)
-
-
 class And(CIKeyword):
     """
     The reason for defining an Enum grammar of Keywords is for populating the Keyword.table for checking whether
@@ -122,7 +106,10 @@ class Range(object):
 
 # #### Lowest level operators #####
 class Qualifier(LeafRule):
-    grammar = attr('value', re.compile(r"({0})\b".format("|".join(INSPIRE_PARSER_KEYWORDS))))
+    grammar = re.compile(r"({0})\b".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())))
+
+    def __init__(self, value):
+        self.value = INSPIRE_PARSER_KEYWORDS[value]
 
 
 class Terminal(LeafRule):
@@ -209,32 +196,6 @@ class Value(UnaryRule):
         ComplexValue,
         SimpleValue,
     ])
-
-
-class ExactAuthorOp(UnaryRule):
-    """Support for ExactAuthor queries.
-
-    E.g. find ea: andre lukas"""
-    # TODO Add as an option an exact value.
-    grammar = omit(ExactAuthor), omit(optional(':')), attr('op', SimpleValue)
-
-
-# TODO Authorcount: Support greater/less that/to operators and merge range.
-class AuthorCountOp(UnaryRule):
-    grammar = omit(AuthorCount), omit(optional(':')), attr('op', re.compile("\d+"))
-
-
-class AuthorCountRangeOp(BinaryRule):
-    grammar = omit(AuthorCount), omit(optional(':')), \
-              attr('left', re.compile("\d+")), omit(Range), attr('right', re.compile("\d+"))
-
-
-class FulltextOp(UnaryRule):
-    grammar = omit(Fulltext), omit(optional(':')), attr('op', SimpleValue)  # TODO add Partial and Exact phrases
-
-
-class ReferenceOp(UnaryRule):
-    grammar = omit(Reference), omit(optional(':')), attr('op', [re.compile(r"\"[^\"]*\""), SimpleValue])
 ########################
 
 
@@ -252,11 +213,6 @@ class SimpleQuery(UnaryRule):
     These are comprised of metadata queries, qualified keywords and plaintext phrases (values).
     """
     grammar = attr('op', [
-        AuthorCountRangeOp,
-        AuthorCountOp,
-        ExactAuthorOp,
-        FulltextOp,
-        ReferenceOp,
         QualifierExpression,
         Value,
     ])

@@ -11,28 +11,43 @@ INSPIRE_PARSER_KEYWORDS = {
     "au": "author",
     "a": "author",
 
+    # Author-Count
+    "author-count": "author-count",
+    "authorcount": "author-count",
+    "ac": "author-count",
+
     # Collection
     "collection": "collection",
+
+    # Exact-Author
+    "exact-author": "exact-author",
+    "exactauthor": "exact-author",
+    "ea": "exact-author",
 
     # Experiment
     "experiment": "experiment",
     "exp": "experiment",
-
-    # Journal
-    "journal": "journal",
-    "j": "journal",
-
-    # Title
-    "title": "title",
-    "t": "title",
 
     # First-Author
     "first-author": "first-author",
     "firstauthor": "first-author",
     "fa": "first-author",
 
-    # Exact-Author
-    "exact-author": "exact-author",
-    "exactauthor": "exact-author",
-    "ea": "exact-author",
+    # Fulltext
+    "fulltext": "fulltext",
+    "ft": "fulltext",
+
+    # Journal
+    "journal": "journal",
+    "j": "journal",
+
+    # Reference
+    "reference": "reference",
+    "citation": "reference",
+    'jour-vol-page': 'reference',  # ??
+    'jvp': 'reference',  # ??
+
+    # Title
+    "title": "title",
+    "t": "title",
 }
