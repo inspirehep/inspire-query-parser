@@ -153,20 +153,12 @@ class Terminal(LeafRule):
         return result
 
 
-class Terminals(ListRule):
-    """Encapsulation rule for terminals.
-
-    From this level downwards, automatic whitespace removal is disabled for PyPeg using contiguous setting.
-    """
-    grammar = contiguous(attr('children', (some(Terminal))))
-
-
 class SimpleValue(ListRule):
     """Represents terminals as plaintext.
 
     E.g. title top cross section.
     """
-    grammar = some(Terminals)
+    grammar = contiguous(some(Terminal))
 
     def __init__(self, args):
         self.children = args
@@ -192,9 +184,9 @@ class ExactValueRange(BinaryRule):
     E.g. author:"Ellis, J"->"Ellis, Qqq"
     """
     # TODO change Terminals to exact value regex.
-    grammar = omit(Literal('"')), attr('left', Terminals), omit(Literal('"')), \
+    grammar = omit(Literal('"')), attr('left', Terminal), omit(Literal('"')), \
               omit(Range), \
-              omit(Literal('"')), attr('right', Terminals), omit(Literal('"'))
+              omit(Literal('"')), attr('right', Terminal), omit(Literal('"'))
 
 
 class SimpleValueRange(BinaryRule):
@@ -203,7 +195,7 @@ class SimpleValueRange(BinaryRule):
     E.g. muon decay year:1983->1992
     """
     # TODO Change Terminals to word/number regex.
-    grammar = attr('left', Terminals), omit(Range), attr('right', Terminals)
+    grammar = attr('left', Terminal), omit(Range), attr('right', Terminal)
 
 
 class Value(UnaryRule):
