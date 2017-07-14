@@ -217,9 +217,19 @@ class Statement(UnaryRule):
     pass
 
 
+class Expression(UnaryRule):
+    """A generic query expression.
+
+    Serves as a more restrictive rule than Statement.
+    This is useful for eliminating left recursion in the grammar (requirement for PEGs) when used in binary queries as
+    left hand side production rule.
+    """
+    pass
+
+
 class NotQuery(UnaryRule):
     """Negation query."""
-    grammar = omit(Not), attr('op', Statement)
+    grammar = omit(Not), attr('op', Expression)
 
 
 class ParenthesizedQuery(UnaryRule):
@@ -228,7 +238,7 @@ class ParenthesizedQuery(UnaryRule):
 
 
 class NestedKeywordQuery(BinaryRule):
-    # TODO support citedbyx, parenthesized queries
+    # TODO support citedbyx
     """Nested Keyword queries.
 
     E.g. citedby:author:hui and cited:author:witten
@@ -236,19 +246,12 @@ class NestedKeywordQuery(BinaryRule):
     pass
 
 
-class Expression(UnaryRule):
-    """A generic query expression.
-
-    Serves as a more restrictive rule than Statement.
-    This is useful for eliminating left recursion in the grammar (requirement for PEGs) when used in binary queries as
-    left hand side production rule.
-    """
-    grammar = attr('op', [
-        NotQuery,
-        NestedKeywordQuery,
-        ParenthesizedQuery,
-        SimpleQuery,
-    ])
+Expression.grammar = attr('op', [
+    NotQuery,
+    NestedKeywordQuery,
+    ParenthesizedQuery,
+    SimpleQuery,
+])
 
 
 NestedKeywordQuery.grammar = \

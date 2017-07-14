@@ -19,7 +19,7 @@ if __name__ == '__main__':
     print(emit_tree_repr(parse("f a appelquist and date 1983", Query)))
     print(emit_tree_repr(parse("fin a henneaux and citedby a nicolai", Query)))
     print(emit_tree_repr(parse("au ellis | title 'boson'", Query)))
-    print(emit_tree_repr(parse("author ellis OR title 'boson'", Query)))
+    print(emit_tree_repr(parse("-author ellis OR title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis + title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis & title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis title 'boson'", Query)))
@@ -30,6 +30,7 @@ if __name__ == '__main__':
 
     # Nested expressions
     print(emit_tree_repr(parse("author ellis, j. and (title boson or (author /^xi$/ and title foo))", Query)))
+    print(emit_tree_repr(parse("author ellis, j. and not (title boson or not (author /^xi$/ and title foo))", Query)))
 
     # Metadata search
     print(emit_tree_repr(parse("fulltext:boson", Query)))
@@ -62,6 +63,7 @@ if __name__ == '__main__':
 
     # Nestable keywords
     print(emit_tree_repr(parse("citedby:author:s.p.martin.1", Query)))
+    print(emit_tree_repr(parse("-refersto:recid:1374998 and citedby:(A.A.Aguilar.Arevalo.1)", Query)))
     print(emit_tree_repr(parse("citedby:(author A.A.Aguilar.Arevalo.1)", Query)))
     print(emit_tree_repr(parse("citedby:refersto:recid:1432705", Query)))
 
