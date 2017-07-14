@@ -245,16 +245,28 @@ class Expression(UnaryRule):
 
 
 class BooleanQuery(BinaryRule):
+    """Represents boolean query as a binary rule.
+
+    Attributes:
+        bool_op (str): Representation of the actual boolean operator.
+    """
     bool_op = None
-    grammar = Expression, [And, Or], Statement
+    grammar = Expression, [And, Or, None], Statement
 
     def __init__(self, args):
         self.left = args[0]
-        if isinstance(args[1], And):
+
+        if len(args) == 3:
+            if isinstance(args[1], And):
+                self.bool_op = BooleanOperator.AND
+            elif isinstance(args[1], Or):
+                self.bool_op = BooleanOperator.OR
+            else:
+                raise ValueError("Unexpected boolean operator: " + repr(args[1]))
+        else:  # Implicit-And query
             self.bool_op = BooleanOperator.AND
-        else:
-            self.bool_op = BooleanOperator.OR
-        self.right = args[2]
+
+        self.right = args[len(args) - 1]
 # ########################
 
 

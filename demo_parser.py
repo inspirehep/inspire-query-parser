@@ -14,7 +14,7 @@ if __name__ == '__main__':
     # Invenio like search
     print(emit_tree_repr(parse("author:ellis and title:boson", Query)))
 
-    # Boolean operator testing
+    # Boolean operator testing (And/ Or/ Implicit And)
     print(emit_tree_repr(parse("author ellis and title 'boson'", Query)))
     print(emit_tree_repr(parse("f a appelquist and date 1983", Query)))
     print(emit_tree_repr(parse("fin a henneaux and citedby a nicolai", Query)))
@@ -22,6 +22,7 @@ if __name__ == '__main__':
     print(emit_tree_repr(parse("author ellis OR title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis + title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis & title 'boson'", Query)))
+    print(emit_tree_repr(parse("author ellis title 'boson'", Query)))
 
     # Negation
     print(emit_tree_repr(parse("ellis and not title 'boson'", Query)))
