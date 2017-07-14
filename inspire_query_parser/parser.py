@@ -101,7 +101,8 @@ class Range(object):
 
 
 # #### Lowest level operators #####
-class Qualifier(LeafRule):
+class InspireKeyword(LeafRule):
+    """Inspire Keyword"""
     grammar = re.compile(r"({0})\b".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())))
 
     def __init__(self, value):
@@ -123,6 +124,10 @@ class Terminal(LeafRule):
 
     @classmethod
     def parse(cls, parser, text, pos):
+        """Parses terminals up to keywords defined into the Keyword.table.
+
+        Called by PyPeg.
+        """
         m = cls.regex.match(text)
         if m:
             # Check if token is a DSL keyword
@@ -186,19 +191,24 @@ class Value(UnaryRule):
 ########################
 
 
-class QualifierExpression(BinaryRule):
-    """Qualified keyword queries.
+class KeywordQuery(BinaryRule):
+    """Keyword queries.
 
     E.g. author: ellis, or title boson.
     """
-    grammar = attr('left', Qualifier), omit(optional(':')), attr('right', Value)
+    grammar = attr('left', InspireKeyword), omit(optional(':')), attr('right', Value)
 
 
-class NestedQualifierExpression(BinaryRule):
+class NestedKeywordQuery(BinaryRule):
+    # TODO support citedbyx, parenthesized queries
+    """Nested Keyword queries.
+
+    E.g. citedby:author:hui and cited:author:witten
+    """
     grammar = \
         attr('left', [re.compile('refersto', re.IGNORECASE), re.compile('citedby', re.IGNORECASE)]), \
         optional(omit(":")), \
-        attr('right', QualifierExpression)
+        attr('right', KeywordQuery)
 
 
 class SimpleQuery(UnaryRule):
@@ -207,8 +217,8 @@ class SimpleQuery(UnaryRule):
     These are comprised of metadata queries, qualified keywords and plaintext phrases (values).
     """
     grammar = attr('op', [
-        NestedQualifierExpression,
-        QualifierExpression,
+        NestedKeywordQuery,
+        KeywordQuery,
         Value,
     ])
 
