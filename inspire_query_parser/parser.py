@@ -165,24 +165,16 @@ class ComplexValue(LeafRule):
     grammar = attr('value', re.compile(r"((/\^[^$]*\$/)|('[^']*')|(\"[^\"]*\"))")),
 
 
-class ExactValueRange(BinaryRule):
-    """Range for exact values.
+class RangeOp(BinaryRule):
+    """Range operator mixing any type of values.
 
-    E.g. author:"Ellis, J"->"Ellis, Qqq"
+    E.g.    muon decay year:1983->1992
+            author:"Ellis, J"->"Ellis, Qqq"
+            author:"Ellis, J"->Ellis, M
+
+    The non symmetrical type of values will be handled at a later phase.
     """
-    # TODO change Terminals to exact value regex.
-    grammar = omit(Literal('"')), attr('left', Terminal), omit(Literal('"')), \
-              omit(Range), \
-              omit(Literal('"')), attr('right', Terminal), omit(Literal('"'))
-
-
-class SimpleValueRange(BinaryRule):
-    """Range for simple values, i.e. words or numbers.
-
-    E.g. muon decay year:1983->1992
-    """
-    # TODO Change Terminals to word/number regex.
-    grammar = attr('left', Terminal), omit(Range), attr('right', Terminal)
+    grammar = attr('left', [ComplexValue, SimpleValue]), omit(Range), attr('right', [ComplexValue, SimpleValue])
 
 
 class Value(UnaryRule):
@@ -191,8 +183,7 @@ class Value(UnaryRule):
     Serves as an encapsulation of the listed rules.
     """
     grammar = attr('op', [
-        ExactValueRange,
-        SimpleValueRange,
+        RangeOp,
         ComplexValue,
         SimpleValue,
     ])

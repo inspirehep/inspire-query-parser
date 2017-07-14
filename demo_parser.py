@@ -65,4 +65,6 @@ if __name__ == '__main__':
 
     # Ranges
     print(emit_tree_repr(parse("t bar->foo", Query)))
+    print(emit_tree_repr(parse('t "bar"->"foo"', Query)))
+    print(emit_tree_repr(parse('t bar->"foo"', Query)))
     print(emit_tree_repr(parse("ac 1->10", Query)))
