@@ -238,10 +238,9 @@ class ParenthesizedQuery(UnaryRule):
 
 
 class NestedKeywordQuery(BinaryRule):
-    # TODO support citedbyx
     """Nested Keyword queries.
 
-    E.g. citedby:author:hui and cited:author:witten
+    E.g. citedby:author:hui and refersto:author:witten
     """
     pass
 
@@ -255,7 +254,11 @@ Expression.grammar = attr('op', [
 
 
 NestedKeywordQuery.grammar = \
-    attr('left', [re.compile('refersto', re.IGNORECASE), re.compile('citedby', re.IGNORECASE)]), \
+    attr('left', [
+        re.compile('refersto', re.IGNORECASE),
+        re.compile('citedbyx', re.IGNORECASE),
+        re.compile('citedby', re.IGNORECASE),
+    ]), \
     optional(omit(":")), \
     attr('right', Expression)
 

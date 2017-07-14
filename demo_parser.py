@@ -62,6 +62,7 @@ if __name__ == '__main__':
     print(emit_tree_repr(parse("a a, ellis", Query)))
 
     # Nestable keywords
+    print(emit_tree_repr(parse("citedbyx:author:s.p.martin.1", Query)))
     print(emit_tree_repr(parse("citedby:author:s.p.martin.1", Query)))
     print(emit_tree_repr(parse("-refersto:recid:1374998 and citedby:(A.A.Aguilar.Arevalo.1)", Query)))
     print(emit_tree_repr(parse("citedby:(author A.A.Aguilar.Arevalo.1)", Query)))
