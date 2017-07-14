@@ -41,6 +41,11 @@ CIKeyword = CaseInsensitiveKeyword
 # ########################
 
 
+class BooleanOperator(Enum):
+    AND = 'and'
+    OR = 'or'
+
+
 class LeafRule(ast.Leaf):
     def __init__(self):
         pass
@@ -240,22 +245,22 @@ class Expression(UnaryRule):
     ])
 
 
-class AndQuery(BinaryRule):
-    pass
+class BooleanQuery(BinaryRule):
+    bool_op = None
+    grammar = Expression, [And, Or], Statement
 
-
-class OrQuery(BinaryRule):
-    pass
-
-
-AndQuery.grammar = attr('left', Expression), omit(And), attr('right', Statement)
-
-OrQuery.grammar = attr('left', Expression), omit(Or), attr('right', Statement)
+    def __init__(self, args):
+        self.left = args[0]
+        if isinstance(args[1], And):
+            self.bool_op = BooleanOperator.AND
+        else:
+            self.bool_op = BooleanOperator.OR
+        self.right = args[2]
 # ########################
 
 
 # #### Main productions ####
-Statement.grammar = attr('op', [AndQuery, OrQuery, Expression])
+Statement.grammar = attr('op', [BooleanQuery, Expression])
 
 
 class Query(UnaryRule):

@@ -38,6 +38,14 @@ def recursive_printer(node, level=-INDENTATION):
                 ret_str = ""
 
         elif issubclass(type(node), BinaryOp):
+            try:
+                if node.bool_op:
+                    ret_str = emit_symbol_at_level_str(
+                        node.__class__.__name__ + " {" + node.bool_op + "}",
+                        new_level
+                    )
+            except AttributeError:
+                pass
             ret_str += recursive_printer(node.left, new_level)
             ret_str += recursive_printer(node.right, new_level)
 
