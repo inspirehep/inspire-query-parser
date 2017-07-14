@@ -156,6 +156,9 @@ INSPIRE_PARSER_KEYWORDS = {
     # recid
     'recid': 'recid',
 
+    # recid
+    'recid': 'recid',
+
     # Reference
     'reference': 'reference',
     'citation': 'reference',

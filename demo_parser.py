@@ -62,6 +62,8 @@ if __name__ == '__main__':
 
     # Nestable keywords
     print(emit_tree_repr(parse("citedby:author:s.p.martin.1", Query)))
+    print(emit_tree_repr(parse("citedby:(author A.A.Aguilar.Arevalo.1)", Query)))
+    print(emit_tree_repr(parse("citedby:refersto:recid:1432705", Query)))
 
     # Unicode terminals
     print(emit_tree_repr(parse('a ekström and t γ-radiation', Query)))

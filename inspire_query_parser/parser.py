@@ -199,25 +199,12 @@ class KeywordQuery(BinaryRule):
     grammar = attr('left', InspireKeyword), omit(optional(':')), attr('right', Value)
 
 
-class NestedKeywordQuery(BinaryRule):
-    # TODO support citedbyx, parenthesized queries
-    """Nested Keyword queries.
-
-    E.g. citedby:author:hui and cited:author:witten
-    """
-    grammar = \
-        attr('left', [re.compile('refersto', re.IGNORECASE), re.compile('citedby', re.IGNORECASE)]), \
-        optional(omit(":")), \
-        attr('right', KeywordQuery)
-
-
 class SimpleQuery(UnaryRule):
     """Query basic units.
 
-    These are comprised of metadata queries, qualified keywords and plaintext phrases (values).
+    These are comprised of metadata queries, keywords and value queries.
     """
     grammar = attr('op', [
-        NestedKeywordQuery,
         KeywordQuery,
         Value,
     ])
@@ -240,6 +227,15 @@ class ParenthesizedQuery(UnaryRule):
     grammar = omit(Literal('(')), attr('op', Statement), omit(Literal(')'))
 
 
+class NestedKeywordQuery(BinaryRule):
+    # TODO support citedbyx, parenthesized queries
+    """Nested Keyword queries.
+
+    E.g. citedby:author:hui and cited:author:witten
+    """
+    pass
+
+
 class Expression(UnaryRule):
     """A generic query expression.
 
@@ -249,9 +245,16 @@ class Expression(UnaryRule):
     """
     grammar = attr('op', [
         NotQuery,
+        NestedKeywordQuery,
         ParenthesizedQuery,
         SimpleQuery,
     ])
+
+
+NestedKeywordQuery.grammar = \
+    attr('left', [re.compile('refersto', re.IGNORECASE), re.compile('citedby', re.IGNORECASE)]), \
+    optional(omit(":")), \
+    attr('right', Expression)
 
 
 class BooleanQuery(BinaryRule):
