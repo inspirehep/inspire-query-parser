@@ -16,7 +16,8 @@ if __name__ == '__main__':
 
     # Boolean operator testing
     print(emit_tree_repr(parse("author ellis and title 'boson'", Query)))
-    print(emit_tree_repr(parse("a ellis AND title boson", Query)))
+    print(emit_tree_repr(parse("f a appelquist and date 1983", Query)))
+    print(emit_tree_repr(parse("fin a henneaux and citedby a nicolai", Query)))
     print(emit_tree_repr(parse("au ellis | title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis OR title 'boson'", Query)))
     print(emit_tree_repr(parse("author ellis + title 'boson'", Query)))
@@ -49,6 +50,7 @@ if __name__ == '__main__':
                                Query)))
     print(emit_tree_repr(parse("find t Closed string field theory: Quantum action", Query)))
     print(emit_tree_repr(parse("find title na61/shine", Query)))
+    print(emit_tree_repr(parse("find j phys.rev. and vol d85", Query)))
     print(emit_tree_repr(parse("title foo and author abtrall", Query)))
     print(emit_tree_repr(parse("title e-10 and -author:ellis", Query)))
     print(emit_tree_repr(parse("title 'e-10' and -author:ellis", Query)))
