@@ -203,12 +203,20 @@ class QualifierExpression(BinaryRule):
     grammar = attr('left', Qualifier), omit(optional(':')), attr('right', Value)
 
 
+class NestedQualifierExpression(BinaryRule):
+    grammar = \
+        attr('left', [re.compile('refersto', re.IGNORECASE), re.compile('citedby', re.IGNORECASE)]), \
+        optional(omit(":")), \
+        attr('right', QualifierExpression)
+
+
 class SimpleQuery(UnaryRule):
     """Query basic units.
 
     These are comprised of metadata queries, qualified keywords and plaintext phrases (values).
     """
     grammar = attr('op', [
+        NestedQualifierExpression,
         QualifierExpression,
         Value,
     ])

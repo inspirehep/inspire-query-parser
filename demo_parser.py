@@ -57,10 +57,10 @@ if __name__ == '__main__':
     print(emit_tree_repr(parse("find a d'hoker and a gagne", Query)))
     print(emit_tree_repr(parse('a pang，yi', Query)))  # Full-width comma unicode character
     print(emit_tree_repr(parse('f a SU(2)', Query)))
-    # print(emit_tree_repr(parse("773__w:C11-10-03.2 or 773__w:C11/10/03.2 and 980__a:ConferencePaper", StartRule)))
-
-    # Recognizing same terminal token differently.
     print(emit_tree_repr(parse("a a, ellis", Query)))
+
+    # Nestable keywords
+    print(emit_tree_repr(parse("citedby:author:s.p.martin.1", Query)))
 
     # Unicode terminals
     print(emit_tree_repr(parse('a ekström and t γ-radiation', Query)))
