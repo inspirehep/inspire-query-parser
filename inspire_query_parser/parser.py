@@ -68,15 +68,6 @@ class ListRule(ast.ListOp):
 
 
 # #### Keywords ####
-class Find(Keyword):
-    """SPIRES find keyword.
-
-    We need to have whitespace after the keyword since there's an overlap with other operators, e.g. "fulltext". If not
-    this keyword will consume f from fulltext.
-    """
-    regex = re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE)
-
-
 class And(CIKeyword):
     """
     The reason for defining an Enum grammar of Keywords is for populating the Keyword.table for checking whether
@@ -278,6 +269,6 @@ class Query(UnaryRule):
     It only serves for backward compatibility with SPIRES syntax.
     """
     grammar = [
-        (omit(Find), attr('op', Statement)),
+        (omit(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE)), attr('op', Statement)),
         attr('op', Statement),
     ]
