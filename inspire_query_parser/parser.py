@@ -1,7 +1,8 @@
 # coding=utf-8
 from __future__ import unicode_literals, print_function
 
-from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguous, maybe_some, some, GrammarValueError
+from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguous, maybe_some, some, GrammarValueError, \
+    whitespace
 
 from . import ast
 from .config import INSPIRE_PARSER_KEYWORDS
@@ -292,6 +293,10 @@ class BooleanQuery(BinaryRule):
 Statement.grammar = attr('op', [BooleanQuery, Expression])
 
 
+class EmptyQuery(LeafRule):
+    grammar = omit(optional(whitespace)), attr('value', None)
+
+
 class Query(UnaryRule):
     """The entry-point for the grammar.
 
@@ -301,4 +306,5 @@ class Query(UnaryRule):
     grammar = [
         (omit(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE)), attr('op', Statement)),
         attr('op', Statement),
+        attr('op', EmptyQuery),
     ]
