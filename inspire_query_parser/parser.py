@@ -26,6 +26,7 @@ class CaseInsensitiveKeyword(Keyword):
 
     @classmethod
     def parse(cls, parser, text, pos):
+        """Checks if terminal token is a keyword after lower-casing it."""
         m = cls.regex.match(text)
         if m:
             # Check if match is is not in the grammar of the specific keyword class.
@@ -42,6 +43,7 @@ CIKeyword = CaseInsensitiveKeyword
 
 
 class BooleanOperator(Enum):
+    """Serves as the possible case for a boolean operator."""
     AND = 'and'
     OR = 'or'
 
@@ -93,16 +95,11 @@ class Not(CIKeyword):
     """
     regex = re.compile(r"(not|-)", re.IGNORECASE)
     grammar = Enum(K("not"), "-")
-
-
-class Range(object):
-    grammar = omit(Literal("->"))
 # ########################
 
 
 # #### Lowest level operators #####
 class InspireKeyword(LeafRule):
-    """Inspire Keyword"""
     grammar = re.compile(r"({0})\b".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())))
 
     def __init__(self, value):
@@ -146,10 +143,7 @@ class SimpleValue(ListRule):
 
     E.g. title top cross section.
     """
-    grammar = contiguous(some(Terminal))
-
-    def __init__(self, args):
-        self.children = args
+    grammar = attr('children', contiguous(some(Terminal)))
 
 
 class ComplexValue(LeafRule):
@@ -159,6 +153,7 @@ class ComplexValue(LeafRule):
       * Single quotes: partial text matching (text is analyzed before searched)
       * Double quotes: exact text matching
       * Regex: regex searches
+
     E.g. t 'Millisecond pulsar velocities'.
 
     This makes no difference for the parser and will be handled at a later parsing phase.
@@ -175,7 +170,7 @@ class RangeOp(BinaryRule):
 
     The non symmetrical type of values will be handled at a later phase.
     """
-    grammar = attr('left', [ComplexValue, SimpleValue]), omit(Range), attr('right', [ComplexValue, SimpleValue])
+    grammar = attr('left', [ComplexValue, SimpleValue]), omit(Literal("->")), attr('right', [ComplexValue, SimpleValue])
 
 
 class Value(UnaryRule):
@@ -196,6 +191,7 @@ class KeywordQuery(BinaryRule):
 
     E.g. author: ellis, or title boson.
     """
+
     grammar = attr('left', InspireKeyword), omit(optional(':')), attr('right', Value)
 
 
@@ -213,7 +209,8 @@ class SimpleQuery(UnaryRule):
 class Statement(UnaryRule):
     """The most generic query component.
 
-    Supports queries chaining."""
+    Supports queries chaining, see its grammar for more information.
+    """
     pass
 
 
@@ -268,6 +265,8 @@ class BooleanQuery(BinaryRule):
 
     Attributes:
         bool_op (str): Representation of the actual boolean operator.
+            If its value is None at creation time, this signifies an Implicit And. From that point on, this attribute
+            will contain the value from :attr:`BooleanOperator.AND` field.
     """
     bool_op = None
     grammar = Expression, [And, Or, None], Statement
