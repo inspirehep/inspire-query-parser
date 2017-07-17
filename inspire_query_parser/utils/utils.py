@@ -66,8 +66,9 @@ def recursive_printer(node, level=-INDENTATION):
     return ret_str
 
 
-def emit_tree_repr(tree):
-    print("Converting: " + str(tree))
+def emit_tree_repr(tree, verbose=False):
+    if verbose:
+        print("Converting: " + str(tree))
     ret_str = recursive_printer(tree)
     ret_str += emit_symbol_at_level_str("▆", 0, True)
     return ret_str

@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals, print_function
 
+import sys
 from pypeg2 import parse
 from inspire_query_parser.parser import Query
 from inspire_query_parser.utils.utils import emit_tree_repr
@@ -9,8 +10,29 @@ from inspire_query_parser.utils.utils import emit_tree_repr
 def print_query_and_parse_tree(query_str):
     print("Parsing: [" + query_str + "]")
     print(emit_tree_repr(parse(query_str, Query)))
+    print("————————————————————————————————————————————————————————————————————————————————")
+
+
+def repl():
+    """Read-Eval-Print-Loop for reading the query, printing it and its parse tree.
+
+    Exit the loop either with an interrupt or quit.
+    """
+    while True:
+        try:
+            sys.stdout.write("Type in next query: \n> ")
+            import locale
+            query_str = raw_input().decode(sys.stdin.encoding or locale.getpreferredencoding(True))
+        except KeyboardInterrupt:
+            break
+
+        if u'quit' in query_str:
+            break
+
+        print_query_and_parse_tree(query_str)
 
 if __name__ == '__main__':
+    # repl()
     # Find keyword combined with other production rules
     print_query_and_parse_tree("FIN author:'ellis'")
     print_query_and_parse_tree('Find author "ellis"')
