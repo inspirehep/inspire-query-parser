@@ -159,7 +159,7 @@ class ComplexValue(LeafRule):
 
     This makes no difference for the parser and will be handled at a later parsing phase.
     """
-    grammar = attr('value', re.compile(r"((/\^[^$]*\$/)|('[^']*')|(\"[^\"]*\"))")),
+    grammar = attr('value', re.compile(r"((/(\^)?.+(\$)?/)|('[^']*')|(\"[^\"]*\"))")),
 
 
 class GreaterThanOp(UnaryRule):

@@ -93,6 +93,12 @@ if __name__ == '__main__':
     print_query_and_parse_tree('f a SU(2)')
     print_query_and_parse_tree("a a, ellis")
 
+    # Regex
+    print_query_and_parse_tree("author:/^Ellis, (J|John)$/")
+    print_query_and_parse_tree("-year:/^[[:digit:]]{4}([\?\-]|\-[[:digit:]]{4})?$/")
+    print_query_and_parse_tree("title:/dense ([^ l]* )?matter/")
+    print_query_and_parse_tree("title:/dense ([^ $]* )?matter/")
+
     # Nestable keywords
     print_query_and_parse_tree("citedbyx:author:s.p.martin.1")
     print_query_and_parse_tree("citedby:author:s.p.martin.1")
