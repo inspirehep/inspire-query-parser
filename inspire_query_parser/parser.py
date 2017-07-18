@@ -113,7 +113,7 @@ class Terminal(LeafRule):
     Some examples include: na61/shine, e-10, SU(2).
     Terminals separation happens with these " ", ",", ".", ":", "，" characters.
     """
-    regex = re.compile(r"(\w+(([-/.']\w+)|(\((\w+|\d+)\)))*)", re.UNICODE)
+    regex = re.compile(r"[*]?(\w+(([-/.'*]\w+)|(\((\w+|\d+)\)))*)[*]?", re.UNICODE)
     extras = maybe_some([" ", ",", ".", ":", "，"])
 
     def __init__(self, value):

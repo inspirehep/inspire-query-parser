@@ -84,6 +84,7 @@ if __name__ == '__main__':
     print_query_and_parse_tree("find t Closed string field theory: Quantum action")
     print_query_and_parse_tree("find title na61/shine")
     print_query_and_parse_tree("find j phys.rev. and vol d85")
+    print_query_and_parse_tree("find j phys.rev.lett.,62,1825")
     print_query_and_parse_tree("title foo and author abtrall")
     print_query_and_parse_tree("title e-10 and -author:ellis")
     print_query_and_parse_tree("title 'e-10' and -author:ellis")
@@ -121,3 +122,7 @@ if __name__ == '__main__':
     print_query_and_parse_tree("date before 2000 and ac < 100")
     print_query_and_parse_tree("ac 100- -date <= 2000")
     print_query_and_parse_tree("f a wimpenny and date = 1987")
+
+    # Star queries
+    print_query_and_parse_tree("find a 'o*aigh' and t \"alge*\" and date >2013")
+    print_query_and_parse_tree("a *alge | a alge* | a o*aigh")
