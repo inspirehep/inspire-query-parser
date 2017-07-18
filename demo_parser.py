@@ -112,7 +112,7 @@ if __name__ == '__main__':
     print_query_and_parse_tree("")
     print_query_and_parse_tree("\t \n ")
 
-    # G, GE, LT, LE queries
+    # G, GE, LT, LE, E queries
     print_query_and_parse_tree("date > 10-2000 and title foo")
     print_query_and_parse_tree("date after 10/2000 - title foo")
     print_query_and_parse_tree("date >= 2000 - author ellis")
@@ -120,3 +120,4 @@ if __name__ == '__main__':
     print_query_and_parse_tree("date 2010-06+ or foo")
     print_query_and_parse_tree("date before 2000 and ac < 100")
     print_query_and_parse_tree("ac 100- -date <= 2000")
+    print_query_and_parse_tree("f a wimpenny and date = 1987")
