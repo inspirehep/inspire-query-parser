@@ -54,7 +54,7 @@ if __name__ == '__main__':
     print_query_and_parse_tree("-author ellis OR title 'boson'")
     print_query_and_parse_tree("author ellis + title 'boson'")
     print_query_and_parse_tree("author ellis & title 'boson'")
-    print_query_and_parse_tree("author ellis title 'boson'")
+    # print_query_and_parse_tree("author ellis title 'boson'")
 
     # Negation
     print_query_and_parse_tree("ellis and not title 'boson'")

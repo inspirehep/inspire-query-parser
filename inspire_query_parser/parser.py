@@ -114,7 +114,6 @@ class Terminal(LeafRule):
     Terminals separation happens with these " ", ",", ".", ":", "，" characters.
     """
     regex = re.compile(r"[*]?(\w+(([-/.'*]\w+)|(\((\w+|\d+)\)))*)[*]?", re.UNICODE)
-    extras = maybe_some([" ", ",", ".", ":", "，"])
 
     def __init__(self, value):
         super(Terminal, self).__init__()
@@ -132,8 +131,7 @@ class Terminal(LeafRule):
             if m.group(0).lower() in Keyword.table:
                 return text, SyntaxError("found DSL keyword: " + m.group(0))
 
-            # Extract matched keyword and clean "extras" from resulting text
-            result = parser.parse(text[len(m.group(0)):], cls.extras)[0], cls(m.group(0))
+            result = text[len(m.group(0)):], cls(m.group(0))
         else:
             result = text, SyntaxError("expecting match on " + repr(cls.regex))
         return result
@@ -144,7 +142,7 @@ class SimpleValue(ListRule):
 
     E.g. title top cross section.
     """
-    grammar = attr('children', contiguous(some(Terminal)))
+    grammar = attr('children', contiguous(some(Terminal, maybe_some([" ", ",", ".", ":", "，"]))))
 
 
 class ComplexValue(LeafRule):
@@ -304,6 +302,7 @@ NestedKeywordQuery.grammar = \
     attr('right', Expression)
 
 
+# FIXME Implicit And should happen only between KeywordColonQueries!
 class BooleanQuery(BinaryRule):
     """Represents boolean query as a binary rule.
 
