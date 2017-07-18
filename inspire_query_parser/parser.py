@@ -162,6 +162,44 @@ class ComplexValue(LeafRule):
     grammar = attr('value', re.compile(r"((/\^[^$]*\$/)|('[^']*')|(\"[^\"]*\"))")),
 
 
+class GreaterThanOp(UnaryRule):
+    """Greater than operator.
+
+    Supports queries like author-count > 2000 or date after 10-2000.
+    """
+    grammar = omit(re.compile(r"after|>", re.IGNORECASE)), attr('op', SimpleValue)
+
+
+class GreaterEqualOp(UnaryRule):
+    """Greater than or Equal to operator.
+
+    Supports queries like date >= 10-2000 or topcite 200+.
+    """
+    grammar = [
+        (omit(Literal(">=")), attr('op', SimpleValue)),
+        (attr('op', Terminal), omit(Literal("+"))),
+    ]
+
+
+class LessThanOp(UnaryRule):
+    """Less than operator.
+
+    Supports queries like author-count < 100 or date before 1984.
+    """
+    grammar = omit(re.compile(r"before|<", re.IGNORECASE)), attr('op', SimpleValue)
+
+
+class LessEqualOp(UnaryRule):
+    """Less than or Equal to operator.
+
+    Supports queries like date <= 10-2000 or author-count 100-.
+    """
+    grammar = [
+        (omit(Literal("<=")), attr('op', SimpleValue)),
+        (attr('op', Terminal), omit(Literal("-")))
+    ]
+
+
 class RangeOp(BinaryRule):
     """Range operator mixing any type of values.
 
@@ -181,6 +219,10 @@ class Value(UnaryRule):
     """
     grammar = attr('op', [
         RangeOp,
+        GreaterEqualOp,
+        LessEqualOp,
+        GreaterThanOp,
+        LessThanOp,
         ComplexValue,
         SimpleValue,
     ])

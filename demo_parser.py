@@ -33,6 +33,11 @@ def repl():
 
 if __name__ == '__main__':
     # repl()
+
+    # print_query_and_parse_tree("date today - 2")
+    # print_query_and_parse_tree("find a T.A. Aibergenov and date = 1986")
+    # print_query_and_parse_tree("find a o*aigh and t alge*")
+    # print_query_and_parse_tree("find exp cern-lhc-atlas and ac 100+")
     # Find keyword combined with other production rules
     print_query_and_parse_tree("FIN author:'ellis'")
     print_query_and_parse_tree('Find author "ellis"')
@@ -106,3 +111,12 @@ if __name__ == '__main__':
     # Empty query
     print_query_and_parse_tree("")
     print_query_and_parse_tree("\t \n ")
+
+    # G, GE, LT, LE queries
+    print_query_and_parse_tree("date > 10-2000 and title foo")
+    print_query_and_parse_tree("date after 10/2000 - title foo")
+    print_query_and_parse_tree("date >= 2000 - author ellis")
+    print_query_and_parse_tree("date foo+ + -ac 100+")
+    print_query_and_parse_tree("date 2010-06+ or foo")
+    print_query_and_parse_tree("date before 2000 and ac < 100")
+    print_query_and_parse_tree("ac 100- -date <= 2000")
