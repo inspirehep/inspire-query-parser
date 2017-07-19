@@ -228,13 +228,19 @@ class Value(UnaryRule):
 ########################
 
 
-class KeywordQuery(BinaryRule):
-    """Keyword queries.
+class InvenioKeywordQuery(BinaryRule):
+    """Keyword queries with colon separator (i.e. Invenio style).
 
-    E.g. author: ellis, or title boson.
+    There needs to be a distinction between Invenio and SPIRES keyword queries, so as the parser is able to recognize
+    any terminal as keyword for the former ones.
+    E.g. author: ellis, title: boson, or unknown_keyword: foo.
     """
+    grammar = attr('left', [InspireKeyword, Terminal]), omit(':'), attr('right', Value)
 
-    grammar = attr('left', InspireKeyword), omit(optional(':')), attr('right', Value)
+
+class SpiresKeywordQuery(BinaryRule):
+    """Keyword queries with space separator (i.e. Spires style)."""
+    grammar = attr('left', InspireKeyword), attr('right', Value)
 
 
 class SimpleQuery(UnaryRule):
@@ -243,7 +249,8 @@ class SimpleQuery(UnaryRule):
     These are comprised of metadata queries, keywords and value queries.
     """
     grammar = attr('op', [
-        KeywordQuery,
+        InvenioKeywordQuery,
+        SpiresKeywordQuery,
         Value,
     ])
 

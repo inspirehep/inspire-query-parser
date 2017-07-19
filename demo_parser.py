@@ -40,6 +40,8 @@ if __name__ == '__main__':
     # print_query_and_parse_tree("find exp cern-lhc-atlas and ac 100+")
     # Find keyword combined with other production rules
     print_query_and_parse_tree("FIN author:'ellis'")
+    print_query_and_parse_tree("unknown_keyword:'bar'")
+    print_query_and_parse_tree("dotted.keyword:'bar'")
     print_query_and_parse_tree('Find author "ellis"')
     print_query_and_parse_tree('f author ellis')
 
