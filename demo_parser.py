@@ -4,12 +4,12 @@ from __future__ import unicode_literals, print_function
 import sys
 from pypeg2 import parse
 from inspire_query_parser.parser import Query
-from inspire_query_parser.utils.utils import emit_tree_repr
+from inspire_query_parser.utils.utils import emit_tree_repr, Colors
 
 
 def print_query_and_parse_tree(query_str):
-    print("Parsing: [" + query_str + "]")
-    print(emit_tree_repr(parse(query_str, Query)))
+    print(Colors.OKBLUE + "Parsing: [" + query_str + "]" + Colors.ENDC)
+    print(Colors.OKGREEN + emit_tree_repr(parse(query_str, Query)) + Colors.ENDC)
     print("————————————————————————————————————————————————————————————————————————————————")
 
 
@@ -35,11 +35,10 @@ if __name__ == '__main__':
     # repl()
 
     # print_query_and_parse_tree("date today - 2")
-    # print_query_and_parse_tree("find a T.A. Aibergenov and date = 1986")
-    # print_query_and_parse_tree("find a o*aigh and t alge*")
-    # print_query_and_parse_tree("find exp cern-lhc-atlas and ac 100+")
+
     # Find keyword combined with other production rules
     print_query_and_parse_tree("FIN author:'ellis'")
+    print_query_and_parse_tree("find a T.A. Aibergenov and date = 1986")
     print_query_and_parse_tree("unknown_keyword:'bar'")
     print_query_and_parse_tree("dotted.keyword:'bar'")
     print_query_and_parse_tree('Find author "ellis"')
@@ -56,6 +55,7 @@ if __name__ == '__main__':
     print_query_and_parse_tree("-author ellis OR title 'boson'")
     print_query_and_parse_tree("author ellis + title 'boson'")
     print_query_and_parse_tree("author ellis & title 'boson'")
+    # FIXME Implicit and
     # print_query_and_parse_tree("author ellis title 'boson'")
 
     # Negation
@@ -83,7 +83,9 @@ if __name__ == '__main__':
     print_query_and_parse_tree("author j., ellis")
     print_query_and_parse_tree("f title Super Collider Physics")
     print_query_and_parse_tree("find title Alternative the Phase-II upgrade of the ATLAS Inner Detector or title foo")
-    print_query_and_parse_tree("find t Closed string field theory: Quantum action")
+    # The query below doesn't work on legacy. If we add a catch all option at the Statement rule
+    # then we can accept it as something unrecognized.
+    # print_query_and_parse_tree("find t Closed string field theory: Quantum action")
     print_query_and_parse_tree("find title na61/shine")
     print_query_and_parse_tree("find j phys.rev. and vol d85")
     print_query_and_parse_tree("find j phys.rev.lett.,62,1825")
@@ -93,7 +95,12 @@ if __name__ == '__main__':
     print_query_and_parse_tree("find a d'hoker and a gagne")
     print_query_and_parse_tree('a pang，yi')  # Full-width comma unicode character
     print_query_and_parse_tree('f a SU(2)')
+    print_query_and_parse_tree('t e(+)e(-)')
+    print_query_and_parse_tree('t e+e- Colliders')
     print_query_and_parse_tree("a a, ellis")
+    print_query_and_parse_tree("title: Si-28(p(pol.),n(pol.))")
+    print_query_and_parse_tree("title:  Si28(p→,p→′)Si28(6−,T=1) ")
+    print_query_and_parse_tree("title:  C-12(vec-p,vec-n)N-12 (g.s.,1+)")
 
     # Regex
     print_query_and_parse_tree("author:/^Ellis, (J|John)$/")
@@ -125,12 +132,16 @@ if __name__ == '__main__':
     print_query_and_parse_tree("date > 10-2000 and title foo")
     print_query_and_parse_tree("date after 10/2000 - title foo")
     print_query_and_parse_tree("date >= 2000 - author ellis")
-    print_query_and_parse_tree("date foo+ + -ac 100+")
+    print_query_and_parse_tree("date 1978+ + -ac 100+")
     print_query_and_parse_tree("date 2010-06+ or foo")
+    print_query_and_parse_tree("date 2010-06   + or foo")
     print_query_and_parse_tree("date before 2000 and ac < 100")
-    print_query_and_parse_tree("ac 100- -date <= 2000")
+    print_query_and_parse_tree("date before 2000 and ac 100+")
+    print_query_and_parse_tree("ac 100- and -date <= 2000")
     print_query_and_parse_tree("f a wimpenny and date = 1987")
 
     # Star queries
     print_query_and_parse_tree("find a 'o*aigh' and t \"alge*\" and date >2013")
     print_query_and_parse_tree("a *alge | a alge* | a o*aigh")
+    print_query_and_parse_tree("find t $\psi$")
+    print_query_and_parse_tree("find t $\psi$")

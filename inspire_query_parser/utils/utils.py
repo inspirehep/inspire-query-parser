@@ -1,7 +1,27 @@
 # coding=utf-8
+from __future__ import print_function
+
+import sys
+
 from ..ast import UnaryOp, Leaf, BinaryOp, ListOp
 
 INDENTATION = 4
+
+
+class Colors(object):
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+if sys.version_info[0] == 3:  # pragma: no cover (Python 2/3 specific code)
+    string_types = str,
+else:  # pragma: no cover (Python 2/3 specific code)
+    string_types = basestring,
 
 
 def emit_symbol_at_level_str(symbol, level, is_last=False):
@@ -22,12 +42,12 @@ def recursive_printer(node, level=-INDENTATION):
 
     if issubclass(type(node), Leaf):
         value = "" if not repr(node.value) or repr(node.value) == "None" \
-            else node.__class__.__name__ + " {" + repr(node.value) + "}"
+            else node.__class__.__name__ + " {" + node.value.encode('utf-8') + "}"
 
         ret_str = emit_symbol_at_level_str(value, new_level) if value != "" else ""
     elif issubclass(type(node), unicode):
         value = "" if not repr(node) or repr(node) == "None" \
-            else node.__class__.__name__ + " {" + repr(node) + "}"
+            else node.__class__.__name__ + " {" + node.encode('utf-8') + "}"
 
         ret_str = emit_symbol_at_level_str(value, new_level) if value != "" else ""
     else:

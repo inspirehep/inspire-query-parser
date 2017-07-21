@@ -1,9 +1,11 @@
 # coding=utf-8
 from __future__ import unicode_literals, print_function
 
+import sys
 from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguous, maybe_some, some, GrammarValueError, \
     whitespace
 
+from inspire_query_parser.utils.utils import string_types
 from . import ast
 from .config import INSPIRE_PARSER_KEYWORDS
 
@@ -40,6 +42,17 @@ class CaseInsensitiveKeyword(Keyword):
         return result
 
 CIKeyword = CaseInsensitiveKeyword
+
+
+class InspireParserState(object):
+    """Encapsulates global state during parsing.
+
+    Attributes:
+        parsing_parenthesized_terminal (bool): Signifies whether the parser is trying to identify a parenthesized
+            terminal.
+    """
+    parsing_parenthesized_terminal = False
+
 # ########################
 
 
@@ -77,7 +90,7 @@ class And(CIKeyword):
     terminal symbols are actually DSL keywords.
     """
     regex = re.compile(r"(and|\+|&)", re.IGNORECASE)
-    grammar = Enum(K("and"), "+", "&")
+    grammar = Enum(K("and"), K("+"), K("&"))
 
 
 class Or(CIKeyword):
@@ -86,7 +99,7 @@ class Or(CIKeyword):
     terminal symbols are actually DSL keywords.
     """
     regex = re.compile(r"(or|\|)", re.IGNORECASE)
-    grammar = Enum(K("or"), "|")
+    grammar = Enum(K("or"), K("|"))
 
 
 class Not(CIKeyword):
@@ -95,7 +108,7 @@ class Not(CIKeyword):
     terminal symbols are actually DSL keywords.
     """
     regex = re.compile(r"(not|-)", re.IGNORECASE)
-    grammar = Enum(K("not"), "-")
+    grammar = Enum(K("not"), K("-"))
 # ########################
 
 
@@ -107,42 +120,105 @@ class InspireKeyword(LeafRule):
         self.value = INSPIRE_PARSER_KEYWORDS[value]
 
 
-class Terminal(LeafRule):
-    """Represents terminal symbols that are not keywords.
+class SimpleValueUnit(LeafRule):
+    """Represents either a terminal symbol (without parentheses) or a parenthesized SimpleValue.
 
-    Some examples include: na61/shine, e-10, SU(2).
-    Terminals separation happens with these " ", ",", ".", ":", "，" characters.
+    The parenthesized case (2nd option of SimpleValueUnit) accepts a SimpleValue which is the more generic case of
+    plaintext and in turn (its grammar) encapsulates whitespace and SimpleValueUnit recognition.
+
     """
-    regex = re.compile(r"[*]?(\w+(([-/.'*]\w+)|(\((\w+|\d+)\)))*)[*]?", re.UNICODE)
-
-    def __init__(self, value):
-        super(Terminal, self).__init__()
-        self.value = value
+    def __init__(self, args):
+        super(SimpleValueUnit, self).__init__()
+        if isinstance(args, string_types):
+            # Value was recognized by the 1st option (regex)
+            self.value = args
+        else:
+            # Value was recognized by the 2nd option
+            self.value = args[0] + args[1].value + args[2]
 
     @classmethod
-    def parse(cls, parser, text, pos):
-        """Parses terminals up to keywords defined into the Keyword.table.
+    def parse_terminal_token(cls, text):
+        """Parses a terminal token that doesn't contain parentheses.
 
-        Called by PyPeg.
+        Note:
+            If we're parsing text not in parentheses, then some DSL keywords (e.g. And, Or, Not, defined above) should
+            not be recognized as terminals, thus we check if they are in the Keywords table (namespace like structure
+            handled by PyPeg).
+            This is done only when we are not parsing a parenthesized SimpleValue.
         """
-        m = cls.regex.match(text)
+        m = cls.grammar[0].match(text)
         if m:
-            # Check if token is a DSL keyword
-            if m.group(0).lower() in Keyword.table:
+            # Check if token is a DSL keyword only in the case where the parser doesn't parse a parenthesized terminal
+            if m.group(0).lower() in Keyword.table and not InspireParserState.parsing_parenthesized_terminal:
                 return text, SyntaxError("found DSL keyword: " + m.group(0))
 
             result = text[len(m.group(0)):], cls(m.group(0))
         else:
-            result = text, SyntaxError("expecting match on " + repr(cls.regex))
+            result = text, SyntaxError("expecting match on " + repr(cls.grammar[0].pattern))
+        return result
+
+    @classmethod
+    def parse(cls, parser, text, pos):
+        """Imitates parsing a list grammar.
+
+        Parses plaintext which is comprised of either 1) simple terminal (no parentheses) or 2) a parenthesized
+        SimpleValue.
+
+        For example, "e(+)" will be parsed in two steps, first, "e" token will be recognized and then "(+)", as a
+        parenthesized SimpleValue.
+        """
+        found = False
+
+        # Attempt to parse the first element of the grammar (i.e. a Terminal token)
+        t, r = SimpleValueUnit.parse_terminal_token(text)
+        if type(r) != SyntaxError:
+            found = True
+        else:
+            # Attempt to parse a terminal with parentheses
+            try:
+                # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
+                InspireParserState.parsing_parenthesized_terminal = True
+                t, r = parser.parse(text, cls.grammar[1], pos)
+
+                # Flatten list of terminals (e.g. ["(", "token", ")"] into a SimpleValueUnit("(token)").
+                r = SimpleValueUnit(r)
+                found = True
+            except SyntaxError:
+                pass
+            except GrammarValueError:
+                raise
+            except ValueError:
+                pass
+            finally:
+                InspireParserState.parsing_parenthesized_terminal = False
+
+        if found:
+            result = t, r
+        else:
+            result = text, SyntaxError("expecting one of " + repr(cls.grammar))
+
         return result
 
 
-class SimpleValue(ListRule):
+class SimpleValue(LeafRule):
     """Represents terminals as plaintext.
 
-    E.g. title top cross section.
+    E.g. title top cross section, or title Si-28(p(pol.), n(pol.)).
     """
-    grammar = attr('children', contiguous(some(Terminal, maybe_some([" ", ",", ".", ":", "，"]))))
+    class Whitespace(LeafRule):
+        grammar = attr('value', whitespace)
+
+    grammar = contiguous(some(optional(Whitespace), some(SimpleValueUnit)))
+
+    def __init__(self, values):
+        super(SimpleValue, self).__init__()
+        self.value = ''.join([v.value for v in values])
+
+
+SimpleValueUnit.grammar = [
+    re.compile(r"[^\s:)(]+"),
+    (re.compile(r"\("), SimpleValue, re.compile(r"\)"))
+]
 
 
 class ComplexValue(LeafRule):
@@ -160,6 +236,11 @@ class ComplexValue(LeafRule):
     grammar = attr('value', re.compile(r"((/(\^)?.+(\$)?/)|('[^']*')|(\"[^\"]*\"))")),
 
 
+class SimpleRangeValue(LeafRule):
+    # TODO Why not adding also a ":" ? More restrictive...
+    grammar = attr('value', re.compile(r"([^\s)(-]|-+[^\s)(>])+"))
+
+
 class GreaterThanOp(UnaryRule):
     """Greater than operator.
 
@@ -175,7 +256,10 @@ class GreaterEqualOp(UnaryRule):
     """
     grammar = [
         (omit(Literal(">=")), attr('op', SimpleValue)),
-        (attr('op', Terminal), omit(Literal("+"))),
+        # Accept a number or anything that doesn't contain {whitespace, (, ), :} followed by a "-" which should be
+        # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
+        (attr('op', re.compile(r"\d+")), omit(re.compile(r'\+(?=\s|\)|$)'))),
+        (attr('op', re.compile(r"[^\s():]+(?=([ ]+\+|\+))")), omit(re.compile(r'\+(?=\s|\)|$)'))),
     ]
 
 
@@ -194,7 +278,11 @@ class LessEqualOp(UnaryRule):
     """
     grammar = [
         (omit(Literal("<=")), attr('op', SimpleValue)),
-        (attr('op', Terminal), omit(Literal("-")))
+        # Accept a number or anything that doesn't contain {whitespace, (, ), :} followed by a "-" which should be
+        # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
+        (attr('op', re.compile(r"\d+")), omit(re.compile(r'-(?=\s|\)|$)'))),
+        (attr('op', re.compile(r"[^\s():]+(?=( -|-))")), omit(re.compile(r'\+(?=\s|\)|$)'))),
+
     ]
 
 
@@ -207,7 +295,10 @@ class RangeOp(BinaryRule):
 
     The non symmetrical type of values will be handled at a later phase.
     """
-    grammar = attr('left', [ComplexValue, SimpleValue]), omit(Literal("->")), attr('right', [ComplexValue, SimpleValue])
+    grammar = \
+        attr('left', [ComplexValue, SimpleRangeValue]), \
+        omit(Literal("->")), \
+        attr('right', [ComplexValue, SimpleRangeValue])
 
 
 class Value(UnaryRule):
@@ -235,7 +326,7 @@ class InvenioKeywordQuery(BinaryRule):
     any terminal as keyword for the former ones.
     E.g. author: ellis, title: boson, or unknown_keyword: foo.
     """
-    grammar = attr('left', [InspireKeyword, Terminal]), omit(':'), attr('right', Value)
+    grammar = attr('left', [InspireKeyword, re.compile(r"[^\s:]+")]), omit(':'), attr('right', Value)
 
 
 class SpiresKeywordQuery(BinaryRule):
