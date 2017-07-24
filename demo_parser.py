@@ -32,6 +32,13 @@ def repl():
         print_query_and_parse_tree(query_str)
 
 if __name__ == '__main__':
+    # FIXME Implicit and among:
+    # 1. InvenioKeyword queries
+    # 2. SpiresKeyword queries
+    # 3. mixed
+    # print_query_and_parse_tree(r"author:ellis title:'boson'")
+    # print_query_and_parse_tree(r"author:ellis title:'boson'")
+
     # repl()
 
     # print_query_and_parse_tree(r"date today - 2")
@@ -55,8 +62,6 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"-author ellis OR title 'boson'")
     print_query_and_parse_tree(r"author ellis + title 'boson'")
     print_query_and_parse_tree(r"author ellis & title 'boson'")
-    # FIXME Implicit and
-    # print_query_and_parse_tree(r"author ellis title 'boson'")
 
     # Negation
     print_query_and_parse_tree(r"ellis and not title 'boson'")
@@ -76,6 +81,12 @@ if __name__ == '__main__':
     # Only phrases
     print_query_and_parse_tree(r'ellis')
     print_query_and_parse_tree(r"'ellis'")
+
+    # Parenthesized keyword query values (working also with SPIRES operators - doesn't on legacy)
+    print_query_and_parse_tree(r"author:(title ellis)")
+    print_query_and_parse_tree(r"author (pardo AND slavich) OR (author:bernreuther and date:2017)")
+    print_query_and_parse_tree(r"author:(foo or bar and not foobar)")
+    print_query_and_parse_tree(r"author (pardo and slavich)")
 
     # Non trivial terminals
     print_query_and_parse_tree(r"find Higgs boson")

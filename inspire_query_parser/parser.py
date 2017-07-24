@@ -208,7 +208,7 @@ class SimpleValue(LeafRule):
     class Whitespace(LeafRule):
         grammar = attr('value', whitespace)
 
-    grammar = contiguous(some(optional(Whitespace), some(SimpleValueUnit)))
+    grammar = contiguous(SimpleValueUnit, maybe_some((optional(Whitespace), some(SimpleValueUnit))))
 
     def __init__(self, values):
         super(SimpleValue, self).__init__()
@@ -219,6 +219,53 @@ SimpleValueUnit.grammar = [
     re.compile(r"[^\s:)(]+"),
     (re.compile(r"\("), SimpleValue, re.compile(r"\)"))
 ]
+
+
+# ######################################## #
+# SimpleValues related grammar
+# ######################################## #
+class SimpleValueNegation(UnaryRule):
+    """Negation accepting only SimpleValues."""
+    grammar = omit(Not), attr('op', SimpleValue)
+
+
+class SimpleValueBooleanQuery(BinaryRule):
+    """For supporting queries like author:(foo or bar and not foobar)."""
+    bool_op = None
+    pass
+
+    def __init__(self, args):
+        self.left = args[0]
+
+        if isinstance(args[1], And):
+            self.bool_op = BooleanOperator.AND
+        elif isinstance(args[1], Or):
+            self.bool_op = BooleanOperator.OR
+        else:
+            raise ValueError("Unexpected boolean operator: " + repr(args[1]))
+
+        self.right = args[2]
+
+
+SimpleValueBooleanQuery.grammar = (
+    # Left operand options
+    [
+        SimpleValueNegation,
+        SimpleValue,
+    ],
+
+    omit(optional(whitespace)),
+    [And, Or],
+    omit(optional(whitespace)),
+
+    # Right operand options
+    [
+        SimpleValueBooleanQuery,
+        SimpleValueNegation,
+        SimpleValue,
+    ]
+)
+# ######################################## #
 
 
 class ComplexValue(LeafRule):
@@ -314,6 +361,7 @@ class Value(UnaryRule):
         GreaterThanOp,
         LessThanOp,
         ComplexValue,
+        (omit(Literal("(")), [SimpleValueBooleanQuery, SimpleValueNegation, SimpleValue], omit(Literal(")"))),
         SimpleValue,
     ])
 ########################
