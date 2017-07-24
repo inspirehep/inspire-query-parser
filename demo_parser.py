@@ -125,8 +125,8 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"ac 1->10")
 
     # Empty query
-    print_query_and_parse_tree(r"")
-    print_query_and_parse_tree(r"\t \n ")
+    print_query_and_parse_tree(r"")  # Nothing
+    print_query_and_parse_tree(r"       ")  # Spaces and Tab
 
     # G, GE, LT, LE, E queries
     print_query_and_parse_tree(r"date > 10-2000 and title foo")
