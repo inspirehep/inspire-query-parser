@@ -440,9 +440,13 @@ Expression.grammar = attr('op', [
 
 NestedKeywordQuery.grammar = \
     attr('left', [
-        re.compile('refersto', re.IGNORECASE),
-        re.compile('citedbyx', re.IGNORECASE),
-        re.compile('citedby', re.IGNORECASE),
+        # Most specific regex must be higher.
+        re.compile(r'citedbyexcludingselfcites', re.IGNORECASE),
+        re.compile(r'citedbyx', re.IGNORECASE),
+        re.compile(r'citedby', re.IGNORECASE),
+        re.compile(r'referstoexcludingselfcites', re.IGNORECASE),
+        re.compile(r'referstox', re.IGNORECASE),
+        re.compile(r'refersto', re.IGNORECASE),
     ]), \
     optional(omit(":")), \
     attr('right', Expression)

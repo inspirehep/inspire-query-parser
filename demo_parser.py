@@ -38,6 +38,7 @@ if __name__ == '__main__':
     # 3. mixed
     # print_query_and_parse_tree(r"author:ellis title:'boson'")
     # print_query_and_parse_tree(r"author:ellis title:'boson'")
+    # print_query_and_parse_tree(r"find cn atlas not tc c")
 
     # repl()
 
@@ -120,6 +121,8 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"title:/dense ([^ $]* )?matter/")
 
     # Nestable keywords
+    print_query_and_parse_tree(r"referstox:author:s.p.martin.1")
+    print_query_and_parse_tree(r"refersto:author:s.p.martin.1")
     print_query_and_parse_tree(r"citedbyx:author:s.p.martin.1")
     print_query_and_parse_tree(r"citedby:author:s.p.martin.1")
     print_query_and_parse_tree(r"-refersto:recid:1374998 and citedby:(A.A.Aguilar.Arevalo.1)")
@@ -142,7 +145,7 @@ if __name__ == '__main__':
     # G, GE, LT, LE, E queries
     print_query_and_parse_tree(r"date > 10-2000 and title foo")
     print_query_and_parse_tree(r"date after 10/2000 - title foo")
-    print_query_and_parse_tree(r"date >= 2000 - author ellis")
+    print_query_and_parse_tree(r"date >= nov 2000 - author ellis")
     print_query_and_parse_tree(r"date 1978+ + -ac 100+")
     print_query_and_parse_tree(r"date 2010-06+ or foo")
     print_query_and_parse_tree(r"date 2010-06   + or foo")
