@@ -32,14 +32,6 @@ def repl():
         print_query_and_parse_tree(query_str)
 
 if __name__ == '__main__':
-    # FIXME Implicit and among:
-    # 1. InvenioKeyword queries
-    # 2. SpiresKeyword queries
-    # 3. mixed
-    # print_query_and_parse_tree(r"author:ellis title:'boson'")
-    # print_query_and_parse_tree(r"author:ellis title:'boson'")
-    # print_query_and_parse_tree(r"find cn atlas not tc c")
-
     # repl()
 
     # print_query_and_parse_tree(r"date today - 2")
@@ -55,7 +47,7 @@ if __name__ == '__main__':
     # Invenio like search
     print_query_and_parse_tree(r"author:ellis and title:boson")
 
-    # Boolean operator testing (And/ Or/ Implicit And)
+    # Boolean operator testing (And/Or)
     print_query_and_parse_tree(r"author ellis and title 'boson'")
     print_query_and_parse_tree(r"f a appelquist and date 1983")
     print_query_and_parse_tree(r"fin a henneaux and citedby a nicolai")
@@ -63,6 +55,18 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"-author ellis OR title 'boson'")
     print_query_and_parse_tree(r"author ellis + title 'boson'")
     print_query_and_parse_tree(r"author ellis & title 'boson'")
+
+    # Implicit And
+    # Works in the case of "A B":
+    # 1) B KeywordQuery is of format "keyword:value"
+    # 2) B is a NotQuery, e.g. "title foo not title bar"
+    # 3) A or B KeywordQueries have a ComplexValue as value, e.g. author 'ellis' title boson
+    # 4) B KeywordQuery has a keyword that is a non-shortened version of INSPIRE_KEYWORDS.
+    print_query_and_parse_tree(r"author ellis elastic.keyword:'boson'")
+    print_query_and_parse_tree(r"find cn atlas not tc c")
+    print_query_and_parse_tree(r"author:ellis j title:'boson' reference:M.N.1")
+    print_query_and_parse_tree(r"author:ellis j title 'boson' reference:M.N.1")
+    print_query_and_parse_tree(r"author ellis title 'boson' not value")
 
     # Negation
     print_query_and_parse_tree(r"ellis and not title 'boson'")
@@ -95,9 +99,6 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"author j., ellis")
     print_query_and_parse_tree(r"f title Super Collider Physics")
     print_query_and_parse_tree(r"find title Alternative the Phase-II upgrade of the ATLAS Inner Detector or title foo")
-    # The query below doesn't work on legacy. If we add a catch all option at the Statement rule
-    # then we can accept it as something unrecognized.
-    # print_query_and_parse_tree(r"find t Closed string field theory: Quantum action")
     print_query_and_parse_tree(r"find title na61/shine")
     print_query_and_parse_tree(r"find j phys.rev. and vol d85")
     print_query_and_parse_tree(r"find j phys.rev.lett.,62,1825")
@@ -158,3 +159,8 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"find a 'o*aigh' and t \"alge*\" and date >2013")
     print_query_and_parse_tree(r"a *alge | a alge* | a o*aigh")
     print_query_and_parse_tree(r"find t $ \psi $ decays")
+
+    # The query below doesn't work on legacy. If we add a catch all option at the Statement rule
+    # then we can accept it as something unrecognized. TODO
+    # print_query_and_parse_tree(r"find t Closed string field theory: Quantum action")
+

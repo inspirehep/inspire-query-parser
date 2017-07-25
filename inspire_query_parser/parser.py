@@ -7,7 +7,7 @@ from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguo
 
 from inspire_query_parser.utils.utils import string_types
 from . import ast
-from .config import INSPIRE_PARSER_KEYWORDS
+from .config import INSPIRE_PARSER_KEYWORDS, INSPIRE_KEYWORDS_SET
 
 
 # #### Parser customization ####
@@ -48,11 +48,21 @@ class InspireParserState(object):
     """Encapsulates global state during parsing.
 
     Attributes:
-        parsing_parenthesized_terminal (bool): Signifies whether the parser is trying to identify a parenthesized
-            terminal.
+        parsing_parenthesized_terminal (bool):
+            Signifies whether the parser is trying to identify a parenthesized terminal. Used for disabling the
+            terminals parsing related check "stop on DSL keyword", for allowing to parse symbols such as "+", "-" which
+            are also DSL keywords ('and' and 'not' respectively).
+
+        parsing_parenthesized_simple_values_expression (bool):
+            Signifies whether we are parsing a parenthesized simple values expression. Used for disabling the simple
+            values parsing related check "stop on INSPIRE keyword", for allowing parsing more expressions and not
+            restrict the input accepted by the parser.
     """
     parsing_parenthesized_terminal = False
+    parsing_parenthesized_simple_values_expression = False
 
+
+u_word = re.compile("\w+", re.UNICODE)
 # ########################
 
 
@@ -127,13 +137,16 @@ class SimpleValueUnit(LeafRule):
     plaintext and in turn (its grammar) encapsulates whitespace and SimpleValueUnit recognition.
 
     """
+    starts_with_colon = re.compile(r"\s*:", re.UNICODE)
+    """Used for recognizing whether terminal token is a keyword (i.e. followed by some whitespace and ":"."""
+
     def __init__(self, args):
         super(SimpleValueUnit, self).__init__()
         if isinstance(args, string_types):
-            # Value was recognized by the 1st option (regex)
+            # Value was recognized by the 1st option of the list grammar (regex)
             self.value = args
         else:
-            # Value was recognized by the 2nd option
+            # Value was recognized by the 2nd option of the list grammar
             self.value = args[0] + args[1].value + args[2]
 
     @classmethod
@@ -145,14 +158,31 @@ class SimpleValueUnit(LeafRule):
             not be recognized as terminals, thus we check if they are in the Keywords table (namespace like structure
             handled by PyPeg).
             This is done only when we are not parsing a parenthesized SimpleValue.
+
+            Also, helps in supporting more implicit-and queries cases (last two checks).
         """
         m = cls.grammar[0].match(text)
         if m:
             # Check if token is a DSL keyword only in the case where the parser doesn't parse a parenthesized terminal
-            if m.group(0).lower() in Keyword.table and not InspireParserState.parsing_parenthesized_terminal:
+            if not InspireParserState.parsing_parenthesized_terminal and m.group().lower() in Keyword.table:
                 return text, SyntaxError("found DSL keyword: " + m.group(0))
 
-            result = text[len(m.group(0)):], cls(m.group(0))
+            t = text[len(m.group(0)):]
+
+            # Attempt to recognize whether current terminal is followed by a ":", which definitely signifies that
+            # we are parsing a keyword, and we shouldn't.
+            if cls.starts_with_colon.match(t):
+                return text, \
+                       SyntaxError("parsing a keyword (token followed by \":\"): \"" + repr(m.group(0)) + "\"")
+
+            # Attempt to recognize whether current terminal is a non shortened version of an Inspire keywords. This is
+            # done for supporting implicit-and in case of SPIRES style keyword queries. Using the non shortened version
+            # of the keywords, makes this recognition not eager.
+            if not InspireParserState.parsing_parenthesized_simple_values_expression \
+                    and m.group() in INSPIRE_KEYWORDS_SET:
+                return text, SyntaxError("parsing a keyword (non shortened INSPIRE keyword)")
+
+            result = t, cls(m.group(0))
         else:
             result = text, SyntaxError("expecting match on " + repr(cls.grammar[0].pattern))
         return result
@@ -195,7 +225,9 @@ class SimpleValueUnit(LeafRule):
         if found:
             result = t, r
         else:
-            result = text, SyntaxError("expecting one of " + repr(cls.grammar))
+            result = text, SyntaxError("expecting one of: [" + repr(cls.grammar[0].pattern) + ", ("
+                                       + repr(cls.grammar[1][0].pattern) + ", " + repr(cls.grammar[1][1]) + ", "
+                                       + repr(cls.grammar[1][2].pattern) + ")")
 
         return result
 
@@ -212,7 +244,39 @@ class SimpleValue(LeafRule):
 
     def __init__(self, values):
         super(SimpleValue, self).__init__()
-        self.value = ''.join([v.value for v in values])
+        self.value = unicode.strip(''.join([v.value for v in values]))
+
+    @classmethod
+    def parse(cls, parser, text, pos):
+        try:
+            t, r = parser.parse(text, cls.grammar)
+
+            # Covering a case of implicit-and when one of the SimpleValue tokens is a ComplexValue.
+            # E.g. with the query "author foo t 'bar'", since 'bar' is a ComplexValue then the previous token is a
+            # keyword. This means we have consumed a KeywordQuery (due to 'and' missing).
+            found_complex_value = False
+            for idx, v in enumerate(r):
+                if ComplexValue.regex.match(v.value):
+                    # Un-consuming 3 elements and specifically a Keyword, Whitespace and ComplexValue and then
+                    # reconstructing parser's input text.
+                    # In the above example r would be:
+                    # r = [SimpleValueUnit("foo"), Whitespace(" "), SimpleValueUnit("t"), Whitespace(" "),
+                    #      SimpleValueUnit("'bar'")], thus after this, r would have only foo and whitespace, while
+                    # initial text will have been reconstructed as "t 'bar' rest_of_the_text".
+                    terminals = r[:idx-2]
+                    remaining_text = ''.join([v.value for v in r[idx-2:]]) + " " + t
+                    found_complex_value = True
+                    break
+
+            if found_complex_value:
+                result = remaining_text, SimpleValue(terminals)
+            else:
+                result = t, SimpleValue(r)
+
+        except SyntaxError as e:
+            return text, e
+
+        return result
 
 
 SimpleValueUnit.grammar = [
@@ -265,6 +329,23 @@ SimpleValueBooleanQuery.grammar = (
         SimpleValue,
     ]
 )
+
+
+class ParenthesizedSimpleValues(UnaryRule):
+    """Parses parenthesized simple values along with boolean operations on them."""
+    grammar = omit(Literal("(")), [SimpleValueBooleanQuery, SimpleValueNegation, SimpleValue], omit(Literal(")"))
+
+    @classmethod
+    def parse(cls, parser, text, pos):
+        """Using our own parse to enable the flag below."""
+        try:
+            InspireParserState.parsing_parenthesized_simple_values_expression = True
+            t, r = parser.parse(text, cls.grammar)
+            return t, r
+        except SyntaxError as e:
+            return text, e
+        finally:
+            InspireParserState.parsing_parenthesized_simple_values_expression = False
 # ######################################## #
 
 
@@ -280,7 +361,8 @@ class ComplexValue(LeafRule):
 
     This makes no difference for the parser and will be handled at a later parsing phase.
     """
-    grammar = attr('value', re.compile(r"((/.+?/)|('.*?')|(\".*?\"))"))
+    regex = re.compile(r"((/.+?/)|('.*?')|(\".*?\"))")
+    grammar = attr('value', regex)
 
 
 class SimpleRangeValue(LeafRule):
@@ -361,7 +443,7 @@ class Value(UnaryRule):
         GreaterThanOp,
         LessThanOp,
         ComplexValue,
-        (omit(Literal("(")), [SimpleValueBooleanQuery, SimpleValueNegation, SimpleValue], omit(Literal(")"))),
+        ParenthesizedSimpleValues,
         SimpleValue,
     ])
 ########################
@@ -452,7 +534,6 @@ NestedKeywordQuery.grammar = \
     attr('right', Expression)
 
 
-# FIXME Implicit And should happen only between KeywordColonQueries!
 class BooleanQuery(BinaryRule):
     """Represents boolean query as a binary rule.
 
