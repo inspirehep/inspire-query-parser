@@ -34,8 +34,6 @@ def repl():
 if __name__ == '__main__':
     # repl()
 
-    # print_query_and_parse_tree(r"date today - 2")
-
     # Find keyword combined with other production rules
     print_query_and_parse_tree(r"FIN author:'ellis'")
     print_query_and_parse_tree(r"find a T.A. Aibergenov and date = 1986")
@@ -154,6 +152,14 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"date before 2000 and ac 100+")
     print_query_and_parse_tree(r"ac 100- and -date <= 2000")
     print_query_and_parse_tree(r"f a wimpenny and date = 1987")
+
+    # Date specifiers
+    print_query_and_parse_tree(r"date today - 2 and title foo")
+    print_query_and_parse_tree(r"date this month author ellis")
+    print_query_and_parse_tree(r"date yesterday - 2 - ac 100")
+    print_query_and_parse_tree(r"date last month - 2 + ac < 50")
+    print_query_and_parse_tree(r"date this month - 2")
+    print_query_and_parse_tree(r"du > yesterday - 2")
 
     # Star queries
     print_query_and_parse_tree(r"find a 'o*aigh' and t \"alge*\" and date >2013")

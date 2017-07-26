@@ -137,6 +137,12 @@ class SimpleValueUnit(LeafRule):
     plaintext and in turn (its grammar) encapsulates whitespace and SimpleValueUnit recognition.
 
     """
+    token_regex = re.compile(r"[^\s:)(]+")
+
+    date_specifiers_regex = re.compile(r"(yesterday|today|(this\s+month)|(last\s+month))\s*-\s*\d+")
+
+    parenthesized_token_grammar = None  # is set after SimpleValue definition.
+
     starts_with_colon = re.compile(r"\s*:", re.UNICODE)
     """Used for recognizing whether terminal token is a keyword (i.e. followed by some whitespace and ":"."""
 
@@ -161,7 +167,7 @@ class SimpleValueUnit(LeafRule):
 
             Also, helps in supporting more implicit-and queries cases (last two checks).
         """
-        m = cls.grammar[0].match(text)
+        m = cls.token_regex.match(text)
         if m:
             # Check if token is a DSL keyword only in the case where the parser doesn't parse a parenthesized terminal
             if not InspireParserState.parsing_parenthesized_terminal and m.group().lower() in Keyword.table:
@@ -182,52 +188,60 @@ class SimpleValueUnit(LeafRule):
                     and m.group() in INSPIRE_KEYWORDS_SET:
                 return text, SyntaxError("parsing a keyword (non shortened INSPIRE keyword)")
 
-            result = t, cls(m.group(0))
+            result = t, m.group(0)
         else:
-            result = text, SyntaxError("expecting match on " + repr(cls.grammar[0].pattern))
+            result = text, SyntaxError("expecting match on " + repr(cls.token_regex.pattern))
         return result
 
     @classmethod
     def parse(cls, parser, text, pos):
         """Imitates parsing a list grammar.
 
-        Parses plaintext which is comprised of either 1) simple terminal (no parentheses) or 2) a parenthesized
-        SimpleValue.
+        Specifically, this
+        grammar = [
+            SimpleValueUnit.date_specifiers_regex,
+            SimpleValueUnit.token_regex,
+            SimpleValueUnit.parenthesized_token_grammar
+        ]
+
+        Parses plaintext which matches date specifiers syntax or is comprised of either 1) simple terminal
+        (no parentheses) or 2) a parenthesized SimpleValue.
 
         For example, "e(+)" will be parsed in two steps, first, "e" token will be recognized and then "(+)", as a
         parenthesized SimpleValue.
         """
         found = False
 
-        # Attempt to parse the first element of the grammar (i.e. a Terminal token)
-        t, r = SimpleValueUnit.parse_terminal_token(text)
-        if type(r) != SyntaxError:
-            found = True
+        # Attempt to parse date specifier
+        m = cls.date_specifiers_regex.match(text)
+        if m:
+            t, r, found = text[len(m.group(0)):], m.group(0), True
         else:
-            # Attempt to parse a terminal with parentheses
-            try:
-                # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
-                InspireParserState.parsing_parenthesized_terminal = True
-                t, r = parser.parse(text, cls.grammar[1], pos)
-
-                # Flatten list of terminals (e.g. ["(", "token", ")"] into a SimpleValueUnit("(token)").
-                r = SimpleValueUnit(r)
+            # Attempt to parse the first element of the grammar (i.e. a Terminal token)
+            t, r = SimpleValueUnit.parse_terminal_token(text)
+            if type(r) != SyntaxError:
                 found = True
-            except SyntaxError:
-                pass
-            except GrammarValueError:
-                raise
-            except ValueError:
-                pass
-            finally:
-                InspireParserState.parsing_parenthesized_terminal = False
+            else:
+                # Attempt to parse a terminal with parentheses
+                try:
+                    # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
+                    InspireParserState.parsing_parenthesized_terminal = True
+                    t, r = parser.parse(text, cls.parenthesized_token_grammar, pos)
+
+                    found = True
+                except SyntaxError:
+                    pass
+                except GrammarValueError:
+                    raise
+                except ValueError:
+                    pass
+                finally:
+                    InspireParserState.parsing_parenthesized_terminal = False
 
         if found:
-            result = t, r
+            result = t, SimpleValueUnit(r)
         else:
-            result = text, SyntaxError("expecting one of: [" + repr(cls.grammar[0].pattern) + ", ("
-                                       + repr(cls.grammar[1][0].pattern) + ", " + repr(cls.grammar[1][1]) + ", "
-                                       + repr(cls.grammar[1][2].pattern) + ")")
+            result = text, SyntaxError("expecting match on " + cls.__name__)
 
         return result
 
@@ -279,10 +293,7 @@ class SimpleValue(LeafRule):
         return result
 
 
-SimpleValueUnit.grammar = [
-    re.compile(r"[^\s:)(]+"),
-    (re.compile(r"\("), SimpleValue, re.compile(r"\)"))
-]
+SimpleValueUnit.parenthesized_token_grammar = (re.compile(r"\("), SimpleValue, re.compile(r"\)"))
 
 
 # ######################################## #
