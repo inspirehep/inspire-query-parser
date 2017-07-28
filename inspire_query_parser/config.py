@@ -2,10 +2,13 @@
 A collection of INSPIRE related keywords.
 
 This dictionary has a twofold use.
-Primarily, the parser uses its keys to generate INSPIRE related keywords (i.e. qualifiers) and secondly, the mapping it
-provides is used by a visitor at a later phase to actually translate from the shortened variants to the canonical ones.
+Primarily, the parser uses its keys to generate INSPIRE related keywords (i.e. qualifiers) and secondly, provides
+a normalization of the shortened keywords to their full version.
 """
 INSPIRE_PARSER_KEYWORDS = {
+    # Abstract
+    'abstract': 'abstract',
+
     # Address
     'address': 'address',
 
@@ -21,6 +24,7 @@ INSPIRE_PARSER_KEYWORDS = {
     'author': 'author',
     'au': 'author',
     'a': 'author',
+    'name': 'author',
 
     # Author-Count
     'author-count': 'author-count',
@@ -29,47 +33,37 @@ INSPIRE_PARSER_KEYWORDS = {
 
     # Bulletin
     'bb': 'reportnumber',
-    'bbn': 'reportnumber',
     'bull': 'reportnumber',
-    'bulletin-bd': 'reportnumber',
-    'bulletin-bd-no': 'reportnumber',
     'eprint': 'reportnumber',
 
     # Cataloguer
-    'cataloguer': 'cataloguer',
     'cat': 'cataloguer',
 
     # Caption
     'caption': 'caption',
 
+    # Cite, i.e. records that cite the given search term
+    # Cite and c: SPIRES syntax while reference is INVENIO syntax
+    'cite': 'cite',
+    'c': 'cite',
+    'reference': 'cite',
+
     # Citedby related
-    'citedby': 'citedby',
+    'citedby': 'citedby',  # nested keyword query
+
+    # Cited by excluding self sites, e.g. citedbyexcludingselfcites:author:M.E.Peskin.1
+    'citedbyexcludingselfcites': 'citedbyexcludingselfcites',
+    'citedbyx': 'citedbyexcludingselfcites',
+
+    # Cited excluding self sites, e.g. citedexcludingselfcites:50+
     'citedexcludingselfcites': 'citedexcludingselfcites',
     'cx': 'citedexcludingselfcites',
 
-    # coden
-    'bc': 'journal',
-    'browse-only-indx': 'journal',
-    'coden': 'journal',
-    'journal-coden': 'journal',
-
     # Collaboration
     'collaboration': 'collaboration',
-    'collab-name': 'collaboration',
     'cn': 'collaboration',
 
-    # Collection
-    'collection': 'collection',
-    'tc': 'collection',
-    'ty': 'collection',
-    'type': 'collection',
-    'type-code': 'collection',
-    'scl': 'collection',
-    'ps': 'collection',
-
     # Conference number
-    'confnumber': 'confnumber',
-    'conf-number': 'confnumber',
     'cnum': 'confnumber',
 
     # Country
@@ -77,23 +71,24 @@ INSPIRE_PARSER_KEYWORDS = {
     'cc': 'country',
 
     # Date
-    'date': 'year',
-    'year': 'year',
-    'd': 'year',
+    'date': 'date',
+    'd': 'date',
+    # From queries dataset, users seem to use year and date interchangeably.
+    'year': 'date',
 
     # Date added
-    'date-added': 'datecreated',
-    'dadd': 'datecreated',
-    'da': 'datecreated',
+    'date-added': 'date-added',
+    'dadd': 'date-added',
+    'da': 'date-added',
 
     # Date earliest
     'date-earliest': 'date-earliest',
     'de': 'date-earliest',
 
     # Date updated
-    'date-updated': 'datemodified',
-    'dupd': 'datemodified',
-    'du': 'datemodified',
+    'date-updated': 'date-updated',
+    'dupd': 'date-updated',
+    'du': 'date-updated',
 
     # DOI
     'doi': 'doi',
@@ -108,11 +103,10 @@ INSPIRE_PARSER_KEYWORDS = {
     'exp': 'experiment',
 
     # Field code
-    'subject': 'subject',
-    'f': 'subject',
-    'fc': 'subject',
-    'field': 'subject',
-    'field-code': 'subject',
+    'field-code': 'field-code',
+    'subject': 'field-code',
+    'fc': 'field-code',
+    'f': 'field-code',
 
     # First-Author
     'first-author': 'first-author',
@@ -124,37 +118,32 @@ INSPIRE_PARSER_KEYWORDS = {
     'ft': 'fulltext',
 
     # Job related
-    'job': 'title',
     'position': 'title',
     'region': 'region',
     'continent': 'region',
     'rank': 'rank',
 
-    # Journal
+    # Journal related
+    'coden': 'journal',
     'journal': 'journal',
     'j': 'journal',
     'published_in': 'journal',
-    'spicite': 'journal',
-    'volume': 'journal',
-    'vol': 'journal',
+    'volume': 'volume',
+    'vol': 'volume',
 
     # Journal year
     'journal-year': 'journal-year',
     'jy': 'journal-year',
 
     # Keyword
+    # keyword is Invenio style, while the rest are from SPIRES syntax.
     'keyword': 'keyword',
-    'k': 'keyword',
     'keywords': 'keyword',
     'kw': 'keyword',
+    'k': 'keyword',
 
-    # Note
-    'note': 'note',
-    'notes': 'note',
-
-    # Postal code
-    'postalcode': 'postalcode',
-    'zip': 'postalcode',
+    # Primary archive
+    'primarch': 'primarch',
 
     # rawref
     'rawref': 'rawref',
@@ -162,18 +151,19 @@ INSPIRE_PARSER_KEYWORDS = {
     # recid
     'recid': 'recid',
 
-    # recid
-    'recid': 'recid',
-
     # Reference
-    'reference': 'reference',
     'citation': 'reference',
     'jour-vol-page': 'reference',
     'jvp': 'reference',
 
     # Refersto operator
+    # Nested keyword query
     'refersto': 'refersto',
-    'refs': 'refersto',
+
+    # Refers to excluding self cites, e.g. referstoexcludingselfcites:author:M.E.Peskin.1
+    # Nested keyword queries
+    'referstoexcludingselfcites': 'referstoexcludingselfcites',
+    'referstox': 'referstoexcludingselfcites',
 
     # Report number
     'reportnumber': 'reportnumber',
@@ -185,15 +175,26 @@ INSPIRE_PARSER_KEYWORDS = {
 
     # Title
     'title': 'title',
+    'ti': 'title',
     't': 'title',
 
     # texkey
     'texkey': 'texkey',
 
-    # Topcite
-    'cited': 'cited',
-    'topcit': 'cited',
-    'topcite': 'cited',
+    # Topcite, i.e. citation count
+    # Cited used to be for Invenio style syntax while topcite for SPIRES
+    'cited': 'topcite',
+    'topcit': 'topcite',
+    'topcite': 'topcite',
+
+    # Type-Code
+    'type-code': 'type-code',
+    'type': 'type-code',
+    'tc': 'type-code',
+    'ty': 'type-code',
+    'scl': 'type-code',
+    'ps': 'type-code',
+    'collection': 'type-code',  # Queries for this one include "collection published" only
 }
 
 INSPIRE_KEYWORDS_SET = set(INSPIRE_PARSER_KEYWORDS.values())
