@@ -66,6 +66,15 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"author:ellis j title 'boson' reference:M.N.1")
     print_query_and_parse_tree(r"author ellis title 'boson' not value")
 
+    # ##### Boolean operators at terminals level ####
+    # 1. Boolean operators among simple values
+    print_query_and_parse_tree(r"author ellis, j and smith")
+    # 2. An and query among terminals or and "j" signifies the "journal" keyword?
+    print_query_and_parse_tree(r"f author ellis, j and patrignani and j Chin.Phys.")
+    # This one is ambiguous since first name "j" overlaps with journals
+    print_query_and_parse_tree(r"f author ellis, j and patrignani and j ellis")
+    print_query_and_parse_tree(r"f author ellis, j and patrignani and j, ellis")
+
     # Negation
     print_query_and_parse_tree(r"ellis and not title 'boson'")
     print_query_and_parse_tree(r"-title 'boson'")
@@ -87,23 +96,21 @@ if __name__ == '__main__':
 
     # Parenthesized keyword query values (working also with SPIRES operators - doesn't on legacy)
     print_query_and_parse_tree(r"author:(title ellis)")
-    print_query_and_parse_tree(r"author (pardo AND slavich) OR (author:bernreuther and date:2017)")
+    print_query_and_parse_tree(r"author (pardo, f AND slavich) OR (author:bernreuther and date:2017)")
     print_query_and_parse_tree(r"author:(foo or bar and not foobar)")
     print_query_and_parse_tree(r"author (pardo and slavich)")
 
     # Non trivial terminals
     print_query_and_parse_tree(r"find Higgs boson")
     print_query_and_parse_tree(r"author ellis, j.")
-    print_query_and_parse_tree(r"author j., ellis")
+    print_query_and_parse_tree(r"author smith and j., ellis")
     print_query_and_parse_tree(r"f title Super Collider Physics")
     print_query_and_parse_tree(r"find title Alternative the Phase-II upgrade of the ATLAS Inner Detector or title foo")
     print_query_and_parse_tree(r"find title na61/shine")
     print_query_and_parse_tree(r"find j phys.rev. and vol d85")
     print_query_and_parse_tree(r"find j phys.rev.lett.,62,1825")
     print_query_and_parse_tree(r"title foo and author abtrall")
-    print_query_and_parse_tree(r"title e-10 and -author:ellis")
-    print_query_and_parse_tree(r"title 'e-10' and -author:ellis")
-    print_query_and_parse_tree(r"find a d'hoker and a gagne")
+    print_query_and_parse_tree(r"title e-10 and -author d'hoker")
     print_query_and_parse_tree(r'a pang，yi')  # Full-width comma unicode character
     print_query_and_parse_tree(r'f a SU(2)')
     print_query_and_parse_tree(r't e(+)e(-)')
@@ -116,12 +123,11 @@ if __name__ == '__main__':
     # Regex
     print_query_and_parse_tree(r"author:/^Ellis, (J|John)$/")
     print_query_and_parse_tree(r"-year:/^[[:digit:]]{4}([\?\-]|\-[[:digit:]]{4})?$/")
-    print_query_and_parse_tree(r"title:/dense ([^ l]* )?matter/")
     print_query_and_parse_tree(r"title:/dense ([^ $]* )?matter/")
 
     # Nestable keywords
     print_query_and_parse_tree(r"referstox:author:s.p.martin.1")
-    print_query_and_parse_tree(r"refersto:author:s.p.martin.1")
+    print_query_and_parse_tree(r"find a parke, s j and refersto author witten")
     print_query_and_parse_tree(r"citedbyx:author:s.p.martin.1")
     print_query_and_parse_tree(r"citedby:author:s.p.martin.1")
     print_query_and_parse_tree(r"-refersto:recid:1374998 and citedby:(A.A.Aguilar.Arevalo.1)")

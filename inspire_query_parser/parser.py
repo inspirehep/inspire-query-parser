@@ -330,6 +330,39 @@ class SimpleValueBooleanQuery(BinaryRule):
 
         self.right = args[2]
 
+    @classmethod
+    def parse(cls, parser, text, pos):
+        # Used to check whether we parsed successfully up to
+        left_operand, operator = None, None
+        try:
+            # Parse left operand
+            text_after_left_op, left_operand = parser.parse(text, cls.grammar[0])
+
+            # Parse boolean operators
+            text_after_bool_op, operator = parser.parse(text_after_left_op, cls.grammar[1])
+
+            # Parse right operand.
+            # We don't want to eagerly recognize keyword queries as SimpleValues.
+            # So we attempt to firstly recognize the more specific rules (keyword queries and their negation), and
+            # then a SimpleValue.
+            _ = parser.parse(text_after_bool_op, (omit(optional(Not)), [InvenioKeywordQuery, SpiresKeywordQuery]))
+
+            # Keyword query parsing succeeded, stop boolean_op among terminals recognition.
+            result = text, SyntaxError("found keyword query at terminals level")
+
+        except SyntaxError as e:
+            result = text, e
+
+            if left_operand and operator:
+                    # Attempt to parse a right operand
+                    try:
+                        t, right_operand = parser.parse(text_after_bool_op, cls.grammar[2])
+                        result = t, SimpleValueBooleanQuery([left_operand, operator, right_operand])
+                    except SyntaxError as e:  # Actual failure of parsing boolean query at terminals level
+                        return text, e
+
+        return result
+
 
 SimpleValueBooleanQuery.grammar = (
     # Left operand options
@@ -338,9 +371,7 @@ SimpleValueBooleanQuery.grammar = (
         SimpleValue,
     ],
 
-    omit(optional(whitespace)),
     [And, Or],
-    omit(optional(whitespace)),
 
     # Right operand options
     [
@@ -463,6 +494,7 @@ class Value(UnaryRule):
         LessThanOp,
         ComplexValue,
         ParenthesizedSimpleValues,
+        SimpleValueBooleanQuery,
         SimpleValue,
     ])
 ########################
