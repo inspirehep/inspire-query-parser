@@ -172,6 +172,10 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"a *alge | a alge* | a o*aigh")
     print_query_and_parse_tree(r"find t $ \psi $ decays")
 
+    # Unrecognized queries
+    print_query_and_parse_tree(r"title and foo")
+    print_query_and_parse_tree(r"title γ-radiation and and")
+
     # The query below doesn't work on legacy. Currently, it is recognized as a boolean query (since theory is recognized
     # as a keyword). Can be useful for testing multiple parse trees generation (one with the first parse and a second
     # with removing ":" character (could be one heuristic)).

@@ -68,8 +68,8 @@ class BinaryRule(ast.BinaryOp):
 
 
 class ListRule(ast.ListOp):
-    def __init__(self):
-        pass
+    def __init__(self, children):
+        super(ListRule, self).__init__(children)
 # ########################
 
 
@@ -614,17 +614,38 @@ class BooleanQuery(BinaryRule):
 Statement.grammar = attr('op', [BooleanQuery, Expression])
 
 
+class MalformedQueryText(LeafRule):
+    """Represents queries that weren't recognized by the main parsing branch of Statements."""
+    grammar = some(re.compile(r"[^\s]+", re.UNICODE))
+
+    def __init__(self, values):
+        self.value = ' '.join([v for v in values])
+
+
 class EmptyQuery(LeafRule):
     grammar = omit(optional(whitespace)), attr('value', None)
 
 
-class Query(UnaryRule):
+class Query(ListRule):
     """The entry-point for the grammar.
 
-    Find keyword is ignored as the current grammar is an augmentation of SPIRES and Google style syntaxes.
+    Find keyword is ignored as the current grammar is an augmentation of SPIRES and Invenio style syntaxes.
     It only serves for backward compatibility with SPIRES syntax.
     """
     grammar = [
-        (omit(optional(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE))), attr('op', Statement)),
-        attr('op', EmptyQuery),
+        (omit(optional(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE))),
+         (Statement, maybe_some(MalformedQueryText))),
+        MalformedQueryText,
+        EmptyQuery,
     ]
+
+    # @classmethod
+    # def parse(cls, parser, text, pos):
+    #     for e in cls.grammar:
+    #         try:
+    #             t, r = parser.parse(text, e)
+    #             print("got: " + t + "\tr:" + repr(r))
+    #             break
+    #         except SyntaxError as se:
+    #             pass
+    #     return t, cls(r)
