@@ -124,7 +124,7 @@ class Not(CIKeyword):
 
 # #### Lowest level operators #####
 class InspireKeyword(LeafRule):
-    grammar = re.compile(r"({0})\b".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())))
+    grammar = re.compile(r"({0})(?=(:|\s))".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())))
 
     def __init__(self, value):
         self.value = INSPIRE_PARSER_KEYWORDS[value]
