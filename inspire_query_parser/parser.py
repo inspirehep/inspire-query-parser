@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import unicode_literals, print_function
 
-import sys
 from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguous, maybe_some, some, GrammarValueError, \
     whitespace
 
@@ -185,18 +184,18 @@ class SimpleValueUnit(LeafRule):
         Specifically, this
         grammar = [
             SimpleValueUnit.date_specifiers_regex,
+            SimpleValueUnit.arxiv_token_regex,
             SimpleValueUnit.token_regex,
             SimpleValueUnit.parenthesized_token_grammar
-        ]
+        ].
 
-        Parses plaintext which matches date specifiers syntax or is comprised of either 1) simple terminal
-        (no parentheses) or 2) a parenthesized SimpleValue.
+        Parses plaintext which matches date specifiers or arxiv_identifier syntax, or is comprised of either 1) simple
+        terminal (no parentheses) or 2) a parenthesized SimpleValue.
 
         For example, "e(+)" will be parsed in two steps, first, "e" token will be recognized and then "(+)", as a
         parenthesized SimpleValue.
         """
         found = False
-        # TODO refactor all regex parsing in one method
 
         # Attempt to parse date specifier
         m = cls.date_specifiers_regex.match(text)
@@ -208,7 +207,7 @@ class SimpleValueUnit(LeafRule):
             if m:
                 t, r, found = text[len(m.group(0)):], m.group(0), True
             else:
-                # Attempt to parse the first element of the grammar (i.e. a Terminal token)
+                # Attempt to parse a terminal token
                 t, r = SimpleValueUnit.parse_terminal_token(parser, text)
                 if type(r) != SyntaxError:
                     found = True
@@ -253,28 +252,39 @@ class SimpleValue(LeafRule):
 
     @classmethod
     def parse(cls, parser, text, pos):
+
+        def unconsume_and_reconstruct_input():
+            """Reconstruct input in case of consuming a keyword query with ComplexValue as SimpleValue.
+
+            Un-consuming 3 elements and specifically a Keyword, Whitespace and ComplexValue and then reconstructing 
+            parser's input text.
+
+            Example:
+                Given this query "author foo t 'bar'", r would be:
+                    r = [SimpleValueUnit("foo"), Whitespace(" "), SimpleValueUnit("t"), Whitespace(" "),
+                        SimpleValueUnit("'bar'")]
+                thus after this method, r would be [SimpleValueUnit("foo"), Whitespace(" ")], while initial text will
+                have been reconstructed as "t 'bar' rest_of_the_text".
+            """
+            reconstructed_terminals = r[:idx - 2]
+            remaining_text = ''.join([v.value for v in r[idx - 2:]]) + " " + t
+            return remaining_text, reconstructed_terminals
+
         try:
             t, r = parser.parse(text, cls.grammar)
 
             # Covering a case of implicit-and when one of the SimpleValue tokens is a ComplexValue.
-            # E.g. with the query "author foo t 'bar'", since 'bar' is a ComplexValue then the previous token is a
+            # E.g. with the query "author foo t 'bar'", since 'bar' is a ComplexValue, then the previous token is a
             # keyword. This means we have consumed a KeywordQuery (due to 'and' missing).
             found_complex_value = False
             for idx, v in enumerate(r):
                 if ComplexValue.regex.match(v.value):
-                    # Un-consuming 3 elements and specifically a Keyword, Whitespace and ComplexValue and then
-                    # reconstructing parser's input text.
-                    # In the above example r would be:
-                    # r = [SimpleValueUnit("foo"), Whitespace(" "), SimpleValueUnit("t"), Whitespace(" "),
-                    #      SimpleValueUnit("'bar'")], thus after this, r would have only foo and whitespace, while
-                    # initial text will have been reconstructed as "t 'bar' rest_of_the_text".
-                    terminals = r[:idx-2]
-                    remaining_text = ''.join([v.value for v in r[idx-2:]]) + " " + t
+                    remaining_text, reconstructed_terminals = unconsume_and_reconstruct_input(r)
                     found_complex_value = True
                     break
 
             if found_complex_value:
-                result = remaining_text, SimpleValue(terminals)
+                result = remaining_text, SimpleValue(reconstructed_terminals)
             else:
                 result = t, SimpleValue(r)
 
@@ -287,9 +297,9 @@ class SimpleValue(LeafRule):
 SimpleValueUnit.parenthesized_token_grammar = (re.compile(r"\("), SimpleValue, re.compile(r"\)"))
 
 
-# ######################################## #
-# SimpleValues related grammar
-# ######################################## #
+# ################################################## #
+# Boolean operators support at SimpleValues level
+# ################################################## #
 class SimpleValueNegation(UnaryRule):
     """Negation accepting only SimpleValues."""
     grammar = omit(Not), attr('op', SimpleValue)
@@ -615,7 +625,6 @@ class Query(UnaryRule):
     It only serves for backward compatibility with SPIRES syntax.
     """
     grammar = [
-        (omit(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE)), attr('op', Statement)),
-        attr('op', Statement),
+        (omit(optional(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE))), attr('op', Statement)),
         attr('op', EmptyQuery),
     ]
