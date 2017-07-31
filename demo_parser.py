@@ -1,36 +1,7 @@
 # coding=utf-8
 from __future__ import unicode_literals, print_function
 
-import sys
-from inspire_query_parser.stateful_pypeg_parser import parse
-from inspire_query_parser.parser import Query
-from inspire_query_parser.utils.utils import Colors
-from inspire_query_parser.utils.parse_tree_formatter import ParseTreeFormatter
-
-
-def print_query_and_parse_tree(query_str):
-    print(Colors.OKBLUE + "Parsing: [" + query_str + "]" + Colors.ENDC)
-    print(Colors.OKGREEN + ParseTreeFormatter.emit_tree_format(parse(query_str, Query)) + Colors.ENDC)
-    print("————————————————————————————————————————————————————————————————————————————————")
-
-
-def repl():
-    """Read-Eval-Print-Loop for reading the query, printing it and its parse tree.
-
-    Exit the loop either with an interrupt or "quit".
-    """
-    while True:
-        try:
-            sys.stdout.write("Type in next query: \n> ")
-            import locale
-            query_str = raw_input().decode(sys.stdin.encoding or locale.getpreferredencoding(True))
-        except KeyboardInterrupt:
-            break
-
-        if u'quit' in query_str:
-            break
-
-        print_query_and_parse_tree(query_str)
+from inspire_query_parser.utils.utils import print_query_and_parse_tree
 
 if __name__ == '__main__':
     # repl()
