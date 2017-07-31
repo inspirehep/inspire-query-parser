@@ -2,7 +2,7 @@
 from __future__ import unicode_literals, print_function
 
 import sys
-from pypeg2 import parse
+from inspire_query_parser.stateful_pypeg_parser import parse
 from inspire_query_parser.parser import Query
 from inspire_query_parser.utils.utils import emit_tree_repr, Colors
 

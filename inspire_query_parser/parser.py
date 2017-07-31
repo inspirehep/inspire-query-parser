@@ -43,25 +43,6 @@ class CaseInsensitiveKeyword(Keyword):
 
 CIKeyword = CaseInsensitiveKeyword
 
-
-class InspireParserState(object):
-    """Encapsulates global state during parsing.
-
-    Attributes:
-        parsing_parenthesized_terminal (bool):
-            Signifies whether the parser is trying to identify a parenthesized terminal. Used for disabling the
-            terminals parsing related check "stop on DSL keyword", for allowing to parse symbols such as "+", "-" which
-            are also DSL keywords ('and' and 'not' respectively).
-
-        parsing_parenthesized_simple_values_expression (bool):
-            Signifies whether we are parsing a parenthesized simple values expression. Used for disabling the simple
-            values parsing related check "stop on INSPIRE keyword", for allowing parsing more expressions and not
-            restrict the input accepted by the parser.
-    """
-    parsing_parenthesized_terminal = False
-    parsing_parenthesized_simple_values_expression = False
-
-
 u_word = re.compile("\w+", re.UNICODE)
 # ########################
 
@@ -159,7 +140,7 @@ class SimpleValueUnit(LeafRule):
             self.value = args[0] + args[1].value + args[2]
 
     @classmethod
-    def parse_terminal_token(cls, text):
+    def parse_terminal_token(cls, parser, text):
         """Parses a terminal token that doesn't contain parentheses nor colon symbol.
 
         Note:
@@ -174,7 +155,7 @@ class SimpleValueUnit(LeafRule):
         if m:
             # Check if token is a DSL keyword. Disable this check in the case where the parser isn't parsing a
             # parenthesized terminal.
-            if not InspireParserState.parsing_parenthesized_terminal and m.group().lower() in Keyword.table:
+            if not parser.parsing_parenthesized_terminal and m.group().lower() in Keyword.table:
                 return text, SyntaxError("found DSL keyword: " + m.group(0))
 
             t = text[len(m.group(0)):]
@@ -188,7 +169,7 @@ class SimpleValueUnit(LeafRule):
             # Attempt to recognize whether current terminal is a non shortened version of an Inspire keywords. This is
             # done for supporting implicit-and in case of SPIRES style keyword queries. Using the non shortened version
             # of the keywords, makes this recognition not eager.
-            if not InspireParserState.parsing_parenthesized_simple_values_expression \
+            if not parser.parsing_parenthesized_simple_values_expression \
                     and m.group() in INSPIRE_KEYWORDS_SET:
                 return text, SyntaxError("parsing a keyword (non shortened INSPIRE keyword)")
 
@@ -228,14 +209,14 @@ class SimpleValueUnit(LeafRule):
                 t, r, found = text[len(m.group(0)):], m.group(0), True
             else:
                 # Attempt to parse the first element of the grammar (i.e. a Terminal token)
-                t, r = SimpleValueUnit.parse_terminal_token(text)
+                t, r = SimpleValueUnit.parse_terminal_token(parser, text)
                 if type(r) != SyntaxError:
                     found = True
                 else:
                     # Attempt to parse a terminal with parentheses
                     try:
                         # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
-                        InspireParserState.parsing_parenthesized_terminal = True
+                        parser.parsing_parenthesized_terminal = True
                         t, r = parser.parse(text, cls.parenthesized_token_grammar, pos)
 
                         found = True
@@ -246,7 +227,7 @@ class SimpleValueUnit(LeafRule):
                     except ValueError:
                         pass
                     finally:
-                        InspireParserState.parsing_parenthesized_terminal = False
+                        parser.parsing_parenthesized_terminal = False
 
         if found:
             result = t, SimpleValueUnit(r)
@@ -390,13 +371,13 @@ class ParenthesizedSimpleValues(UnaryRule):
     def parse(cls, parser, text, pos):
         """Using our own parse to enable the flag below."""
         try:
-            InspireParserState.parsing_parenthesized_simple_values_expression = True
+            parser.parsing_parenthesized_simple_values_expression = True
             t, r = parser.parse(text, cls.grammar)
             return t, r
         except SyntaxError as e:
             return text, e
         finally:
-            InspireParserState.parsing_parenthesized_simple_values_expression = False
+            parser.parsing_parenthesized_simple_values_expression = False
 # ######################################## #
 
 
@@ -512,8 +493,8 @@ class InvenioKeywordQuery(BinaryRule):
     E.g. author: ellis, title: boson, or unknown_keyword: foo.
     """
     grammar = attr('left', [InspireKeyword, re.compile(r"(?!arxiv)[^\s:]+")]), \
-              omit(':'), \
-              attr('right', Value)
+        omit(':'), \
+        attr('right', Value)
 
 
 class SpiresKeywordQuery(BinaryRule):
