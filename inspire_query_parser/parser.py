@@ -137,9 +137,12 @@ class SimpleValueUnit(LeafRule):
     plaintext and in turn (its grammar) encapsulates whitespace and SimpleValueUnit recognition.
 
     """
-    token_regex = re.compile(r"[^\s:)(]+")
+    token_regex = re.compile(r"[^\s:)(]+", re.UNICODE)
 
-    date_specifiers_regex = re.compile(r"(yesterday|today|(this\s+month)|(last\s+month))\s*-\s*\d+")
+    arxiv_token_regex = re.compile(r"arxiv:" + token_regex.pattern, re.IGNORECASE)
+    """Arxiv identifiers are special cases of tokens where the ":" symbol is allowed."""
+
+    date_specifiers_regex = re.compile(r"(yesterday|today|(this\s+month)|(last\s+month))\s*-\s*\d+", re.UNICODE)
 
     parenthesized_token_grammar = None  # is set after SimpleValue definition.
 
@@ -157,7 +160,7 @@ class SimpleValueUnit(LeafRule):
 
     @classmethod
     def parse_terminal_token(cls, text):
-        """Parses a terminal token that doesn't contain parentheses.
+        """Parses a terminal token that doesn't contain parentheses nor colon symbol.
 
         Note:
             If we're parsing text not in parentheses, then some DSL keywords (e.g. And, Or, Not, defined above) should
@@ -169,7 +172,8 @@ class SimpleValueUnit(LeafRule):
         """
         m = cls.token_regex.match(text)
         if m:
-            # Check if token is a DSL keyword only in the case where the parser doesn't parse a parenthesized terminal
+            # Check if token is a DSL keyword. Disable this check in the case where the parser isn't parsing a
+            # parenthesized terminal.
             if not InspireParserState.parsing_parenthesized_terminal and m.group().lower() in Keyword.table:
                 return text, SyntaxError("found DSL keyword: " + m.group(0))
 
@@ -211,32 +215,38 @@ class SimpleValueUnit(LeafRule):
         parenthesized SimpleValue.
         """
         found = False
+        # TODO refactor all regex parsing in one method
 
         # Attempt to parse date specifier
         m = cls.date_specifiers_regex.match(text)
         if m:
             t, r, found = text[len(m.group(0)):], m.group(0), True
         else:
-            # Attempt to parse the first element of the grammar (i.e. a Terminal token)
-            t, r = SimpleValueUnit.parse_terminal_token(text)
-            if type(r) != SyntaxError:
-                found = True
+            # Attempt to parse arxiv identifier
+            m = cls.arxiv_token_regex.match(text)
+            if m:
+                t, r, found = text[len(m.group(0)):], m.group(0), True
             else:
-                # Attempt to parse a terminal with parentheses
-                try:
-                    # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
-                    InspireParserState.parsing_parenthesized_terminal = True
-                    t, r = parser.parse(text, cls.parenthesized_token_grammar, pos)
-
+                # Attempt to parse the first element of the grammar (i.e. a Terminal token)
+                t, r = SimpleValueUnit.parse_terminal_token(text)
+                if type(r) != SyntaxError:
                     found = True
-                except SyntaxError:
-                    pass
-                except GrammarValueError:
-                    raise
-                except ValueError:
-                    pass
-                finally:
-                    InspireParserState.parsing_parenthesized_terminal = False
+                else:
+                    # Attempt to parse a terminal with parentheses
+                    try:
+                        # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
+                        InspireParserState.parsing_parenthesized_terminal = True
+                        t, r = parser.parse(text, cls.parenthesized_token_grammar, pos)
+
+                        found = True
+                    except SyntaxError:
+                        pass
+                    except GrammarValueError:
+                        raise
+                    except ValueError:
+                        pass
+                    finally:
+                        InspireParserState.parsing_parenthesized_terminal = False
 
         if found:
             result = t, SimpleValueUnit(r)
@@ -307,7 +317,6 @@ class SimpleValueNegation(UnaryRule):
 class SimpleValueBooleanQuery(BinaryRule):
     """For supporting queries like author:(foo or bar and not foobar)."""
     bool_op = None
-    pass
 
     def __init__(self, args):
         self.left = args[0]
@@ -377,7 +386,6 @@ class ComplexValue(LeafRule):
 
 
 class SimpleRangeValue(LeafRule):
-    # TODO Why not adding also a ":" ? More restrictive...
     grammar = attr('value', re.compile(r"([^\s)(-]|-+[^\s)(>])+"))
 
 
@@ -465,9 +473,15 @@ class InvenioKeywordQuery(BinaryRule):
 
     There needs to be a distinction between Invenio and SPIRES keyword queries, so as the parser is able to recognize
     any terminal as keyword for the former ones.
+
+    Note:
+        "arxiv:arxiv_identifier" should be excluded from the generic keyword pattern as it is a special case of
+        SimpleValue, since it contains ":".
     E.g. author: ellis, title: boson, or unknown_keyword: foo.
     """
-    grammar = attr('left', [InspireKeyword, re.compile(r"[^\s:]+")]), omit(':'), attr('right', Value)
+    grammar = attr('left', [InspireKeyword, re.compile(r"(?!arxiv)[^\s:]+")]), \
+              omit(':'), \
+              attr('right', Value)
 
 
 class SpiresKeywordQuery(BinaryRule):
