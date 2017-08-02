@@ -4,9 +4,9 @@ from __future__ import unicode_literals, print_function
 from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguous, maybe_some, some, GrammarValueError, \
     whitespace
 
-from inspire_query_parser.utils.utils import string_types
 from . import ast
 from .config import INSPIRE_PARSER_KEYWORDS, INSPIRE_KEYWORDS_SET
+from .utils.utils import string_types
 
 
 # #### Parser customization ####
