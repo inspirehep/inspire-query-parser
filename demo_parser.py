@@ -20,7 +20,7 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
 
 import sys
 
@@ -204,4 +204,3 @@ if __name__ == '__main__':
     # as a keyword). Can be useful for testing multiple parse trees generation (one with the first parse and a second
     # with removing ":" character (could be one heuristic)).
     # print_query_and_parse_tree(r"find t Closed string field theory: Quantum action")
-

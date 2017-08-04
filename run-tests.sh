@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 # -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
@@ -20,6 +21,6 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-"""A PEG-based query parser for INSPIRE"""
-
-from __future__ import absolute_import, print_function
+isort -rc -c -df && \
+sphinx-build -qnNW docs docs/_build/html && \
+python setup.py test

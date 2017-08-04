@@ -20,6 +20,6 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-"""A PEG-based query parser for INSPIRE"""
+"""Pytest configuration."""
 
 from __future__ import absolute_import, print_function

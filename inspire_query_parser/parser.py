@@ -20,13 +20,14 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
 
-from pypeg2 import attr, Keyword, Literal, omit, optional, re, K, Enum, contiguous, maybe_some, some, GrammarValueError, \
-    whitespace
+from pypeg2 import (Enum, GrammarValueError, K, Keyword, Literal, attr,
+                    contiguous, maybe_some, omit, optional, re, some,
+                    whitespace)
 
 from . import ast
-from .config import INSPIRE_PARSER_KEYWORDS, INSPIRE_KEYWORDS_SET
+from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS
 from .utils.utils import string_types
 
 
@@ -60,6 +61,7 @@ class CaseInsensitiveKeyword(Keyword):
         else:
             result = text, SyntaxError("expecting " + repr(cls.__name__))
         return result
+
 
 CIKeyword = CaseInsensitiveKeyword
 
@@ -277,7 +279,7 @@ class SimpleValue(LeafRule):
         def unconsume_and_reconstruct_input():
             """Reconstruct input in case of consuming a keyword query with ComplexValue as SimpleValue.
 
-            Un-consuming 3 elements and specifically a Keyword, Whitespace and ComplexValue and then reconstructing 
+            Un-consuming 3 elements and specifically a Keyword, Whitespace and ComplexValue and then reconstructing
             parser's input text.
 
             Example:
@@ -357,7 +359,7 @@ class SimpleValueBooleanQuery(BinaryRule):
             # We don't want to eagerly recognize keyword queries as SimpleValues.
             # So we attempt to firstly recognize the more specific rules (keyword queries and their negation), and
             # then a SimpleValue.
-            _ = parser.parse(text_after_bool_op, (omit(optional(Not)), [InvenioKeywordQuery, SpiresKeywordQuery]))
+            parser.parse(text_after_bool_op, (omit(optional(Not)), [InvenioKeywordQuery, SpiresKeywordQuery]))
 
             # Keyword query parsing succeeded, stop boolean_op among terminals recognition.
             result = text, SyntaxError("found keyword query at terminals level")

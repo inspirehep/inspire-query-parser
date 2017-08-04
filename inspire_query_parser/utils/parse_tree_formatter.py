@@ -20,7 +20,7 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from ..ast import UnaryOp, Leaf, BinaryOp, ListOp
+from ..ast import BinaryOp, Leaf, ListOp, UnaryOp
 
 INDENTATION = 4
 
@@ -49,7 +49,7 @@ class ParseTreeFormatter(object):
         def emit_prefix():
             ret_str = ""
             prefix = ("└── " if is_last else "├── ") if level != 0 else ""
-            for i in range(level-INDENTATION):
+            for i in range(level - INDENTATION):
                 if i % INDENTATION == 0:
                     ret_str += "│"
                 else:
