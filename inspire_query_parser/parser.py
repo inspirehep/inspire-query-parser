@@ -659,14 +659,3 @@ class Query(ListRule):
         MalformedQueryText,
         EmptyQuery,
     ]
-
-    # @classmethod
-    # def parse(cls, parser, text, pos):
-    #     for e in cls.grammar:
-    #         try:
-    #             t, r = parser.parse(text, e)
-    #             print("got: " + t + "\tr:" + repr(r))
-    #             break
-    #         except SyntaxError as se:
-    #             pass
-    #     return t, cls(r)
