@@ -25,10 +25,10 @@ from __future__ import print_function, unicode_literals
 from pypeg2 import (Enum, GrammarValueError, K, Keyword, Literal, attr,
                     contiguous, maybe_some, omit, optional, re, some,
                     whitespace)
+import six
 
 from . import ast
 from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS
-from .utils.utils import string_types
 
 
 # #### Parser customization ####
@@ -154,7 +154,7 @@ class SimpleValueUnit(LeafRule):
 
     def __init__(self, args):
         super(SimpleValueUnit, self).__init__()
-        if isinstance(args, string_types):
+        if isinstance(args, six.string_types):
             # Value was recognized by the 1st option of the list grammar (regex)
             self.value = args
         else:
@@ -271,7 +271,7 @@ class SimpleValue(LeafRule):
 
     def __init__(self, values):
         super(SimpleValue, self).__init__()
-        self.value = unicode.strip(''.join([v.value for v in values]))
+        self.value = six.text_type.strip(''.join([v.value for v in values]))
 
     @classmethod
     def parse(cls, parser, text, pos):
