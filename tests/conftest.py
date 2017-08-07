@@ -23,3 +23,10 @@
 """Pytest configuration."""
 
 from __future__ import absolute_import, print_function
+
+import sys
+import os
+
+# Use the helpers folder to store test helpers.
+# See: http://stackoverflow.com/a/33515264/374865
+sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
