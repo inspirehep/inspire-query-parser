@@ -20,6 +20,8 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
+import six
+
 from ..ast import BinaryOp, Leaf, ListOp, UnaryOp
 
 INDENTATION = 4
@@ -67,7 +69,7 @@ class ParseTreeFormatter(object):
                 else node.__class__.__name__ + " {" + node.value.encode('utf-8') + "}"
 
             ret_str = ParseTreeFormatter.__emit_symbol_at_level_str(value, new_level) if value != "" else ""
-        elif issubclass(type(node), unicode):
+        elif issubclass(type(node), six.text_type):
             value = "" if not repr(node) or repr(node) == "None" \
                 else node.__class__.__name__ + " {" + node.encode('utf-8') + "}"
 
