@@ -33,7 +33,7 @@ def test_that_parse_terminal_token_does_accept_keywords_if_parsing_parenthesized
     query_str = 'and'
 
     parser = StatefulParser()
-    parser.parsing_parenthesized_terminal = True
+    parser._parsing_parenthesized_terminal = True
 
     returned_unrecognised_text, returned_result = SimpleValueUnit.parse_terminal_token(parser, query_str)
     assert returned_unrecognised_text == ''

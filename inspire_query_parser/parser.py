@@ -179,7 +179,7 @@ class SimpleValueUnit(LeafRule):
 
             # Check if token is a DSL keyword. Disable this check in the case where the parser isn't parsing a
             # parenthesized terminal.
-            if not parser.parsing_parenthesized_terminal and matched_token.lower() in Keyword.table:
+            if not parser._parsing_parenthesized_terminal and matched_token.lower() in Keyword.table:
                 return text, SyntaxError("found DSL keyword: " + matched_token)
 
             unrecognized_text = text[len(matched_token):]
@@ -193,7 +193,7 @@ class SimpleValueUnit(LeafRule):
             # Attempt to recognize whether current terminal is a non shortened version of Inspire keywords. This is
             # done for supporting implicit-and in case of SPIRES style keyword queries. Using the non shortened version
             # of the keywords, makes this recognition not eager.
-            if not parser.parsing_parenthesized_simple_values_expression \
+            if not parser._parsing_parenthesized_simple_values_expression \
                     and matched_token in INSPIRE_KEYWORDS_SET:
                 return text, SyntaxError("parsing a keyword (non shortened INSPIRE keyword)")
 
@@ -240,7 +240,7 @@ class SimpleValueUnit(LeafRule):
                     # Attempt to parse a terminal with parentheses
                     try:
                         # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
-                        parser.parsing_parenthesized_terminal = True
+                        parser._parsing_parenthesized_terminal = True
                         t, r = parser.parse(text, cls.parenthesized_token_grammar, pos)
 
                         found = True
@@ -251,7 +251,7 @@ class SimpleValueUnit(LeafRule):
                     except ValueError:
                         pass
                     finally:
-                        parser.parsing_parenthesized_terminal = False
+                        parser._parsing_parenthesized_terminal = False
 
         if found:
             result = t, SimpleValueUnit(r)
@@ -307,7 +307,7 @@ class SimpleValue(LeafRule):
             found_complex_value = False
             for idx, v in enumerate(r):
                 if ComplexValue.regex.match(v.value):
-                    remaining_text, reconstructed_terminals = unconsume_and_reconstruct_input(r)
+                    remaining_text, reconstructed_terminals = unconsume_and_reconstruct_input()
                     found_complex_value = True
                     break
 
@@ -409,13 +409,13 @@ class ParenthesizedSimpleValues(UnaryRule):
     def parse(cls, parser, text, pos):
         """Using our own parse to enable the flag below."""
         try:
-            parser.parsing_parenthesized_simple_values_expression = True
+            parser._parsing_parenthesized_simple_values_expression = True
             t, r = parser.parse(text, cls.grammar)
             return t, r
         except SyntaxError as e:
             return text, e
         finally:
-            parser.parsing_parenthesized_simple_values_expression = False
+            parser._parsing_parenthesized_simple_values_expression = False
 # ######################################## #
 
 

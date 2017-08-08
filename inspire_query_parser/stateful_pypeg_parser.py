@@ -28,12 +28,12 @@ class StatefulParser(Parser):
     """Defines a stateful parser for encapsulating parsing flags functionality.
 
     Attributes:
-        parsing_parenthesized_terminal (bool):
+        _parsing_parenthesized_terminal (bool):
             Signifies whether the parser is trying to identify a parenthesized terminal. Used for disabling the
             terminals parsing related check "stop on DSL keyword", for allowing to parse symbols such as "+", "-" which
             are also DSL keywords ('and' and 'not' respectively).
 
-        parsing_parenthesized_simple_values_expression (bool):
+        _parsing_parenthesized_simple_values_expression (bool):
             Signifies whether we are parsing a parenthesized simple values expression. Used for disabling the simple
             values parsing related check "stop on INSPIRE keyword", for allowing parsing more expressions and not
             restrict the input accepted by the parser.
@@ -41,8 +41,8 @@ class StatefulParser(Parser):
 
     def __init__(self):
         super(StatefulParser, self).__init__()
-        self.parsing_parenthesized_terminal = False
-        self.parsing_parenthesized_simple_values_expression = False
+        self._parsing_parenthesized_terminal = False
+        self._parsing_parenthesized_simple_values_expression = False
 
 
 def parse(text, thing):
