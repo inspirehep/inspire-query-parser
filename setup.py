@@ -35,6 +35,7 @@ tests_require = [
     'pytest-cov>=1.8.0',
     'pytest-flake8>=0.8.1',
     'pytest>=2.8.0',
+    'six>=1.10.0'
 ]
 
 extras_require = {
@@ -85,6 +86,8 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3'
+        'Programming Language :: Python :: 3.6'
         'Development Status :: 2 - Pre-Alpha',
     ],
 )

@@ -175,27 +175,29 @@ class SimpleValueUnit(LeafRule):
         """
         m = cls.token_regex.match(text)
         if m:
+            matched_token = m.group(0)
+
             # Check if token is a DSL keyword. Disable this check in the case where the parser isn't parsing a
             # parenthesized terminal.
-            if not parser.parsing_parenthesized_terminal and m.group().lower() in Keyword.table:
-                return text, SyntaxError("found DSL keyword: " + m.group(0))
+            if not parser.parsing_parenthesized_terminal and matched_token.lower() in Keyword.table:
+                return text, SyntaxError("found DSL keyword: " + matched_token)
 
-            t = text[len(m.group(0)):]
+            unrecognized_text = text[len(matched_token):]
 
             # Attempt to recognize whether current terminal is followed by a ":", which definitely signifies that
             # we are parsing a keyword, and we shouldn't.
-            if cls.starts_with_colon.match(t):
+            if cls.starts_with_colon.match(unrecognized_text):
                 return text, \
-                       SyntaxError("parsing a keyword (token followed by \":\"): \"" + repr(m.group(0)) + "\"")
+                       SyntaxError("parsing a keyword (token followed by \":\"): \"" + repr(matched_token) + "\"")
 
-            # Attempt to recognize whether current terminal is a non shortened version of an Inspire keywords. This is
+            # Attempt to recognize whether current terminal is a non shortened version of Inspire keywords. This is
             # done for supporting implicit-and in case of SPIRES style keyword queries. Using the non shortened version
             # of the keywords, makes this recognition not eager.
             if not parser.parsing_parenthesized_simple_values_expression \
-                    and m.group() in INSPIRE_KEYWORDS_SET:
+                    and matched_token in INSPIRE_KEYWORDS_SET:
                 return text, SyntaxError("parsing a keyword (non shortened INSPIRE keyword)")
 
-            result = t, m.group(0)
+            result = unrecognized_text, matched_token
         else:
             result = text, SyntaxError("expecting match on " + repr(cls.token_regex.pattern))
         return result
@@ -271,7 +273,10 @@ class SimpleValue(LeafRule):
 
     def __init__(self, values):
         super(SimpleValue, self).__init__()
-        self.value = six.text_type.strip(''.join([v.value for v in values]))
+        if isinstance(values, six.string_types):
+            self.value = values
+        else:
+            self.value = six.text_type.strip(''.join([v.value for v in values]))
 
     @classmethod
     def parse(cls, parser, text, pos):
