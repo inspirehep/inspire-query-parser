@@ -26,7 +26,7 @@ import sys
 
 from inspire_query_parser.parser import Query
 from inspire_query_parser.stateful_pypeg_parser import parse
-from inspire_query_parser.utils.parse_tree_formatter import ParseTreeFormatter
+from inspire_query_parser.utils.format_parse_tree import emit_tree_format
 from inspire_query_parser.utils.utils import Colors
 
 
@@ -51,7 +51,7 @@ def repl():
 
 def print_query_and_parse_tree(query_str):
     print(Colors.OKBLUE + "Parsing: [" + query_str + "]" + Colors.ENDC)
-    print(Colors.OKGREEN + ParseTreeFormatter.emit_tree_format(parse(query_str, Query)) + Colors.ENDC)
+    print(Colors.OKGREEN + emit_tree_format(parse(query_str, Query)) + Colors.ENDC)
     print("————————————————————————————————————————————————————————————————————————————————")
 
 
