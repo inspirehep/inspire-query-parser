@@ -22,10 +22,10 @@
 
 from __future__ import print_function, unicode_literals
 
+import six
 from pypeg2 import (Enum, GrammarValueError, K, Keyword, Literal, attr,
                     contiguous, maybe_some, omit, optional, re, some,
                     whitespace)
-import six
 
 from . import ast
 from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS
@@ -76,17 +76,22 @@ class BooleanOperator(Enum):
 
 
 class LeafRule(ast.Leaf):
-    def __init__(self):
-        pass
+    def __init__(self, value=None):
+        if value:
+            super(LeafRule, self).__init__(value)
 
 
 class UnaryRule(ast.UnaryOp):
-    def __init__(self):
-        pass
+    def __init__(self, op=None):
+        if op:
+            super(UnaryRule, self).__init__(op)
 
 
 class BinaryRule(ast.BinaryOp):
-    def __init__(self):
+    def __init__(self, left=None, right=None):
+        if left and right:
+            self.left = left
+            self.right = right
         pass
 
 

@@ -22,7 +22,6 @@
 
 from __future__ import print_function, unicode_literals
 
-
 from inspire_query_parser.parser import SimpleValue, SimpleValueUnit
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from test_utils import parametrize
