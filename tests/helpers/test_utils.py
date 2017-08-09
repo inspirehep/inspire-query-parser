@@ -22,9 +22,10 @@
 
 from __future__ import absolute_import
 
-import pytest
 from collections import OrderedDict
-from six import iteritems, itervalues, next, viewitems, viewkeys, viewvalues, iterkeys
+
+import pytest
+from six import iteritems, iterkeys, itervalues, next, viewitems
 
 
 def parametrize(test_configurations):

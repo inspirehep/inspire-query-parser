@@ -20,6 +20,8 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
+from __future__ import absolute_import, unicode_literals
+
 import six
 
 from ..ast import BinaryOp, Leaf, ListOp, UnaryOp
@@ -38,7 +40,7 @@ def emit_tree_format(tree, verbose=False):
         str:  tree-like representation of the parse tree
     """
     if verbose:
-        print("Converting: " + str(tree))
+        print("Converting: " + repr(tree))
     ret_str = __recursive_formatter(tree)
     return ret_str
 
@@ -54,32 +56,32 @@ def __emit_symbol_at_level_str(symbol, level, is_last=False):
                 ret_str += " "
         return ret_str + prefix
 
-    return emit_prefix() + str(symbol) + "\n"
+    return emit_prefix() + symbol + "\n"
 
 
 def __recursive_formatter(node, level=-INDENTATION):
     new_level = INDENTATION + level
 
-    if issubclass(type(node), Leaf):
+    if isinstance(node, Leaf):
         value = "" if not repr(node.value) or repr(node.value) == "None" \
-            else node.__class__.__name__ + " {" + node.value.encode('utf-8') + "}"
+            else node.__class__.__name__ + " {" + node.value + "}"
 
         ret_str = __emit_symbol_at_level_str(value, new_level) if value != "" else ""
 
-    elif issubclass(type(node), six.text_type):
+    elif isinstance(node, six.text_type):
         value = "" if not repr(node) or repr(node) == "None" \
-            else node.__class__.__name__ + " {" + node.encode('utf-8') + "}"
+            else "Text {" + node + "}"
 
         ret_str = __emit_symbol_at_level_str(value, new_level) if value != "" else ""
 
     else:
         ret_str = __emit_symbol_at_level_str(node.__class__.__name__, new_level)
-        if issubclass(type(node), UnaryOp):
+        if isinstance(node, UnaryOp):
             ret_str += __recursive_formatter(node.op, new_level)
             if not node.op:
                 ret_str = ""
 
-        elif issubclass(type(node), BinaryOp):
+        elif isinstance(node, BinaryOp):
             try:
                 if node.bool_op:
                     ret_str = __emit_symbol_at_level_str(
@@ -91,7 +93,7 @@ def __recursive_formatter(node, level=-INDENTATION):
             ret_str += __recursive_formatter(node.left, new_level)
             ret_str += __recursive_formatter(node.right, new_level)
 
-        elif issubclass(type(node), ListOp):
+        elif isinstance(node, ListOp):
             try:
                 len(node.children)
                 for c in node.children:
@@ -103,6 +105,6 @@ def __recursive_formatter(node, level=-INDENTATION):
         elif not node:
             return ""
         else:
-            raise TypeError("Unexpected base type: " + str(type(node)))
+            raise TypeError("Unexpected base type: " + repr(type(node)))
 
     return ret_str

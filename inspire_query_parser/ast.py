@@ -23,6 +23,7 @@
 # Abstract Syntax Tree classes
 # I.e. generic syntax tree classes that simply define categories
 # for each of the actual AST nodes.
+from __future__ import unicode_literals
 
 
 class Leaf(object):
@@ -93,14 +94,14 @@ class ListOp(object):
         return visitor.visit(self, [c.accept(visitor) for c in self.children])
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.op == other.op
+        return type(self) == type(other) and self.children == other.children
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self.children))
+
+
 # Concrete Syntax Tree classes
 # I.e. classes that provide the supertypes for the parser nodes.
-
-
 class Keyword(Leaf):
     pass
 

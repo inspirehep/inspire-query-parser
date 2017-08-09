@@ -19,8 +19,7 @@
 # In applying this license, CERN does not waive the privileges and immunities
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
-
-
+import six
 from pypeg2 import Parser
 
 
@@ -56,6 +55,9 @@ def parse(text, thing):
         GrammarTypeError:   if grammar contains an object of unknown type
         GrammarValueError:  if grammar contains an illegal cardinality value
     """
+    if not isinstance(text, six.text_type):
+        text = six.text_type(text.decode('utf-8'))
+
     parser = StatefulParser()
     t, r = parser.parse(text, thing)
     if t:

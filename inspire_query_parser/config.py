@@ -27,6 +27,7 @@ This dictionary has a twofold use.
 Primarily, the parser uses its keys to generate INSPIRE related keywords (i.e. qualifiers) and secondly, provides
 a normalization of the shortened keywords to their full version.
 """
+from __future__ import unicode_literals
 
 INSPIRE_PARSER_KEYWORDS = {
     # Abstract

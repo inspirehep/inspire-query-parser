@@ -20,13 +20,20 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-"""Pytest configuration."""
+from __future__ import absolute_import, unicode_literals
 
-from __future__ import absolute_import, print_function
+from inspire_query_parser.parser import (Expression, InvenioKeywordQuery,
+                                         Query, SimpleQuery, SimpleValue,
+                                         Statement, Value)
+from inspire_query_parser.utils.format_parse_tree import emit_tree_format
 
-import os
-import sys
 
-# Use the helpers folder to store test helpers.
-# See: http://stackoverflow.com/a/33515264/374865
-sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+def test_format_parse_tree_handles_unicode_values():
+    parse_tree = Query([Statement(Expression(SimpleQuery(Value(SimpleValue('γ-radiation')))))])
+    assert emit_tree_format(parse_tree, verbose=True)
+
+
+def test_format_parse_tree_handles_unicode_nodes():
+    parse_tree = Query([Statement(Expression(SimpleQuery(InvenioKeywordQuery('unicode-keyword-φοο',
+                                                                             Value(SimpleValue('γ-radiation'))))))])
+    assert emit_tree_format(parse_tree, verbose=True)
