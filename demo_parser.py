@@ -89,6 +89,7 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"author:ellis j title:'boson' reference:M.N.1")
     print_query_and_parse_tree(r"author:ellis j title 'boson' reference:M.N.1")
     print_query_and_parse_tree(r"author ellis title 'boson' not value")
+    print_query_and_parse_tree(r"author ellis - title 'boson'")
 
     # ##### Boolean operators at terminals level ####
     # 1. Boolean operators among simple values
@@ -177,7 +178,6 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"date >= nov 2000 - author ellis")
     print_query_and_parse_tree(r"date 1978+ + -ac 100+")
     print_query_and_parse_tree(r"date 2010-06+ or foo")
-    print_query_and_parse_tree(r"date 2010-06   + or foo")
     print_query_and_parse_tree(r"date before 2000 and ac < 100")
     print_query_and_parse_tree(r"date before 2000 and ac 100+")
     print_query_and_parse_tree(r"ac 100- and -date <= 2000")
