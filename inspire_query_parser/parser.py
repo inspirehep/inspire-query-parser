@@ -459,10 +459,9 @@ class GreaterEqualOp(UnaryRule):
     """
     grammar = [
         (omit(Literal(">=")), attr('op', SimpleValue)),
-        # Accept a number or anything that doesn't contain {whitespace, (, ), :} followed by a "-" which should be
+        # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
         # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
-        (attr('op', re.compile(r"\d+")), omit(re.compile(r'\+(?=\s|\)|$)'))),
-        (attr('op', re.compile(r"[^\s():]+(?=([ ]+\+|\+))")), omit(re.compile(r'\+(?=\s|\)|$)'))),
+        (attr('op', re.compile(r"\d+([/-]\d+)*(?=\+)")), omit(re.compile(r'\+(?=\s|\)|$)'))),
     ]
 
 
@@ -481,11 +480,9 @@ class LessEqualOp(UnaryRule):
     """
     grammar = [
         (omit(Literal("<=")), attr('op', SimpleValue)),
-        # Accept a number or anything that doesn't contain {whitespace, (, ), :} followed by a "-" which should be
+        # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
         # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
-        (attr('op', re.compile(r"\d+")), omit(re.compile(r'-(?=\s|\)|$)'))),
-        (attr('op', re.compile(r"[^\s():]+(?=( -|-))")), omit(re.compile(r'\+(?=\s|\)|$)'))),
-
+        (attr('op', re.compile(r"\d+([/-]\d+)*(?=-)")), omit(re.compile(r'-(?=\s|\)|$)'))),
     ]
 
 
