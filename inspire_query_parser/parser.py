@@ -62,6 +62,12 @@ class CaseInsensitiveKeyword(Keyword):
             result = text, SyntaxError("expecting " + repr(cls.__name__))
         return result
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "%s()" % self.__class__.__name__
+
 
 CIKeyword = CaseInsensitiveKeyword
 
@@ -69,7 +75,7 @@ u_word = re.compile("\w+", re.UNICODE)
 # ########################
 
 
-class BooleanOperator(Enum):
+class BooleanOperator(object):
     """Serves as the possible case for a boolean operator."""
     AND = 'and'
     OR = 'or'
@@ -110,6 +116,10 @@ class And(CIKeyword):
     regex = re.compile(r"(and|\+|&)", re.IGNORECASE)
     grammar = Enum(K("and"), K("+"), K("&"))
 
+    def __init__(self, keyword=None):
+        # Normalize different AND keywords
+        super(And, self).__init__(BooleanOperator.AND)
+
 
 class Or(CIKeyword):
     """
@@ -118,6 +128,10 @@ class Or(CIKeyword):
     """
     regex = re.compile(r"(or|\|)", re.IGNORECASE)
     grammar = Enum(K("or"), K("|"))
+
+    def __init__(self, keyword=None):
+        # Normalize different OR keywords
+        super(Or, self).__init__(BooleanOperator.OR)
 
 
 class Not(CIKeyword):
@@ -653,7 +667,13 @@ class MalformedQueryText(LeafRule):
 
 
 class EmptyQuery(LeafRule):
-    grammar = omit(optional(whitespace)), attr('value', None)
+    grammar = omit(optional(whitespace))
+
+    def __init__(self):
+        self.value = None
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
 
 
 class Query(ListRule):

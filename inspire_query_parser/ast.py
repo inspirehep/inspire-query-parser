@@ -38,7 +38,7 @@ class Leaf(object):
         return type(self) == type(other) and self.value == other.value
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, repr(self.value))
+        return '%s(%r)' % (self.__class__.__name__, self.value)
 
 
 class UnaryOp(object):
@@ -52,7 +52,7 @@ class UnaryOp(object):
         return type(self) == type(other) and self.op == other.op
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.op))
+        return "%s(%r)" % (self.__class__.__name__, self.op)
 
 
 class BinaryOp(object):
@@ -97,7 +97,9 @@ class ListOp(object):
         return type(self) == type(other) and self.children == other.children
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.children))
+        return "%s(%r)" % (self.__class__.__name__, self.children)
+
+    __hash__ = object.__hash__
 
 
 # Concrete Syntax Tree classes
