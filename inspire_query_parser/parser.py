@@ -98,7 +98,50 @@ class BinaryRule(ast.BinaryOp):
         if left and right:
             self.left = left
             self.right = right
-        pass
+
+
+class BooleanRule(ast.BinaryOp):
+    """Represents a boolean query rule.
+
+    This means that there is a left and right node, but also the boolean operator of the rule.
+    Can be called by PyPeg framework either when constructing a boolean query (which supports implicit and) or when
+    constructing a boolean query among simple values (thus, no implicit and support).
+
+    Note:
+        When a BooleanRule is created from PyPeg, the format of the arguments is an iterable, when it's created from
+        the custom parse method of simple value boolean query, the non-default arguments are being used.
+    """
+
+    def __init__(self, args, bool_op=None, right=None):
+        self.bool_op = None
+        try:
+            iter(args)
+        except TypeError:
+            self.left = args
+            self.bool_op = bool_op
+            self.right = right
+            return
+
+        self.left = args[0]
+
+        if len(args) == 3:
+            if isinstance(args[1], And) or isinstance(args[1], Or):
+                self.bool_op = args[1]
+            else:
+                raise ValueError("Unexpected boolean operator: " + repr(args[1]))
+        else:
+            self.bool_op = And()
+
+        self.right = args[len(args) - 1]
+
+    def __eq__(self, other):
+        return super(BooleanRule, self).__eq__(other) and type(self.bool_op) == type(other.bool_op)  # noqa:E721
+
+    def __repr__(self):
+        return "%s(%r, %r, %r)" % (self.__class__.__name__,
+                                   self.left,
+                                   self.bool_op,
+                                   self.right)
 
 
 class ListRule(ast.ListOp):
@@ -353,21 +396,8 @@ class SimpleValueNegation(UnaryRule):
     grammar = omit(Not), attr('op', SimpleValue)
 
 
-class SimpleValueBooleanQuery(BinaryRule):
+class SimpleValueBooleanQuery(BooleanRule):
     """For supporting queries like author:(foo or bar and not foobar)."""
-    bool_op = None
-
-    def __init__(self, args):
-        self.left = args[0]
-
-        if isinstance(args[1], And):
-            self.bool_op = BooleanOperator.AND
-        elif isinstance(args[1], Or):
-            self.bool_op = BooleanOperator.OR
-        else:
-            raise ValueError("Unexpected boolean operator: " + repr(args[1]))
-
-        self.right = args[2]
 
     @classmethod
     def parse(cls, parser, text, pos):
@@ -396,7 +426,9 @@ class SimpleValueBooleanQuery(BinaryRule):
                     # Attempt to parse a right operand
                     try:
                         t, right_operand = parser.parse(text_after_bool_op, cls.grammar[2])
-                        result = t, SimpleValueBooleanQuery([left_operand, operator, right_operand])
+                        result = t, SimpleValueBooleanQuery(left_operand,
+                                                            bool_op=operator,
+                                                            right=right_operand)
                     except SyntaxError as e:  # Actual failure of parsing boolean query at terminals level
                         return text, e
 
@@ -627,31 +659,12 @@ NestedKeywordQuery.grammar = \
     attr('right', Expression)
 
 
-class BooleanQuery(BinaryRule):
+class BooleanQuery(BooleanRule):
     """Represents boolean query as a binary rule.
 
-    Attributes:
-        bool_op (str): Representation of the actual boolean operator.
-            If its value is None at creation time, this signifies an Implicit And. From that point on, this attribute
-            will contain the value from :attr:`BooleanOperator.AND` field.
     """
-    bool_op = None
     grammar = Expression, [And, Or, None], Statement
 
-    def __init__(self, args):
-        self.left = args[0]
-
-        if len(args) == 3:
-            if isinstance(args[1], And):
-                self.bool_op = BooleanOperator.AND
-            elif isinstance(args[1], Or):
-                self.bool_op = BooleanOperator.OR
-            else:
-                raise ValueError("Unexpected boolean operator: " + repr(args[1]))
-        else:  # Implicit-And query
-            self.bool_op = BooleanOperator.AND
-
-        self.right = args[len(args) - 1]
 # ########################
 
 

@@ -24,6 +24,7 @@ from __future__ import absolute_import, unicode_literals
 
 import six
 
+from inspire_query_parser.parser import BooleanRule
 from ..ast import BinaryOp, Leaf, ListOp, UnaryOp
 
 INDENTATION = 4
@@ -83,9 +84,9 @@ def __recursive_formatter(node, level=-INDENTATION):
 
         elif isinstance(node, BinaryOp):
             try:
-                if node.bool_op:
+                if isinstance(node, BooleanRule):
                     ret_str = __emit_symbol_at_level_str(
-                        node.__class__.__name__ + " {" + node.bool_op + "}",
+                        node.__class__.__name__ + " {" + str(node.bool_op) + "}",
                         new_level
                     )
             except AttributeError:
