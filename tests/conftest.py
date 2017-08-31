@@ -22,11 +22,25 @@
 
 """Pytest configuration."""
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
 
+from inspire_query_parser.parser import Query
+from inspire_query_parser.utils.format_parse_tree import emit_tree_format
+
 # Use the helpers folder to store test helpers.
 # See: http://stackoverflow.com/a/33515264/374865
 sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+
+
+def pytest_assertrepr_compare(op, left, right):
+    if isinstance(left, Query) and isinstance(right, Query) and op == "==":
+        left_parse_tree = emit_tree_format(left).splitlines()
+        right_parse_tree = emit_tree_format(right).splitlines()
+        return \
+            ['that given parse trees are equal:'] \
+            + left_parse_tree \
+            + ['', "──────── == ────────", ''] \
+            + right_parse_tree
