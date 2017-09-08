@@ -47,14 +47,6 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
          Query(Statement(Expression(SimpleQuery(InvenioKeywordQuery(InspireKeyword('author'),
                                                                     Value(ComplexValue("'ellis'")))))))
          ),
-        ("find a T.A. Aibergenov and date = 1986",
-         Query([Statement(BooleanQuery(
-             Expression(SimpleQuery(
-                 SpiresKeywordQuery(InspireKeyword('author'), Value(SimpleValue('T.A. Aibergenov'))))),
-             And(),
-             Statement(Expression(SimpleQuery(
-                 SpiresKeywordQuery(InspireKeyword('date'), Value(SimpleValue('1986'))))))))])
-         ),
         ('Find author "ellis"',
          Query([Statement(
              Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(ComplexValue('"ellis"'))))))])

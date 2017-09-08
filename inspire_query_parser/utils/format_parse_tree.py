@@ -25,6 +25,7 @@ from __future__ import absolute_import, unicode_literals
 import six
 
 from inspire_query_parser.parser import BooleanRule
+
 from ..ast import BinaryOp, Leaf, ListOp, UnaryOp
 
 INDENTATION = 4
