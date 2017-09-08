@@ -56,6 +56,9 @@ class Leaf(ASTElement):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.value)
 
+    def __hash__(self):
+        return hash(self.value)
+
 
 class UnaryOp(ASTElement):
 
@@ -67,6 +70,9 @@ class UnaryOp(ASTElement):
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.op)
+
+    def __hash__(self):
+        return hash(self.op)
 
 
 class BinaryOp(ASTElement):
@@ -88,6 +94,9 @@ class BinaryOp(ASTElement):
         return "%s(%s, %s)" % (self.__class__.__name__,
                                repr(self.left), repr(self.right))
 
+    def __hash__(self):
+        return hash((self.left, self.right))
+
 
 class ListOp(ASTElement):
 
@@ -105,7 +114,8 @@ class ListOp(ASTElement):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.children)
 
-    __hash__ = object.__hash__
+    def __hash__(self):
+        return hash(tuple(self.children))
 
 
 # Concrete Syntax Tree classes

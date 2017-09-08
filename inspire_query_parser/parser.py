@@ -149,6 +149,9 @@ class BooleanRule(ast.BinaryOp):
                                    self.bool_op,
                                    self.right)
 
+    def __hash__(self):
+        return hash((self.left, self.bool_op, self.right))
+
 
 class ListRule(ast.ListOp):
     def __init__(self, children):
