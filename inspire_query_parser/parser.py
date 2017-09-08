@@ -397,7 +397,7 @@ class SimpleValueNegation(UnaryRule):
 
 
 class SimpleValueBooleanQuery(BooleanRule):
-    """For supporting queries like author:(foo or bar and not foobar)."""
+    """For supporting queries like author ellis or smith and not Vanderhaeghen."""
 
     @classmethod
     def parse(cls, parser, text, pos):
@@ -409,6 +409,8 @@ class SimpleValueBooleanQuery(BooleanRule):
 
             # Parse boolean operators
             text_after_bool_op, operator = parser.parse(text_after_left_op, cls.grammar[1])
+            if not operator:  # Implicit AND at terminals level
+                operator = And(BooleanOperator.AND)
 
             # Parse right operand.
             # We don't want to eagerly recognize keyword queries as SimpleValues.
@@ -442,7 +444,7 @@ SimpleValueBooleanQuery.grammar = (
         SimpleValue,
     ],
 
-    [And, Or],
+    [And, Or, None],
 
     # Right operand options
     [
@@ -507,7 +509,7 @@ class GreaterEqualOp(UnaryRule):
     grammar = [
         (omit(Literal(">=")), attr('op', SimpleValue)),
         # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
-        # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
+        # followed by \s or ) or end of input so that you don't accept a value like 1-e.
         (attr('op', re.compile(r"\d+([/-]\d+)*(?=\+)")), omit(re.compile(r'\+(?=\s|\)|$)'))),
     ]
 
@@ -528,7 +530,7 @@ class LessEqualOp(UnaryRule):
     grammar = [
         (omit(Literal("<=")), attr('op', SimpleValue)),
         # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
-        # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
+        # followed by \s or ) or end of input so that you don't accept a value like 1-e.
         (attr('op', re.compile(r"\d+([/-]\d+)*(?=-)")), omit(re.compile(r'-(?=\s|\)|$)'))),
     ]
 
