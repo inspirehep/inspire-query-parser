@@ -29,11 +29,12 @@ from inspire_query_parser.parser import (And, BooleanQuery, ComplexValue,
                                          GreaterEqualOp, GreaterThanOp,
                                          InspireKeyword, InvenioKeywordQuery,
                                          LessEqualOp, LessThanOp,
-                                         MalformedQueryText,
+                                         MalformedQueryWords,
                                          NestedKeywordQuery, NotQuery, Or,
                                          ParenthesizedQuery, Query, RangeOp,
                                          SimpleQuery, SimpleRangeValue,
                                          SimpleValue, SimpleValueBooleanQuery,
+                                         SimpleValueNegation,
                                          SpiresKeywordQuery, Statement, Value)
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 
@@ -140,13 +141,13 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
                      InvenioKeywordQuery(InspireKeyword('cite'),
                                          Value(SimpleValue('M.N.1'))))))))))])
          ),
-        ("author ellis title 'boson' not value",
+        ("author ellis title boson not title higgs",
          Query([Statement(BooleanQuery(
-             Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(SimpleValue('ellis'))))),
-             And(), Statement(BooleanQuery(Expression(
-                 SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(ComplexValue(u"'boson'"))))), And(),
-                 Statement(Expression(NotQuery(
-                     Expression(SimpleQuery(Value(SimpleValue('value')))))))))))])
+             Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword(u'author'), Value(SimpleValue(u'ellis'))))),
+             And(), Statement(BooleanQuery(
+                 Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword(u'title'), Value(SimpleValue(u'boson'))))),
+                 And(), Statement(Expression(NotQuery(Expression(
+                     SimpleQuery(SpiresKeywordQuery(InspireKeyword(u'title'), Value(SimpleValue(u'higgs'))))))))))))])
          ),
         ("author ellis - title 'boson'",
          Query([Statement(BooleanQuery(Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'),
@@ -309,7 +310,7 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
          Query([Statement(Expression(SimpleQuery(
              InvenioKeywordQuery(InspireKeyword('title'), Value(SimpleValue('Si-28(p(pol.),n(pol.))'))))))])
          ),
-        ('t Si28(p→,p→′)Si28(6−,T=1) ',
+        ('t Si28(p→,p→′)Si28(6−,T=1)',
          Query([Statement(Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(
              SimpleValue('Si28(p→,p→′)Si28(6−,T=1)'))))))])
          ),
@@ -480,16 +481,16 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 
         # Unrecognized queries
         ('title and foo',
-         Query([MalformedQueryText(['title', 'and', 'foo'])])
+         Query([MalformedQueryWords(['title', 'and', 'foo'])])
          ),
         ('title γ-radiation and and',
          Query([Statement(Expression(
              SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(SimpleValue('\u03b3-radiation')))))),
-             MalformedQueryText(['and', 'and'])])
+             MalformedQueryWords(['and', 'and'])])
          )
     }
 )
-def test_parser_output(query_str, expected_parse_tree):
+def test_parser_functionality(query_str, expected_parse_tree):
     print("Parsing: " + query_str)
     parser = StatefulParser()
     _, parse_tree = parser.parse(query_str, Query)

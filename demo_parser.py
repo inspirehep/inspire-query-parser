@@ -86,7 +86,7 @@ if __name__ == '__main__':
     print_query_and_parse_tree(r"author ellis elastic.keyword:'boson'")
     print_query_and_parse_tree(r"find cn atlas not tc c")
     print_query_and_parse_tree(r"author:ellis j title:'boson' reference:M.N.1")
-    print_query_and_parse_tree(r"author ellis title 'boson' not value")
+    print_query_and_parse_tree(r"author ellis title 'boson' not title higgs")
     print_query_and_parse_tree(r"author ellis - title 'boson'")
 
     # ##### Boolean operators at terminals level ####

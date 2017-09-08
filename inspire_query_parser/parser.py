@@ -23,12 +23,18 @@
 from __future__ import print_function, unicode_literals
 
 import six
+
+from inspire_query_parser.config import DATE_SPECIFIERS_COLLECTION
 from pypeg2 import (Enum, GrammarValueError, K, Keyword, Literal, attr,
                     contiguous, maybe_some, omit, optional, re, some,
                     whitespace)
 
 from . import ast
 from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS
+
+# TODO  Restrict what a simple query (i.e. Value) can accept (remove LessThanOp, etc.).
+#       For 'date > 2013 and < 2017' probably allow LessThanOp into SimpleValueBooleanQuery.
+# TODO 'date > 2000-10 and < date 2000-12' parses without a malformed query. (First fix the above)
 
 
 # #### Parser customization ####
@@ -208,7 +214,7 @@ class SimpleValueUnit(LeafRule):
     arxiv_token_regex = re.compile(r"arxiv:" + token_regex.pattern, re.IGNORECASE)
     """Arxiv identifiers are special cases of tokens where the ":" symbol is allowed."""
 
-    date_specifiers_regex = re.compile(r"(yesterday|today|(this\s+month)|(last\s+month))\s*-\s*\d+", re.UNICODE)
+    date_specifiers_regex = re.compile(r"({})\s*-\s*\d+".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
 
     parenthesized_token_grammar = None  # is set after SimpleValue definition.
 
@@ -485,6 +491,10 @@ class ComplexValue(LeafRule):
 
     This makes no difference for the parser and will be handled at a later parsing phase.
     """
+    EXACT_VALUE_TOKEN = '"'
+    PARTIAL_VALUE_TOKEN = '\''
+    REGEX_VALUE_TOKEN = '/'
+
     regex = re.compile(r"((/.+?/)|('.*?')|(\".*?\"))")
     grammar = attr('value', regex)
 
@@ -674,12 +684,12 @@ class BooleanQuery(BooleanRule):
 Statement.grammar = attr('op', [BooleanQuery, Expression])
 
 
-class MalformedQueryText(LeafRule):
+class MalformedQueryWords(ListRule):
     """Represents queries that weren't recognized by the main parsing branch of Statements."""
     grammar = some(re.compile(r"[^\s]+", re.UNICODE))
 
-    def __init__(self, values):
-        self.value = ' '.join([v for v in values])
+    def __init__(self, children):
+        self.children = children
 
 
 class EmptyQuery(LeafRule):
@@ -699,8 +709,10 @@ class Query(ListRule):
     It only serves for backward compatibility with SPIRES syntax.
     """
     grammar = [
-        (omit(optional(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE))),
-         (Statement, maybe_some(MalformedQueryText))),
-        MalformedQueryText,
+        (
+            omit(optional(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE))),
+            (Statement, maybe_some(MalformedQueryWords))
+        ),
+        MalformedQueryWords,
         EmptyQuery,
     ]
