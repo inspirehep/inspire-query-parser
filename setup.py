@@ -75,6 +75,7 @@ setup(
     install_requires=[
         'pypeg2>=2.15.2',
         'six>=1.10.0',
+        'python-dateutil>=2.6.1',
     ],
     setup_requires=setup_requires,
     tests_require=tests_require,

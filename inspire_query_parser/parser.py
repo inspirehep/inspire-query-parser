@@ -23,12 +23,18 @@
 from __future__ import print_function, unicode_literals
 
 import six
+
+from inspire_query_parser.config import DATE_SPECIFIERS_COLLECTION
 from pypeg2 import (Enum, GrammarValueError, K, Keyword, Literal, attr,
                     contiguous, maybe_some, omit, optional, re, some,
                     whitespace)
 
 from . import ast
 from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS
+
+# TODO  Restrict what a simple query (i.e. Value) can accept (remove LessThanOp, etc.).
+#       For 'date > 2013 and < 2017' probably allow LessThanOp into SimpleValueBooleanQuery.
+# TODO 'date > 2000-10 and < date 2000-12' parses without a malformed query. (First fix the above)
 
 
 # #### Parser customization ####
@@ -62,6 +68,12 @@ class CaseInsensitiveKeyword(Keyword):
             result = text, SyntaxError("expecting " + repr(cls.__name__))
         return result
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "%s()" % self.__class__.__name__
+
 
 CIKeyword = CaseInsensitiveKeyword
 
@@ -69,7 +81,7 @@ u_word = re.compile("\w+", re.UNICODE)
 # ########################
 
 
-class BooleanOperator(Enum):
+class BooleanOperator(object):
     """Serves as the possible case for a boolean operator."""
     AND = 'and'
     OR = 'or'
@@ -92,7 +104,53 @@ class BinaryRule(ast.BinaryOp):
         if left and right:
             self.left = left
             self.right = right
-        pass
+
+
+class BooleanRule(ast.BinaryOp):
+    """Represents a boolean query rule.
+
+    This means that there is a left and right node, but also the boolean operator of the rule.
+    Can be called by PyPeg framework either when constructing a boolean query (which supports implicit and) or when
+    constructing a boolean query among simple values (thus, no implicit and support).
+
+    Note:
+        When a BooleanRule is created from PyPeg, the format of the arguments is an iterable, when it's created from
+        the custom parse method of simple value boolean query, the non-default arguments are being used.
+    """
+
+    def __init__(self, args, bool_op=None, right=None):
+        self.bool_op = None
+        try:
+            iter(args)
+        except TypeError:
+            self.left = args
+            self.bool_op = bool_op
+            self.right = right
+            return
+
+        self.left = args[0]
+
+        if len(args) == 3:
+            if isinstance(args[1], And) or isinstance(args[1], Or):
+                self.bool_op = args[1]
+            else:
+                raise ValueError("Unexpected boolean operator: " + repr(args[1]))
+        else:
+            self.bool_op = And()
+
+        self.right = args[len(args) - 1]
+
+    def __eq__(self, other):
+        return super(BooleanRule, self).__eq__(other) and type(self.bool_op) == type(other.bool_op)  # noqa:E721
+
+    def __repr__(self):
+        return "%s(%r, %r, %r)" % (self.__class__.__name__,
+                                   self.left,
+                                   self.bool_op,
+                                   self.right)
+
+    def __hash__(self):
+        return hash((self.left, self.bool_op, self.right))
 
 
 class ListRule(ast.ListOp):
@@ -110,6 +168,10 @@ class And(CIKeyword):
     regex = re.compile(r"(and|\+|&)", re.IGNORECASE)
     grammar = Enum(K("and"), K("+"), K("&"))
 
+    def __init__(self, keyword=None):
+        # Normalize different AND keywords
+        super(And, self).__init__(BooleanOperator.AND)
+
 
 class Or(CIKeyword):
     """
@@ -118,6 +180,10 @@ class Or(CIKeyword):
     """
     regex = re.compile(r"(or|\|)", re.IGNORECASE)
     grammar = Enum(K("or"), K("|"))
+
+    def __init__(self, keyword=None):
+        # Normalize different OR keywords
+        super(Or, self).__init__(BooleanOperator.OR)
 
 
 class Not(CIKeyword):
@@ -132,7 +198,8 @@ class Not(CIKeyword):
 
 # #### Lowest level operators #####
 class InspireKeyword(LeafRule):
-    grammar = re.compile(r"({0})(?=(:|\s))".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())))
+    # InspireKeyword expects a word boundary at its end, excluding [.,] characters, since these might signify names.
+    grammar = re.compile(r"({0})(?![,.])(?=(:|\b))".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())))
 
     def __init__(self, value):
         self.value = INSPIRE_PARSER_KEYWORDS[value]
@@ -150,7 +217,7 @@ class SimpleValueUnit(LeafRule):
     arxiv_token_regex = re.compile(r"arxiv:" + token_regex.pattern, re.IGNORECASE)
     """Arxiv identifiers are special cases of tokens where the ":" symbol is allowed."""
 
-    date_specifiers_regex = re.compile(r"(yesterday|today|(this\s+month)|(last\s+month))\s*-\s*\d+", re.UNICODE)
+    date_specifiers_regex = re.compile(r"({})\s*-\s*\d+".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
 
     parenthesized_token_grammar = None  # is set after SimpleValue definition.
 
@@ -338,21 +405,8 @@ class SimpleValueNegation(UnaryRule):
     grammar = omit(Not), attr('op', SimpleValue)
 
 
-class SimpleValueBooleanQuery(BinaryRule):
-    """For supporting queries like author:(foo or bar and not foobar)."""
-    bool_op = None
-
-    def __init__(self, args):
-        self.left = args[0]
-
-        if isinstance(args[1], And):
-            self.bool_op = BooleanOperator.AND
-        elif isinstance(args[1], Or):
-            self.bool_op = BooleanOperator.OR
-        else:
-            raise ValueError("Unexpected boolean operator: " + repr(args[1]))
-
-        self.right = args[2]
+class SimpleValueBooleanQuery(BooleanRule):
+    """For supporting queries like author ellis or smith and not Vanderhaeghen."""
 
     @classmethod
     def parse(cls, parser, text, pos):
@@ -364,6 +418,8 @@ class SimpleValueBooleanQuery(BinaryRule):
 
             # Parse boolean operators
             text_after_bool_op, operator = parser.parse(text_after_left_op, cls.grammar[1])
+            if not operator:  # Implicit AND at terminals level
+                operator = And(BooleanOperator.AND)
 
             # Parse right operand.
             # We don't want to eagerly recognize keyword queries as SimpleValues.
@@ -381,7 +437,9 @@ class SimpleValueBooleanQuery(BinaryRule):
                     # Attempt to parse a right operand
                     try:
                         t, right_operand = parser.parse(text_after_bool_op, cls.grammar[2])
-                        result = t, SimpleValueBooleanQuery([left_operand, operator, right_operand])
+                        result = t, SimpleValueBooleanQuery(left_operand,
+                                                            bool_op=operator,
+                                                            right=right_operand)
                     except SyntaxError as e:  # Actual failure of parsing boolean query at terminals level
                         return text, e
 
@@ -395,7 +453,7 @@ SimpleValueBooleanQuery.grammar = (
         SimpleValue,
     ],
 
-    [And, Or],
+    [And, Or, None],
 
     # Right operand options
     [
@@ -436,6 +494,10 @@ class ComplexValue(LeafRule):
 
     This makes no difference for the parser and will be handled at a later parsing phase.
     """
+    EXACT_VALUE_TOKEN = '"'
+    PARTIAL_VALUE_TOKEN = '\''
+    REGEX_VALUE_TOKEN = '/'
+
     regex = re.compile(r"((/.+?/)|('.*?')|(\".*?\"))")
     grammar = attr('value', regex)
 
@@ -460,7 +522,7 @@ class GreaterEqualOp(UnaryRule):
     grammar = [
         (omit(Literal(">=")), attr('op', SimpleValue)),
         # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
-        # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
+        # followed by \s or ) or end of input so that you don't accept a value like 1-e.
         (attr('op', re.compile(r"\d+([/-]\d+)*(?=\+)")), omit(re.compile(r'\+(?=\s|\)|$)'))),
     ]
 
@@ -481,7 +543,7 @@ class LessEqualOp(UnaryRule):
     grammar = [
         (omit(Literal("<=")), attr('op', SimpleValue)),
         # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
-        # followed by \s or ) or end of input so that you don't accept a value that is 1-e.
+        # followed by \s or ) or end of input so that you don't accept a value like 1-e.
         (attr('op', re.compile(r"\d+([/-]\d+)*(?=-)")), omit(re.compile(r'-(?=\s|\)|$)'))),
     ]
 
@@ -612,31 +674,12 @@ NestedKeywordQuery.grammar = \
     attr('right', Expression)
 
 
-class BooleanQuery(BinaryRule):
+class BooleanQuery(BooleanRule):
     """Represents boolean query as a binary rule.
 
-    Attributes:
-        bool_op (str): Representation of the actual boolean operator.
-            If its value is None at creation time, this signifies an Implicit And. From that point on, this attribute
-            will contain the value from :attr:`BooleanOperator.AND` field.
     """
-    bool_op = None
     grammar = Expression, [And, Or, None], Statement
 
-    def __init__(self, args):
-        self.left = args[0]
-
-        if len(args) == 3:
-            if isinstance(args[1], And):
-                self.bool_op = BooleanOperator.AND
-            elif isinstance(args[1], Or):
-                self.bool_op = BooleanOperator.OR
-            else:
-                raise ValueError("Unexpected boolean operator: " + repr(args[1]))
-        else:  # Implicit-And query
-            self.bool_op = BooleanOperator.AND
-
-        self.right = args[len(args) - 1]
 # ########################
 
 
@@ -644,16 +687,22 @@ class BooleanQuery(BinaryRule):
 Statement.grammar = attr('op', [BooleanQuery, Expression])
 
 
-class MalformedQueryText(LeafRule):
+class MalformedQueryWords(ListRule):
     """Represents queries that weren't recognized by the main parsing branch of Statements."""
     grammar = some(re.compile(r"[^\s]+", re.UNICODE))
 
-    def __init__(self, values):
-        self.value = ' '.join([v for v in values])
+    def __init__(self, children):
+        self.children = children
 
 
 class EmptyQuery(LeafRule):
-    grammar = omit(optional(whitespace)), attr('value', None)
+    grammar = omit(optional(whitespace))
+
+    def __init__(self):
+        self.value = None
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
 
 
 class Query(ListRule):
@@ -663,8 +712,10 @@ class Query(ListRule):
     It only serves for backward compatibility with SPIRES syntax.
     """
     grammar = [
-        (omit(optional(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE))),
-         (Statement, maybe_some(MalformedQueryText))),
-        MalformedQueryText,
+        (
+            omit(optional(re.compile(r"(find|fin|fi|f)\s", re.IGNORECASE))),
+            (Statement, maybe_some(MalformedQueryWords))
+        ),
+        MalformedQueryWords,
         EmptyQuery,
     ]

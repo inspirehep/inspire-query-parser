@@ -20,51 +20,66 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-# Abstract Syntax Tree classes
-# I.e. generic syntax tree classes that simply define categories
-# for each of the actual AST nodes.
+"""
+AbstractSyntaxTree classes along with their concrete ones.
+
+The module defines a generic AST element along with four AST node categories (which act as a basis for all the concrete
+AST nodes) and finally, the concrete classes which represent the output of the parsing process.
+
+The generic AST node categories are:
+    - Leaf
+    - UnaryOp
+    - BinaryOp
+    - ListOp
+
+The concrete AST nodes, represent higher level (domain specific) nodes.
+"""
+
 from __future__ import unicode_literals
 
 
-class Leaf(object):
-
-    def __init__(self, value):
-        self.value = value
-
+# #### Abstract Syntax Tree classes ####
+class ASTElement(object):
+    """Root AbstractSyntaxTree node that acts as a stub for calling the Visitor's `visit` dispatcher method."""
     def accept(self, visitor):
         return visitor.visit(self)
+
+
+class Leaf(ASTElement):
+
+    def __init__(self, value=None):
+        self.value = value
 
     def __eq__(self, other):
         return type(self) == type(other) and self.value == other.value
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, repr(self.value))
+        return '%s(%r)' % (self.__class__.__name__, self.value)
+
+    def __hash__(self):
+        return hash(self.value)
 
 
-class UnaryOp(object):
+class UnaryOp(ASTElement):
+
     def __init__(self, op):
         self.op = op
-
-    def accept(self, visitor):
-        return visitor.visit(self, self.op.accept(visitor))
 
     def __eq__(self, other):
         return type(self) == type(other) and self.op == other.op
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.op))
+        return "%s(%r)" % (self.__class__.__name__, self.op)
+
+    def __hash__(self):
+        return hash(self.op)
 
 
-class BinaryOp(object):
+class BinaryOp(ASTElement):
 
     def __init__(self, left, right):
         self.left = left
         self.right = right
-
-    def accept(self, visitor):
-        return visitor.visit(self,
-                             self.left.accept(visitor),
-                             self.right.accept(visitor))
 
     def __eq__(self, other):
         return (
@@ -79,8 +94,11 @@ class BinaryOp(object):
         return "%s(%s, %s)" % (self.__class__.__name__,
                                repr(self.left), repr(self.right))
 
+    def __hash__(self):
+        return hash((self.left, self.right))
 
-class ListOp(object):
+
+class ListOp(ASTElement):
 
     def __init__(self, children):
         try:
@@ -90,21 +108,94 @@ class ListOp(object):
         else:
             self.children = children
 
-    def accept(self, visitor):
-        return visitor.visit(self, [c.accept(visitor) for c in self.children])
-
     def __eq__(self, other):
         return type(self) == type(other) and self.children == other.children
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.children))
+        return "%s(%r)" % (self.__class__.__name__, self.children)
+
+    def __hash__(self):
+        return hash(tuple(self.children))
 
 
 # Concrete Syntax Tree classes
-# I.e. classes that provide the supertypes for the parser nodes.
+class AndOp(BinaryOp):
+    pass
+
+
+class OrOp(BinaryOp):
+    pass
+
+
+class KeywordOp(BinaryOp):
+    pass
+
+
+class NotOp(UnaryOp):
+    pass
+
+
+class NestedKeywordOp(BinaryOp):
+    pass
+
+
+class ValueQuery(UnaryOp):
+    pass
+
+
+class QueryWithMalformedPart(BinaryOp):
+    """A combination of recognized part of a query (with a parse tree) and some malformed input.
+
+    Its left child is the recognized parse tree, while its right child has the :class:`MalformedQuery`.
+    """
+    pass
+
+
+class MalformedQuery(ListOp):
+    """A :class:`ListOp` with children the unrecognized words of the parser's input."""
+    pass
+
+
+class RangeOp(BinaryOp):
+    pass
+
+
+class GreaterEqualThanOp(UnaryOp):
+    pass
+
+
+class GreaterThanOp(UnaryOp):
+    pass
+
+
+class LessThanOp(UnaryOp):
+    pass
+
+
+class LessEqualThanOp(UnaryOp):
+    pass
+
+
+# #### Leafs ####
 class Keyword(Leaf):
     pass
 
 
 class Value(Leaf):
+    pass
+
+
+class ExactMatchValue(Leaf):
+    pass
+
+
+class PartialMatchValue(Leaf):
+    pass
+
+
+class RegexValue(Leaf):
+    pass
+
+
+class EmptyQuery(Leaf):
     pass

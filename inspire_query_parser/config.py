@@ -29,6 +29,8 @@ a normalization of the shortened keywords to their full version.
 """
 from __future__ import unicode_literals
 
+import re
+
 INSPIRE_PARSER_KEYWORDS = {
     # Abstract
     'abstract': 'abstract',
@@ -222,3 +224,16 @@ INSPIRE_PARSER_KEYWORDS = {
 }
 
 INSPIRE_KEYWORDS_SET = set(INSPIRE_PARSER_KEYWORDS.values())
+
+# #### Date specifiers #####
+DATE_TODAY_REGEX_PATTERN = 'today'
+DATE_YESTERDAY_REGEX_PATTERN = 'yesterday'
+DATE_LAST_MONTH_REGEX_PATTERN = 'last\s+month'
+DATE_THIS_MONTH_REGEX_PATTERN = 'this\s+month'
+
+DATE_SPECIFIERS_COLLECTION = (
+    DATE_TODAY_REGEX_PATTERN,
+    DATE_YESTERDAY_REGEX_PATTERN,
+    DATE_THIS_MONTH_REGEX_PATTERN,
+    DATE_LAST_MONTH_REGEX_PATTERN
+)
