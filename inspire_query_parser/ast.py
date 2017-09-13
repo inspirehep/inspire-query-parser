@@ -41,8 +41,8 @@ from __future__ import unicode_literals
 # #### Abstract Syntax Tree classes ####
 class ASTElement(object):
     """Root AbstractSyntaxTree node that acts as a stub for calling the Visitor's `visit` dispatcher method."""
-    def accept(self, visitor):
-        return visitor.visit(self)
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit(self, *args, **kwargs)
 
 
 class Leaf(ASTElement):
