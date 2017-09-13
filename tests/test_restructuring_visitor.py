@@ -40,8 +40,6 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.visitors.restructuring_visitor import \
     RestructuringVisitor
 
-# TODO Reformat parentheses around parametrize entries
-
 
 @pytest.mark.parametrize(
     ['query_str', 'expected_parse_tree'],
