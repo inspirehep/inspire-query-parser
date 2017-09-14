@@ -28,10 +28,11 @@ visitor and converts it to an ElasticSearch query.
 from __future__ import absolute_import, unicode_literals
 
 import logging
+
 import six
 
-from inspire_query_parser.visitors.visitor_impl import Visitor
 from inspire_query_parser import ast
+from inspire_query_parser.visitors.visitor_impl import Visitor
 
 logger = logging.getLogger(__name__)
 

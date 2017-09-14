@@ -31,7 +31,6 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 
-
 from inspire_query_parser import ast
 from inspire_query_parser.ast import (AndOp, ExactMatchValue, Keyword,
                                       KeywordOp, NotOp, OrOp,
@@ -42,7 +41,6 @@ from inspire_query_parser.parser import (And, ComplexValue,
 from inspire_query_parser.utils.visitor_utils import \
     DATE_SPECIFIERS_CONVERSION_HANDLERS
 from inspire_query_parser.visitors.visitor_impl import Visitor
-
 
 logger = logging.getLogger(__name__)
 

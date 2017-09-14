@@ -28,8 +28,10 @@ import pytest
 from inspire_query_parser import parser
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.utils.format_parse_tree import emit_tree_format
-from inspire_query_parser.visitors.elastic_search_visitor import ElasticSearchVisitor
-from inspire_query_parser.visitors.restructuring_visitor import RestructuringVisitor
+from inspire_query_parser.visitors.elastic_search_visitor import \
+    ElasticSearchVisitor
+from inspire_query_parser.visitors.restructuring_visitor import \
+    RestructuringVisitor
 
 
 def _parse_query(query_str):
