@@ -43,62 +43,40 @@ def _parse_query(query_str):
     return parse_tree.accept(elastic_search_visitor)
 
 
-# @pytest.mark.parametrize(
-#     ['query_str', 'expected_es_query'],
-#     {
-#         # Find keyword combined with other production rules
-#         (
-#             'FIN author:ellis',
-#             {
-#                 "query": {
-#                     "match": {
-#                         "name.value": "ellis"
-#                     }
-#                 }
-#             }
-#         ),
-#     }
-# )
-# def test_elastic_search_visitor_find_author_partial_value_ellis():
-#     query_str = 'FIN author:\'ellis\''
-#     expected_es_query = \
-#         {
-#             "query": {
-#                 "query_string": {
-#                     "allow_leading_wildcard": True,
-#                     "default_field": "authors.full_name",
-#                     "query": "*ellis*"
-#                 }
-#             }
-#         }
-#
-#     generated_es_query = _parse_query(query_str)
-#     assert generated_es_query == expected_es_query
-#
-#
-# def test_elastic_search_visitor_find_author_exact_value_ellis():
-#     query_str = 'Find author "ellis"'
-#     expected_es_query = \
-#         {
-#             "query": {
-#                 "term": {
-#                     "authors.full_name": "ellis"
-#                 }
-#             }
-#         }
-#
-#     generated_es_query = _parse_query(query_str)
-#     assert generated_es_query == expected_es_query
+def test_elastic_search_visitor_find_author_partial_value_ellis():
+    query_str = 'FIN author:\'ellis\''
+    expected_es_query = \
+        {
+            "query_string": {
+                "allow_leading_wildcard": True,
+                "default_field": "authors.full_name",
+                "query": "*ellis*"
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_author_exact_value_ellis():
+    query_str = 'Find author "ellis"'
+    expected_es_query = \
+        {
+            "term": {
+                "authors.full_name": "ellis"
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
 
 
 def test_elastic_search_visitor_find_author_simple_value_ellis():
     query_str = 'f author ellis'
     expected_es_query = \
         {
-            "query": {
-                "match": {
-                    "authors.full_name": "ellis"
-                }
+            "match": {
+                "authors.full_name": "ellis"
             }
         }
 
@@ -110,25 +88,19 @@ def test_elastic_search_visitor_and_op_query():
     query_str = 'author:ellis and title:boson'
     expected_es_query = \
         {
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "query": {
-                                "match": {
-                                    "authors.full_name": "ellis"
-                                }
-                            }
-                        },
-                        {
-                            "query": {
-                                "match": {
-                                    "titles.title": "boson"
-                                }
-                            }
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "authors.full_name": "ellis"
                         }
-                    ]
-                }
+                    },
+                    {
+                        "match": {
+                            "titles.title": "boson"
+                        }
+                    }
+                ]
             }
         }
 
@@ -140,25 +112,19 @@ def test_elastic_search_visitor_or_op_query():
     query_str = 'author:ellis or title:boson'
     expected_es_query = \
         {
-            "query": {
-                "bool": {
-                    "should": [
-                        {
-                            "query": {
-                                "match": {
-                                    "authors.full_name": "ellis"
-                                }
-                            }
-                        },
-                        {
-                            "query": {
-                                "match": {
-                                    "titles.title": "boson"
-                                }
-                            }
+            "bool": {
+                "should": [
+                    {
+                        "match": {
+                            "authors.full_name": "ellis"
                         }
-                    ]
-                }
+                    },
+                    {
+                        "match": {
+                            "titles.title": "boson"
+                        }
+                    }
+                ]
             }
         }
 
@@ -169,11 +135,9 @@ def test_elastic_search_visitor_or_op_query():
 def test_elastic_search_visitor_unknown_keyword_simple_value():
     query_str = 'unknown_keyword:bar'
     expected_es_query = {
-        "query": {
-                "match": {
-                    "unknown_keyword": "bar"
-                }
-            }
+        "match": {
+            "unknown_keyword": "bar"
+        }
     }
 
     generated_es_query = _parse_query(query_str)
@@ -183,11 +147,9 @@ def test_elastic_search_visitor_unknown_keyword_simple_value():
 def test_elastic_search_visitor_dotted_keyword_simple_value():
     query_str = 'dotted.keyword:bar'
     expected_es_query = {
-        "query": {
-                "match": {
-                    "dotted.keyword": "bar"
-                }
-            }
+        "match": {
+            "dotted.keyword": "bar"
+        }
     }
 
     generated_es_query = _parse_query(query_str)
@@ -197,10 +159,8 @@ def test_elastic_search_visitor_dotted_keyword_simple_value():
 def test_elastic_search_visitor_value_query():
     query_str = 'foo bar'
     expected_es_query = {
-        "query": {
-            "match": {
-                "_all": "foo bar"
-            }
+        "match": {
+            "_all": "foo bar"
         }
     }
 
@@ -212,31 +172,25 @@ def test_elastic_search_visitor_range_op():
     query_str = 'd 2015->2017 and cited:1->9'
     expected_es_query = \
         {
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "query": {
-                                "range": {
-                                    "earliest_date": {
-                                        "gte": "2015",
-                                        "lte": "2017"
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "query": {
-                                "range": {
-                                    "citation_count": {
-                                        "gte": "1",
-                                        "lte": "9"
-                                    }
-                                }
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "earliest_date": {
+                                "gte": "2015",
+                                "lte": "2017"
                             }
                         }
-                    ]
-                }
+                    },
+                    {
+                        "range": {
+                            "citation_count": {
+                                "gte": "1",
+                                "lte": "9"
+                            }
+                        }
+                    }
+                ]
             }
         }
 
@@ -248,16 +202,12 @@ def test_elastic_search_visitor_not_op():
     query_str = '-author ellis'
     expected_es_query = \
         {
-            "query": {
-                "bool": {
-                    "must_not": [{
-                        "query": {
-                            "match": {
-                                "authors.full_name": "ellis"
-                            }
-                        }
-                    }]
-                }
+            "bool": {
+                "must_not": [{
+                    "match": {
+                        "authors.full_name": "ellis"
+                    }
+                }]
             }
         }
 
@@ -269,29 +219,23 @@ def test_elastic_search_visitor_gt_and_lt_op():
     query_str = 'date > 2000-10 and date < 2000-12'
     expected_es_query = \
         {
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "query": {
-                                "range": {
-                                    "earliest_date": {
-                                        "gt": "2000-10",
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "query": {
-                                "range": {
-                                    "earliest_date": {
-                                        "lt": "2000-12"
-                                    }
-                                }
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "earliest_date": {
+                                "gt": "2000-10",
                             }
                         }
-                    ]
-                }
+                    },
+                    {
+                        "range": {
+                            "earliest_date": {
+                                "lt": "2000-12"
+                            }
+                        }
+                    }
+                ]
             }
         }
 
@@ -302,10 +246,8 @@ def test_elastic_search_visitor_gt_and_lt_op():
 def test_elastic_search_visitor_regex_value():
     query_str = 'author /^xi$/'
     expected_es_query = {
-        "query": {
-            "regexp": {
-                'authors.full_name': '^xi$'
-            }
+        "regexp": {
+            'authors.full_name': '^xi$'
         }
     }
 
@@ -313,9 +255,68 @@ def test_elastic_search_visitor_regex_value():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_empty_query():
-    query_str = '   '
-    expected_es_query = {"query": {"match_all": {}}}
+def test_elastic_search_visitor_wildcard_support():
+    query_str = 'a *alge | a \'alge*\' | a "o*aigh"'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {
+                        "wildcard": {
+                            "authors.full_name": "*alge"
+                        }
+                    },
+                    {
+                        "bool": {
+                            "should": [
+                                {
+                                    "query_string": {
+                                        "allow_leading_wildcard": True,
+                                        "default_field": "authors.full_name",
+                                        "query": "*alge*"
+                                    }
+                                },
+                                {
+                                    "term": {
+                                        "authors.full_name": "o*aigh"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_empty_query():
+    query_str = '   '
+    expected_es_query = {"match_all": {}}
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+# TODO Cannot be completed as of yet.
+# def test_elastic_search_visitor_nested_keyword_query():
+#     query_str = 'referstox:author:Ellis, J'
+#     expected_es_queries = [
+#         {
+#             "query": {
+#                 "match": {
+#                     "authors.full_name": "Ellis, J"
+#                 }
+#             }
+#         },
+#         {
+#
+#         }
+#     ]
+#
+#     generated_es_queries = _parse_query(query_str)
+#     assert len(generated_es_queries) == len(expected_es_queries) and \
+#         generated_es_queries[0] == expected_es_queries[0] and \
+#         generated_es_queries[1] == expected_es_queries[1]

@@ -49,15 +49,12 @@ class ElasticSearchVisitor(Visitor):
 
         return \
             {
-                'query':
-                    {
-                        'bool': {
-                            ('must' if isinstance(node, ast.AndOp) else 'should'): [
-                                condition_a,
-                                condition_b
-                            ]
-                        }
-                    }
+                'bool': {
+                    ('must' if isinstance(node, ast.AndOp) else 'should'): [
+                        condition_a,
+                        condition_b
+                    ]
+                }
             }
 
     def _generate_range_queries(self, fieldname, operators_values_sequence):
@@ -89,23 +86,19 @@ class ElasticSearchVisitor(Visitor):
         }
 
     def visit_empty_query(self, node):
-        return {'query': {'match_all': {}}}
+        return {'match_all': {}}
 
     def visit_value_query(self, node):
         return {
-            'query': {
-                'match': {
-                    "_all": node.op.value
-                }
+            'match': {
+                "_all": node.op.value
             }
         }
 
     def visit_not_op(self, node):
         return {
-            'query': {
-                'bool': {
-                    'must_not': [node.op.accept(self)]
-                }
+            'bool': {
+                'must_not': [node.op.accept(self)]
             }
         }
 
@@ -119,9 +112,7 @@ class ElasticSearchVisitor(Visitor):
         # For this visitor, the decision on which type of ElasticSearch query to generate, relies mainly on the leaves.
         # Thus, the fieldname is propagated to them, so that they generate query type, depending on their type.
         fieldname = node.left.accept(self)
-        value_query = node.right.accept(self, fieldname)
-
-        return {'query': value_query}
+        return node.right.accept(self, fieldname)
 
     def visit_range_op(self, node, fieldname):
         return self._generate_range_queries(fieldname, {'gte': node.left.value, 'lte': node.right.value})
@@ -138,7 +129,15 @@ class ElasticSearchVisitor(Visitor):
     def visit_less_equal_than_op(self, node, fieldname):
         return self._generate_range_queries(fieldname, {'lte': node.op.value})
 
-    def visit_nested_keyword_op(self, node):  # TODO
+    # TODO Cannot be completed as of yet.
+    def visit_nested_keyword_op(self, node):
+        # inner_query = node.op.accept(self)
+        # outer_query = {
+        #     "query": {
+        #
+        #     }
+        # }
+        # return [inner_query, outer_query]
         raise NotImplementedError
 
     def visit_keyword(self, node):
@@ -158,7 +157,7 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_value(self, node, fieldname):
         return {
-            'match': {
+            'match' if not node.contains_wildcard else 'wildcard': {
                 fieldname: node.value
             }
         }
@@ -173,7 +172,9 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_partial_match_value(self, node, fieldname):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
-        value = '*' + node.value + '*'
+        value = ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \
+            node.value + \
+            ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
         return {
             'query_string': {
                 'allow_leading_wildcard': True,
