@@ -41,8 +41,8 @@ from __future__ import unicode_literals
 # #### Abstract Syntax Tree classes ####
 class ASTElement(object):
     """Root AbstractSyntaxTree node that acts as a stub for calling the Visitor's `visit` dispatcher method."""
-    def accept(self, visitor):
-        return visitor.visit(self)
+    def accept(self, visitor, *args, **kwargs):
+        return visitor.visit(self, *args, **kwargs)
 
 
 class Leaf(ASTElement):
@@ -181,7 +181,22 @@ class Keyword(Leaf):
     pass
 
 
-class Value(Leaf):
+class GenericValue(Leaf):
+    """Represents a generic value, which might contain a wildcard."""
+    WILDCARD_TOKEN = '*'
+
+    def __init__(self, value, contains_wildcard=False):
+        super(GenericValue, self).__init__(value)
+        self.contains_wildcard = contains_wildcard
+
+    def __eq__(self, other):
+        return super(GenericValue, self).__eq__(other) and self.contains_wildcard == other.contains_wildcard
+
+    def __hash__(self):
+        return hash((super(GenericValue, self).__hash__(), self.contains_wildcard))
+
+
+class Value(GenericValue):
     pass
 
 
@@ -189,7 +204,7 @@ class ExactMatchValue(Leaf):
     pass
 
 
-class PartialMatchValue(Leaf):
+class PartialMatchValue(GenericValue):
     pass
 
 

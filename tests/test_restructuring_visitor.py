@@ -40,8 +40,6 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.visitors.restructuring_visitor import \
     RestructuringVisitor
 
-# TODO Reformat parentheses around parametrize entries
-
 
 @pytest.mark.parametrize(
     ['query_str', 'expected_parse_tree'],
@@ -448,9 +446,11 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'find a \'o*aigh\' and t "alge*" and date >2013',
             AndOp(
-                KeywordOp(Keyword('author'), PartialMatchValue('o*aigh')),
+                KeywordOp(Keyword('author'), PartialMatchValue('o*aigh', contains_wildcard=True)),
                 AndOp(
-                    KeywordOp(Keyword('title'), ExactMatchValue('alge*')),
+                    KeywordOp(Keyword('title'), ExactMatchValue('alge*'
+
+                                                                )),
                     KeywordOp(Keyword('date'), GreaterThanOp(Value('2013')))
                 )
             )
@@ -458,10 +458,10 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'a *alge | a alge* | a o*aigh',
             OrOp(
-                KeywordOp(Keyword('author'), Value('*alge')),
+                KeywordOp(Keyword('author'), Value('*alge', contains_wildcard=True)),
                 OrOp(
-                    KeywordOp(Keyword('author'), Value('alge*')),
-                    KeywordOp(Keyword('author'), Value('o*aigh'))
+                    KeywordOp(Keyword('author'), Value('alge*', contains_wildcard=True)),
+                    KeywordOp(Keyword('author'), Value('o*aigh', contains_wildcard=True))
                 )
             )
          ),

@@ -34,9 +34,10 @@ from inspire_query_parser.parser import (And, BooleanQuery, ComplexValue,
                                          ParenthesizedQuery, Query, RangeOp,
                                          SimpleQuery, SimpleRangeValue,
                                          SimpleValue, SimpleValueBooleanQuery,
-                                         SimpleValueNegation,
                                          SpiresKeywordQuery, Statement, Value)
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
+
+# TODO Reformat parentheses around parametrize entries
 
 
 @pytest.mark.parametrize(

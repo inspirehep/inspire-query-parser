@@ -39,7 +39,7 @@ def camel_to_snake_case(name):
 
 
 class Visitor(object):
-    def visit(self, node):
+    def visit(self, node, *args, **kwargs):
         method_name = 'visit_{}'.format(camel_to_snake_case(type(node).__name__))
         visitor_method = getattr(self, method_name)
-        return visitor_method(node)
+        return visitor_method(node, *args, **kwargs)

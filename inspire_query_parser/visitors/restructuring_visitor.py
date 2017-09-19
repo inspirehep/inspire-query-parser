@@ -231,10 +231,12 @@ class RestructuringVisitor(Visitor):
     def visit_complex_value(self, node):
         """Convert :class:`ComplexValue` to one of ExactMatch, PartialMatch and Regex Value nodes."""
         if node.value.startswith(ComplexValue.EXACT_VALUE_TOKEN):
-            return ExactMatchValue(node.value.strip(ComplexValue.EXACT_VALUE_TOKEN))
+            value = node.value.strip(ComplexValue.EXACT_VALUE_TOKEN)
+            return ExactMatchValue(value)
 
         elif node.value.startswith(ComplexValue.PARTIAL_VALUE_TOKEN):
-            return PartialMatchValue(node.value.strip(ComplexValue.PARTIAL_VALUE_TOKEN))
+            value = node.value.strip(ComplexValue.PARTIAL_VALUE_TOKEN)
+            return PartialMatchValue(value, True if ast.GenericValue.WILDCARD_TOKEN in value else False)
 
         elif node.value.startswith(ComplexValue.REGEX_VALUE_TOKEN):
             return RegexValue(node.value.strip(ComplexValue.REGEX_VALUE_TOKEN))
@@ -259,7 +261,7 @@ class RestructuringVisitor(Visitor):
                 return ast.Value(str(date_conversion_handler(relative_date_specifier_suffix)))
 
         # Normal text value
-        return ast.Value(node.value)
+        return ast.Value(node.value, True if ast.GenericValue.WILDCARD_TOKEN in node.value else False)
 
     def visit_simple_range_value(self, node):
         return ast.Value(node.value)
