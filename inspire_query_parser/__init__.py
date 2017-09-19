@@ -23,3 +23,6 @@
 """A PEG-based query parser for INSPIRE"""
 
 from __future__ import absolute_import, print_function
+
+from . import config
+from .parsing_driver import parse_query

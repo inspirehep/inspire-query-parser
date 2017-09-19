@@ -31,6 +31,7 @@ readme = open('README.rst').read()
 tests_require = [
     'coverage>=4.4',
     'isort>=4.2.2',
+    'mock>=1.3.0',
     'pytest-cache>=1.0',
     'pytest-cov>=1.8.0',
     'pytest-flake8>=0.8.1',
