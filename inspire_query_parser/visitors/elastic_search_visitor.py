@@ -150,7 +150,8 @@ class ElasticSearchVisitor(Visitor):
             'citedby': 'citedby',
             'title': 'titles.title',
             'topcite': 'citation_count',
-            'date': 'earliest_date'
+            'date': 'earliest_date',
+            'refersto': 'references.recid'
         }
 
         # If no keyword is found, return the original node value (case of an unknown keyword).

@@ -22,7 +22,7 @@
 
 from __future__ import print_function, unicode_literals
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 import pytest
 from dateutil.relativedelta import relativedelta
@@ -43,7 +43,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
 
 @pytest.mark.parametrize(
     ['query_str', 'expected_parse_tree'],
-    {
+    [
         # Find keyword combined with other production rules
         ('FIN author:\'ellis\'', KeywordOp(Keyword('author'), PartialMatchValue('ellis'))),
         ('Find author "ellis"', KeywordOp(Keyword('author'), ExactMatchValue('ellis'))),
@@ -475,9 +475,144 @@ from inspire_query_parser.visitors.restructuring_visitor import \
                 MalformedQuery(['and', 'and'])
             )
          )
-    }
+    ]
 )
 def test_restructuring_visitor(query_str, expected_parse_tree):
+    print("Parsing: " + query_str)
+    stateful_parser = StatefulParser()
+    restructuring_visitor = RestructuringVisitor()
+    _, parse_tree = stateful_parser.parse(query_str, parser.Query)
+    parse_tree = parse_tree.accept(restructuring_visitor)
+
+    assert parse_tree == expected_parse_tree
+
+
+@pytest.mark.parametrize(
+    ['query_str', 'expected_parse_tree'],
+    [
+        (
+            'sungtae cho or 1301.7261',
+            OrOp(
+                Value('sungtae cho'),
+                Value('1301.7261')
+            )
+        ),
+        (
+            'raffaele d\'agnolo and not cn cms',
+            AndOp(
+                Value('raffaele d\'agnolo'),
+                NotOp(KeywordOp(Keyword('collaboration'), Value('cms')))
+            )
+        ),
+        ('a kondrashuk', KeywordOp(Keyword('author'), Value('kondrashuk'))),
+        pytest.param(
+            'a r.j.hill.1',
+            KeywordOp(Keyword('exact-author'), Value('r.j.hill.1')),
+            marks=pytest.mark.xfail(reason="Keyword used should be exact-author (since value is a BAI).")
+        ),
+        (
+            'a fileviez perez,p or p. f. perez',
+            OrOp(
+                KeywordOp(Keyword('author'), Value('fileviez perez,p')),
+                KeywordOp(Keyword('author'), Value('p. f. perez')),
+            )
+        ),
+        (
+            'a espinosa,jose r and not a rodriguez espinosa',
+            AndOp(
+                KeywordOp(Keyword('author'), Value('espinosa,jose r')),
+                NotOp(KeywordOp(Keyword('author'), Value('rodriguez espinosa'))),
+            )
+        ),
+        (
+            'a nilles,h and not tc I',
+            AndOp(
+                KeywordOp(Keyword('author'), Value('nilles,h')),
+                NotOp(KeywordOp(Keyword('type-code'), Value('I'))),
+            )
+        ),
+        (
+            'a rojo,j. or rojo-chacon,j. and not collaboration pierre auger '
+            'and not collaboration auger and not t auger and tc p',
+            AndOp(
+                OrOp(
+                    KeywordOp(Keyword('author'), Value('rojo,j.')),
+                    KeywordOp(Keyword('author'), Value('rojo-chacon,j.'))
+                ),
+                AndOp(
+                    NotOp(KeywordOp(Keyword('collaboration'), Value('pierre auger'))),
+                    AndOp(
+                        NotOp(KeywordOp(Keyword('collaboration'), Value('auger'))),
+                        AndOp(
+                            NotOp(KeywordOp(Keyword('title'), Value('auger'))),
+                            KeywordOp(Keyword('type-code'), Value('p'))
+                        )
+                    )
+                )
+            )
+        ),
+        pytest.param(
+            'ea wu, xing gang',
+            KeywordOp(Keyword('author'), Value('wu, xing gang')),
+            marks=pytest.mark.xfail(reason="Keyword should be author (with this kind of value).")
+        ),
+        ('abstract: part*', KeywordOp(Keyword('abstract'), Value('part*', contains_wildcard=True))),
+        (
+            "(author:'Hiroshi Okada' OR (author:'H Okada' hep-ph) OR "
+            "title: 'Dark matter in supersymmetric U(1(B-L) model' OR "
+            "title: 'Non-Abelian discrete symmetry for flavors')",
+            OrOp(
+                KeywordOp(Keyword('author'), PartialMatchValue('Hiroshi Okada')),
+                OrOp(
+                    AndOp(
+                        KeywordOp(Keyword('author'), PartialMatchValue('H Okada')),
+                        Value('hep-ph')
+                    ),
+                    OrOp(
+                        KeywordOp(Keyword('title'), PartialMatchValue('Dark matter in supersymmetric U(1(B-L) model')),
+                        KeywordOp(Keyword('title'), PartialMatchValue('Non-Abelian discrete symmetry for flavors')),
+                    )
+                )
+            )
+        ),
+        (
+            'author:"Takayanagi, Tadashi" or hep-th/0010101',
+            OrOp(
+                KeywordOp(Keyword('author'), ExactMatchValue('Takayanagi, Tadashi')),
+                Value('hep-th/0010101')
+            )
+        ),
+        pytest.param(
+            'ea:matt visser',
+            KeywordOp(Keyword('author'), Value('matt visser')),
+            marks=pytest.mark.xfail(reason="Keyword should be author (with this kind of value).")
+        ),
+        (
+            'citedby:recid:902780',
+            NestedKeywordOp(Keyword('citedby'), KeywordOp(Keyword('recid'), Value('902780')))
+        ),
+        ('eprint:arxiv:1706.04080', KeywordOp(Keyword('reportnumber'), Value('arxiv:1706.04080'))),
+        ('eprint:1706.04080', KeywordOp(Keyword('reportnumber'), Value('1706.04080'))),
+        (
+            'f a ostapchenko not olinto not haungs',
+            AndOp(
+                KeywordOp(Keyword('author'), Value('ostapchenko')),
+                AndOp(
+                    NotOp(KeywordOp(Keyword('author'), Value('olinto'))),
+                    NotOp(KeywordOp(Keyword('author'), Value('haungs')))
+                )
+            )
+        ),
+        ('find cc italy', KeywordOp(Keyword('country'), Value('italy'))),
+        ('fin date > today', KeywordOp(Keyword('date'), GreaterThanOp(Value(str(date.today()))))),
+        ('find r atlas-conf-*', KeywordOp(Keyword('reportnumber'), Value('atlas-conf-*', contains_wildcard=True))),
+        (
+            'find caption "Diagram for the fermion flow violating process"',
+            KeywordOp(Keyword('caption'), ExactMatchValue('Diagram for the fermion flow violating process'))
+        )
+    ]
+)
+def test_parsing_output_with_inspire_next_tests(query_str, expected_parse_tree):
     print("Parsing: " + query_str)
     stateful_parser = StatefulParser()
     restructuring_visitor = RestructuringVisitor()
