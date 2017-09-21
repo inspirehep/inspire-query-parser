@@ -26,7 +26,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 
-from inspire_query_parser import ast
+import six
+
 from inspire_query_parser.parser import Query
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.utils.format_parse_tree import emit_tree_format
@@ -47,9 +48,13 @@ def parse_query(query_str):
 
     Returns:
         six.text_types: Return an ElasticSearch query.
+
+    Notes:
+        In case there's an error, an ElasticSearch `multi_match` query is generated with its `query` value, being the
+        query_str argument.
     """
-    def _generate_empty_query_parse_tree():
-        return ast.EmptyQuery(None)
+    def _generate_match_all_fields_query():
+        return {'multi_match': {'query': query_str, 'fields': ['_all'], 'zero_terms_query': 'all'}}
 
     logger.info('Parsing: "' + query_str + '\".')
 
@@ -66,20 +71,31 @@ def parse_query(query_str):
 
             if query_str == unrecognized_text and parse_tree is None:
                 # Didn't recognize anything.
-                msg += 'Continuing with an empty query.'
-                parse_tree = _generate_empty_query_parse_tree()
+                logger.warn(msg)
+                return _generate_match_all_fields_query()
             else:
                 msg += 'Continuing with recognized parse tree.'
 
             logger.warn(msg)
 
-    except SyntaxError:
-        logger.warn('Parser syntax error with query: "' + query_str + '". Continuing with an empty query.')
-        parse_tree = _generate_empty_query_parse_tree()
+    except SyntaxError as e:
+        logger.warn('Parser syntax error (' + six.text_type(e) + ') with query: "' + query_str +
+                    '". Continuing with an empty query.')
+        return _generate_match_all_fields_query()
 
-    restructured_parse_tree = parse_tree.accept(rst_visitor)
-    logger.debug('Parse tree: \n' + emit_tree_format(restructured_parse_tree))
+    # Try-Catch-all exceptions for visitors, so that search functionality never fails for the user.
+    try:
+        restructured_parse_tree = parse_tree.accept(rst_visitor)
+        logger.debug('Parse tree: \n' + emit_tree_format(restructured_parse_tree))
 
-    es_query = restructured_parse_tree.accept(es_visitor)
+    except Exception as e:
+        logger.error(RestructuringVisitor.__name__ + " crashed: " + six.text_type(e) + ".")
+        return _generate_match_all_fields_query()
+
+    try:
+        es_query = restructured_parse_tree.accept(es_visitor)
+    except Exception as e:
+        logger.error(ElasticSearchVisitor.__name__ + " crashed: " + six.text_type(e) + ".")
+        return _generate_match_all_fields_query()
 
     return es_query
