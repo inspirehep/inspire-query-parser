@@ -99,7 +99,7 @@ def test_elastic_search_visitor_and_op_query():
                     },
                     {
                         "match": {
-                            "titles.title": "boson"
+                            "titles.full_title": "boson"
                         }
                     }
                 ]
@@ -123,7 +123,7 @@ def test_elastic_search_visitor_or_op_query():
                     },
                     {
                         "match": {
-                            "titles.title": "boson"
+                            "titles.full_title": "boson"
                         }
                     }
                 ]
@@ -170,6 +170,87 @@ def test_elastic_search_visitor_value_query():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_keyword_query_and_value_query():
+    query_str = 'topcite 2+ and skands'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "citation_count": {
+                                "gte": "2",
+                            }
+                        }
+                    },
+                    {
+                        "match": {
+                            "_all": "skands"
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_keyword_query_and_partial_value_query():
+    query_str = 'topcite 2+ and \'skands\''
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "citation_count": {
+                                "gte": "2",
+                            }
+                        }
+                    },
+                    {
+                        "query_string": {
+                            "allow_leading_wildcard": True,
+                            "default_field": "_all",
+                            "query": "*skands*"
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_keyword_query_and_exact_value_query():
+    query_str = 'topcite 2+ and "skands"'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "citation_count": {
+                                "gte": "2",
+                            }
+                        }
+                    },
+                    {
+                        "term": {
+                            "_all": "skands",
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+@pytest.mark.xfail(reason="Date should be parsed and converted to mapping compliant date format.")
 def test_elastic_search_visitor_range_op():
     query_str = 'd 2015->2017 and cited:1->9'
     expected_es_query = \
@@ -217,6 +298,7 @@ def test_elastic_search_visitor_not_op():
     assert generated_es_query == expected_es_query
 
 
+@pytest.mark.xfail(reason="Date should be parsed and converted to mapping compliant date format.")
 def test_elastic_search_visitor_gt_and_lt_op():
     query_str = 'date > 2000-10 and date < 2000-12'
     expected_es_query = \
@@ -264,8 +346,10 @@ def test_elastic_search_visitor_wildcard_support():
             "bool": {
                 "should": [
                     {
-                        "wildcard": {
-                            "authors.full_name": "*alge"
+                        "query_string": {
+                            "query": "*alge",
+                            "default_field": "authors.full_name",
+                            "analyze_wildcard": True
                         }
                     },
                     {
