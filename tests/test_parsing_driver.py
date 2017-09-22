@@ -42,10 +42,16 @@ def test_driver_with_simple_query():
 
 @mock.patch('inspire_query_parser.parsing_driver.StatefulParser')
 def test_driver_with_nothing_recognized(mocked_parser):
-    query_str = 'unrecognized'
-    expected_es_query = {"match_all": {}}
+    query_str = 'unrecognized query'
+    expected_es_query = {
+        'multi_match': {
+            'query': 'unrecognized query',
+            'fields': ['_all'],
+            'zero_terms_query': 'all'
+        }
+    }
 
-    mocked_parser.return_value.parse.return_value = ('unrecognized', None)
+    mocked_parser.return_value.parse.return_value = ('unrecognized query', None)
 
     es_query = parse_query(query_str)
 
@@ -55,9 +61,51 @@ def test_driver_with_nothing_recognized(mocked_parser):
 @mock.patch('inspire_query_parser.parsing_driver.StatefulParser')
 def test_driver_with_syntax_error(mocked_parser):
     query_str = 'query with syntax error'
-    expected_es_query = {"match_all": {}}
+    expected_es_query = {
+        'multi_match': {
+            'query': 'query with syntax error',
+            'fields': ['_all'],
+            'zero_terms_query': 'all'
+        }
+    }
 
     mocked_parser.return_value.parse.side_effect = SyntaxError()
+
+    es_query = parse_query(query_str)
+
+    assert es_query == expected_es_query
+
+
+@mock.patch('inspire_query_parser.parsing_driver.RestructuringVisitor')
+def test_driver_with_rst_visitor_error(mocked_rst_visitor):
+    query_str = 'foo'
+    expected_es_query = {
+        'multi_match': {
+            'query': 'foo',
+            'fields': ['_all'],
+            'zero_terms_query': 'all'
+        }
+    }
+    mocked_rst_visitor.return_value.visit.side_effect = Exception('Something went wrong with visit_value')
+    mocked_rst_visitor.__name__ = 'MockedRestructuringVisitor'
+
+    es_query = parse_query(query_str)
+
+    assert es_query == expected_es_query
+
+
+@mock.patch('inspire_query_parser.parsing_driver.ElasticSearchVisitor')
+def test_driver_with_es_visitor_error(mocked_es_visitor):
+    query_str = 'foo'
+    expected_es_query = {
+        'multi_match': {
+            'query': 'foo',
+            'fields': ['_all'],
+            'zero_terms_query': 'all'
+        }
+    }
+    mocked_es_visitor.return_value.visit.side_effect = Exception('Something went wrong with visit_value')
+    mocked_es_visitor.__name__ = 'MockedElasticSearchVisitor'
 
     es_query = parse_query(query_str)
 
