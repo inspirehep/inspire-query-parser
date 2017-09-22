@@ -477,7 +477,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
          )
     ]
 )
-def test_restructuring_visitor(query_str, expected_parse_tree):
+def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
     print("Parsing: " + query_str)
     stateful_parser = StatefulParser()
     restructuring_visitor = RestructuringVisitor()

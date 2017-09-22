@@ -148,32 +148,52 @@ class ElasticSearchVisitor(Visitor):
         keyword_to_fieldname = {
             'author': 'authors.full_name',
             'citedby': 'citedby',
-            'title': 'titles.title',
+            'title': 'titles.full_title',
             'topcite': 'citation_count',
             'date': 'earliest_date',
-            'refersto': 'references.recid'
+            'refersto': 'references.recid',
+            'reportnumber': 'report_numbers.value',
+            'subject': 'inspire_categories.term',
         }
 
         # If no keyword is found, return the original node value (case of an unknown keyword).
         return keyword_to_fieldname.get(node.value, node.value)
 
-    def visit_value(self, node, fieldname):
-        return {
-            'match' if not node.contains_wildcard else 'wildcard': {
-                fieldname: node.value
-            }
-        }
+    def visit_value(self, node, fieldname=None):
+        if not fieldname:
+            fieldname = '_all'
 
-    def visit_exact_match_value(self, node, fieldname):
+        if node.contains_wildcard:
+            return {
+                "query_string": {
+                    "query": node.value,
+                    "default_field": fieldname,
+                    "analyze_wildcard": True
+                }
+            }
+        else:
+            return {
+                'match': {
+                    fieldname: node.value
+                }
+            }
+
+    def visit_exact_match_value(self, node, fieldname=None):
         """Generates a term query (exact search in ElasticSearch)."""
+        if not fieldname:
+            fieldname = '_all'
+
         return {
             'term': {
                 fieldname: node.value
             }
         }
 
-    def visit_partial_match_value(self, node, fieldname):
+    def visit_partial_match_value(self, node, fieldname=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
+        if not fieldname:
+            fieldname = '_all'
+
         value = ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \
             node.value + \
             ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')

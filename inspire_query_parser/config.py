@@ -128,12 +128,6 @@ INSPIRE_PARSER_KEYWORDS = {
     'experiment': 'experiment',
     'exp': 'experiment',
 
-    # Field code
-    'field-code': 'field-code',
-    'subject': 'field-code',
-    'fc': 'field-code',
-    'f': 'field-code',
-
     # First-Author
     'first-author': 'first-author',
     'firstauthor': 'first-author',
@@ -198,6 +192,9 @@ INSPIRE_PARSER_KEYWORDS = {
     'rept': 'reportnumber',
     'rn': 'reportnumber',
     'r': 'reportnumber',
+
+    # Subject
+    'subject': 'subject',
 
     # Title
     'title': 'title',
