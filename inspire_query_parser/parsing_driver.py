@@ -89,13 +89,13 @@ def parse_query(query_str):
         logger.debug('Parse tree: \n' + emit_tree_format(restructured_parse_tree))
 
     except Exception as e:
-        logger.error(RestructuringVisitor.__name__ + " crashed: " + six.text_type(e) + ".")
+        logger.exception(RestructuringVisitor.__name__ + " crashed: " + six.text_type(e) + ".")
         return _generate_match_all_fields_query()
 
     try:
         es_query = restructured_parse_tree.accept(es_visitor)
     except Exception as e:
-        logger.error(ElasticSearchVisitor.__name__ + " crashed: " + six.text_type(e) + ".")
+        logger.exception(ElasticSearchVisitor.__name__ + " crashed: " + six.text_type(e) + ".")
         return _generate_match_all_fields_query()
 
     return es_query
