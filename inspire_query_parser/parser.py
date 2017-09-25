@@ -354,10 +354,10 @@ class SimpleValue(LeafRule):
     def parse(cls, parser, text, pos):
 
         def unconsume_and_reconstruct_input():
-            """Reconstruct input in case of consuming a keyword query with ComplexValue as SimpleValue.
+            """Reconstruct input in case of consuming a keyword query or a value query with ComplexValue as value.
 
-            Un-consuming 3 elements and specifically a Keyword, Whitespace and ComplexValue and then reconstructing
-            parser's input text.
+            Un-consuming at most 3 elements and specifically (Keyword,) Whitespace and ComplexValue, while also
+            reconstructing parser's input text.
 
             Example:
                 Given this query "author foo t 'bar'", r would be:
@@ -366,16 +366,24 @@ class SimpleValue(LeafRule):
                 thus after this method, r would be [SimpleValueUnit("foo"), Whitespace(" ")], while initial text will
                 have been reconstructed as "t 'bar' rest_of_the_text".
             """
-            reconstructed_terminals = r[:idx - 2]
-            remaining_text = ''.join([v.value for v in r[idx - 2:]]) + " " + t
+            # Default slicing index: i.e. at most 3 elements will be unconsumed, Keyword, Whitespace and ComplexValue.
+            slicing_start_idx = 2
+            # Check whether the 3rd element from the end is an InspireKeyword.
+            if not INSPIRE_PARSER_KEYWORDS.get(r[idx - slicing_start_idx].value, None):
+                slicing_start_idx = 1
+
+            reconstructed_terminals = r[:idx - slicing_start_idx]
+            remaining_text = '{} {}'.format(''.join([v.value for v in r[idx - slicing_start_idx:]]), t)
             return remaining_text, reconstructed_terminals
 
         try:
             t, r = parser.parse(text, cls.grammar)
 
             # Covering a case of implicit-and when one of the SimpleValue tokens is a ComplexValue.
-            # E.g. with the query "author foo t 'bar'", since 'bar' is a ComplexValue, then the previous token is a
-            # keyword. This means we have consumed a KeywordQuery (due to 'and' missing).
+            # This means we either have a KeywordQuery or a ValueQuery with a ComplexValue.
+            # E.g. "author foo t 'bar'", since 'bar' is a ComplexValue, then the previous token is a keyword.
+            # This means we have consumed a KeywordQuery (due to 'and' missing).
+            # Same goes for "author foo 'bar'", but in this case we have a ValueQuery with a ComplexValue.
             found_complex_value = False
             for idx, v in enumerate(r):
                 if ComplexValue.regex.match(v.value):
@@ -422,13 +430,33 @@ class SimpleValueBooleanQuery(BooleanRule):
                 operator = And(BooleanOperator.AND)
 
             # Parse right operand.
-            # We don't want to eagerly recognize keyword queries as SimpleValues.
-            # So we attempt to firstly recognize the more specific rules (keyword queries and their negation), and
-            # then a SimpleValue.
-            parser.parse(text_after_bool_op, (omit(optional(Not)), [InvenioKeywordQuery, SpiresKeywordQuery]))
+            # We don't want to eagerly recognize anything else other than a SimpleValue.
+            # So we attempt to recognize the more specific rules, and if we do, then we need to stop identifying this
+            # rule.
+            parser.parse(
+                text_after_bool_op,
+                [
+                    (
+                        omit(optional(Not)),
+                        [
+                            InvenioKeywordQuery,
+                            SpiresKeywordQuery,
+                        ]
+                     ),
+                    [
+                        RangeOp,
+                        GreaterEqualOp,
+                        LessEqualOp,
+                        GreaterThanOp,
+                        LessThanOp,
+                        ComplexValue
+                    ]
+                ]
+            )
 
-            # Keyword query parsing succeeded, stop boolean_op among terminals recognition.
-            result = text, SyntaxError("found keyword query at terminals level")
+            # Identified something other than a SimpleValue, stop parsing this rule.
+            result = text, SyntaxError("expected simple value related rule as right operand of a " +
+                                       cls.__name__)
 
         except SyntaxError as e:
             result = text, e

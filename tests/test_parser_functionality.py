@@ -248,6 +248,29 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
         ("'ellis'",
          Query([Statement(Expression(SimpleQuery(Value(ComplexValue(u"'ellis'")))))])
          ),
+        (
+            'foo and \'bar\'',
+            Query([Statement(BooleanQuery(Expression(SimpleQuery(Value(SimpleValue('foo')))), And(),
+                                          Statement(Expression(SimpleQuery(Value(ComplexValue("'bar'")))))))])
+        ),
+        (
+            'ellis and smith and "boson"',
+            Query([Statement(
+                BooleanQuery(
+                    Expression(SimpleQuery(Value(
+                        SimpleValueBooleanQuery(SimpleValue('ellis'), And(), SimpleValue('smith'))))),
+                    And(),
+                    Statement(Expression(SimpleQuery(Value(ComplexValue('"boson"')))))))])
+        ),
+        (
+            'ellis and smith "boson"',
+            Query([Statement(
+                BooleanQuery(
+                    Expression(SimpleQuery(Value(
+                        SimpleValueBooleanQuery(SimpleValue('ellis'), And(), SimpleValue('smith'))))),
+                    And(),
+                    Statement(Expression(SimpleQuery(Value(ComplexValue('"boson"')))))))])
+        ),
 
         # Parenthesized keyword query values (working also with SPIRES operators - doesn't on legacy)
         ('author:(title ellis)',
@@ -286,7 +309,7 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
          Query([Statement(BooleanQuery(
              Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(SimpleValue('e-10'))))), And(),
              Statement(Expression(NotQuery(Expression(
-                 SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(SimpleValue(u"d'hoker"))))))))))])
+                 SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(SimpleValue("d'hoker"))))))))))])
          ),
         ('a pang，yi and t SU(2)',
          Query([Statement(BooleanQuery(Expression(
@@ -455,7 +478,7 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
         # Star queries
         ("find a 'o*aigh' and t \"alge*\" and date >2013",
          Query([Statement(BooleanQuery(
-             Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(ComplexValue(u"'o*aigh'"))))),
+             Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(ComplexValue("'o*aigh'"))))),
              And(), Statement(BooleanQuery(Expression(
                  SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(ComplexValue(r'"alge*"'))))), And(),
                  Statement(Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('date'),
