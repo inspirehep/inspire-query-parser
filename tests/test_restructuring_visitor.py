@@ -22,7 +22,7 @@
 
 from __future__ import print_function, unicode_literals
 
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 
 import pytest
 from dateutil.relativedelta import relativedelta
