@@ -148,12 +148,15 @@ class ElasticSearchVisitor(Visitor):
         keyword_to_fieldname = {
             'author': 'authors.full_name',
             'citedby': 'citedby',
-            'title': 'titles.full_title',
-            'topcite': 'citation_count',
+            'collaboration': 'collaborations.value',
             'date': 'earliest_date',
+            'doi': 'dois.value',
+            'eprint': 'arxiv_eprints.value.raw',
             'refersto': 'references.recid',
             'reportnumber': 'report_numbers.value',
             'subject': 'inspire_categories.term',
+            'title': 'titles.full_title',
+            'topcite': 'citation_count',
         }
 
         # If no keyword is found, return the original node value (case of an unknown keyword).
