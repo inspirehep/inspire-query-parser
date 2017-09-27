@@ -32,6 +32,8 @@ import logging
 import six
 
 from inspire_query_parser import ast
+from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
+                                         ES_MUST_QUERY)
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
 logger = logging.getLogger(__name__)
@@ -95,6 +97,30 @@ class ElasticSearchVisitor(Visitor):
                 "_all": node.op.value
             }
         }
+
+    def visit_malformed_query(self, node):
+        return {
+            'query_string': {
+                'default_field': '_all',
+                'query': ' '.join(node.children)
+            }
+        }
+
+    def visit_query_with_malformed_part(self, node):
+        query = {
+                'bool': {
+                    'must': [
+                        node.left.accept(self),
+                    ],
+                }
+            }
+
+        if DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES == ES_MUST_QUERY:
+            query['bool']['must'].append(node.right.accept(self))
+        else:
+            query['bool']['should'] = [node.right.accept(self)]
+
+        return query
 
     def visit_not_op(self, node):
         return {

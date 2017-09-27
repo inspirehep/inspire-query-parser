@@ -23,11 +23,14 @@
 
 from __future__ import print_function, unicode_literals
 
+import mock
 import pytest
 
+import inspire_query_parser
 from inspire_query_parser import parser
+from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
+                                         ES_MUST_QUERY, ES_SHOULD_QUERY)
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
-from inspire_query_parser.utils.format_parse_tree import emit_tree_format
 from inspire_query_parser.visitors.elastic_search_visitor import \
     ElasticSearchVisitor
 from inspire_query_parser.visitors.restructuring_visitor import \
@@ -35,13 +38,11 @@ from inspire_query_parser.visitors.restructuring_visitor import \
 
 
 def _parse_query(query_str):
-    print("Parsing: " + query_str)
     stateful_parser = StatefulParser()
     restructuring_visitor = RestructuringVisitor()
     elastic_search_visitor = ElasticSearchVisitor()
     _, parse_tree = stateful_parser.parse(query_str, parser.Query)
     parse_tree = parse_tree.accept(restructuring_visitor)
-    print("RST: \n" + emit_tree_format(parse_tree))
     return parse_tree.accept(elastic_search_visitor)
 
 
@@ -381,6 +382,80 @@ def test_elastic_search_visitor_wildcard_support():
 def test_elastic_search_visitor_empty_query():
     query_str = '   '
     expected_es_query = {"match_all": {}}
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_malformed_query():
+    query_str = 'title and foo'
+    expected_es_query = \
+        {
+            "query_string": {
+                "default_field": "_all",
+                "query": "title and foo"
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+@mock.patch(
+    'inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES', ES_MUST_QUERY
+)
+def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_must():
+
+    query_str = 'title γ-radiation and author'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": "γ-radiation"
+                        }
+                    },
+                    {
+                        "query_string": {
+                            "default_field": "_all",
+                            "query": "and author"
+                        }
+                    }
+                ],
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+@mock.patch(
+    'inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES', ES_SHOULD_QUERY
+)
+def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_should():
+
+    query_str = 'title γ-radiation and author'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": "γ-radiation"
+                        }
+                    }
+                ],
+                "should": [
+                    {
+                        "query_string": {
+                            "default_field": "_all",
+                            "query": "and author"
+                        }
+                    }
+                ]
+            }
+        }
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
