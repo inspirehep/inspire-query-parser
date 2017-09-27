@@ -65,8 +65,8 @@ def __recursive_formatter(node, level=-INDENTATION):
     new_level = INDENTATION + level
 
     if isinstance(node, Leaf):
-        value = "" if not repr(node.value) or repr(node.value) == "None" \
-            else node.__class__.__name__ + " {" + node.value + "}"
+        value = "" if not repr(node.value) else node.__class__.__name__ \
+                                                + " {" + (node.value if node.value else "") + "}"
 
         ret_str = __emit_symbol_at_level_str(value, new_level) if value != "" else ""
 
