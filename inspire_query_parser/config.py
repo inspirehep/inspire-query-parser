@@ -29,8 +29,6 @@ a normalization of the shortened keywords to their full version.
 """
 from __future__ import unicode_literals
 
-import re
-
 INSPIRE_PARSER_KEYWORDS = {
     # Abstract
     'abstract': 'abstract',
