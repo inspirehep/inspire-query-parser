@@ -52,13 +52,13 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
          Query([Statement(
              Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(ComplexValue('"ellis"'))))))])
          ),
-        ("f author ellis",
+        ("f AU ellis",
          Query([Statement(
              Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(SimpleValue('ellis'))))))])
          ),
 
         # Invenio like search
-        ("author:ellis and title:boson",
+        ("author:ellis and Ti:boson",
          Query([Statement(BooleanQuery(
              Expression(SimpleQuery(InvenioKeywordQuery(InspireKeyword('author'), Value(SimpleValue('ellis'))))),
              And(), Statement(Expression(
