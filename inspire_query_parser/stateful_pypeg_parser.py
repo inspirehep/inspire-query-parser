@@ -56,9 +56,6 @@ def parse(text, thing):
         GrammarTypeError:   if grammar contains an object of unknown type
         GrammarValueError:  if grammar contains an illegal cardinality value
     """
-    if not isinstance(text, six.text_type):
-        text = six.text_type(text.decode('utf-8'))
-
     parser = StatefulParser()
     t, r = parser.parse(text, thing)
     if t:
