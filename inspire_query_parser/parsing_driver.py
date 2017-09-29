@@ -56,6 +56,9 @@ def parse_query(query_str):
     def _generate_match_all_fields_query():
         return {'multi_match': {'query': query_str, 'fields': ['_all'], 'zero_terms_query': 'all'}}
 
+    if not isinstance(query_str, six.text_type):
+        query_str = six.text_type(query_str.decode('utf-8'))
+
     logger.info('Parsing: "' + query_str + '\".')
 
     parser = StatefulParser()
