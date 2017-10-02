@@ -93,12 +93,12 @@ def test_that_parse_terminal_token_does_not_accept_non_shortened_inspire_keyword
         'Canonical arxiv identifier': {
             'query_str': 'arxiv:1706.04080',
             'unrecognized_text': '',
-            'result': SimpleValueUnit('arxiv:1706.04080')
+            'result': SimpleValueUnit('1706.04080')
         },
         'Arxiv identifier with semantically erroneous value (semantic error)': {
             'query_str': 'arxiv:foo',
             'unrecognized_text': '',
-            'result': SimpleValueUnit('arxiv:foo')
+            'result': SimpleValueUnit('foo')
         },
         'Non arxiv-related terminal with colon': {
             'query_str': 'not_arxiv:foo',
