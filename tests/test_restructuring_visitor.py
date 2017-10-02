@@ -591,8 +591,8 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
             'citedby:recid:902780',
             NestedKeywordOp(Keyword('citedby'), KeywordOp(Keyword('recid'), Value('902780')))
         ),
-        ('eprint:arxiv:1706.04080', KeywordOp(Keyword('reportnumber'), Value('arxiv:1706.04080'))),
-        ('eprint:1706.04080', KeywordOp(Keyword('reportnumber'), Value('1706.04080'))),
+        ('eprint:arxiv:1706.04080', KeywordOp(Keyword('eprint'), Value('1706.04080'))),
+        ('eprint:1706.04080', KeywordOp(Keyword('eprint'), Value('1706.04080'))),
         (
             'f a ostapchenko not olinto not haungs',
             AndOp(
