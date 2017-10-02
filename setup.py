@@ -20,76 +20,78 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-"""A PEG-based query parser for INSPIRE"""
+"""A PEG-based query parser for INSPIRE."""
 
 import os
 
 from setuptools import find_packages, setup
 
+
+URL = 'https://github.com/inspirehep/inspire-query-parser'
+
 readme = open('README.rst').read()
-
-tests_require = [
-    'coverage>=4.4',
-    'isort>=4.2.2',
-    'mock>=1.3.0',
-    'pytest-cache>=1.0',
-    'pytest-cov>=1.8.0',
-    'pytest-flake8>=0.8.1',
-    'pytest>=2.8.0',
-    'six>=1.10.0'
-]
-
-extras_require = {
-    'docs': [
-        'Sphinx>=1.5.1',
-    ],
-    'tests': tests_require,
-    'all': []
-}
-
-for reqs in extras_require.values():
-    extras_require['all'].extend(reqs)
 
 setup_requires = [
     'autosemver',
 ]
 
-packages = find_packages(exclude=['docs'])
+install_requires=[
+    'pypeg2~=2.0,>=2.15.2',
+    'python-dateutil~=2.0,>=2.6.1',
+    'six~=1.0,>=1.11.0',
+],
 
-url = 'https://github.com/inspirehep/inspire-query-parser'
+docs_require = []
+
+tests_require = [
+    'mock~=2.0,>=2.0.0',
+    'pytest-cov~=2.0,>=2.5.1',
+    'pytest-flake8~=0.0,>=0.8.1',
+    'pytest~=3.0,>=3.2.2',
+]
+
+extras_require = {
+    'docs': docs_require,
+    'tests': tests_require,
+}
+
+extras_require['all'] = []
+for name, reqs in extras_require.items():
+    extras_require['all'].extend(reqs)
+
+packages = find_packages(exclude=['docs'])
 
 setup(
     name='inspire-query-parser',
-    description=__doc__,
-    long_description=readme,
-    keywords='inspirehep query parser',
+    autosemver={
+        'bugtracker_url': URL + '/issues',
+    },
+    url=URL,
     license='GPLv3',
     author='CERN',
     author_email='admin@inspirehep.net',
-    url=url,
     packages=packages,
-    autosemver={'bugtracker_url': url + '/issues'},
-    zip_safe=False,
     include_package_data=True,
+    zip_safe=False,
     platforms='any',
-    extras_require=extras_require,
-    install_requires=[
-        'pypeg2>=2.15.2',
-        'six>=1.10.0',
-        'python-dateutil>=2.6.1',
-    ],
+    description=__doc__,
+    long_description=readme,
     setup_requires=setup_requires,
+    install_requires=install_requires,
     tests_require=tests_require,
+    extras_require=extras_require,
     classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Web Environment',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: Software Development :: Libraries :: Python Modules',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
-        'Development Status :: 2 - Pre-Alpha',
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        'Topic :: Software Development :: Libraries :: Python Modules',
     ],
 )
