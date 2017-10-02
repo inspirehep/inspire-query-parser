@@ -19,24 +19,19 @@
     granted to it by virtue of its status as an Intergovernmental Organization
     or submit itself to any jurisdiction.
 
+
 =====================
  INSPIRE-QueryParser
 =====================
 
-.. image:: https://img.shields.io/github/tag/inspirehep/inspire-query-parser.svg
-        :target: https://github.com/inspirehep/inspire-query-parser/releases
+.. image:: https://travis-ci.org/inspirehep/inspire-query-parser.svg?branch=master
+    :target: https://travis-ci.org/inspirehep/inspire-query-parser
 
-.. image:: https://img.shields.io/pypi/dm/inspire-query-parser.svg
-        :target: https://pypi.python.org/pypi/inspire-query-parser
+.. image:: https://coveralls.io/repos/github/inspirehep/inspire-query-parser/badge.svg?branch=master
+    :target: https://coveralls.io/github/inspirehep/inspire-query-parser?branch=master
 
-.. image:: https://img.shields.io/github/license/inspirehep/inspire-query-parser.svg
-        :target: https://github.com/inspirehep/inspire-query-parser/blob/master/LICENSE
 
-A PEG-based query parser for INSPIRE
+About
+=====
 
-*This is a non feature complete version.*
-
-A query parser for INSPIRE, supporting SPIRES and Invenio syntaxes.
-
-Further documentation is available on
-https://inspire-query-parser.readthedocs.io/
+A PEG-based query parser for INSPIRE.
