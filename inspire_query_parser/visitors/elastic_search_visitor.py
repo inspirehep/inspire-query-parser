@@ -165,7 +165,7 @@ class ElasticSearchVisitor(Visitor):
         #     }
         # }
         # return [inner_query, outer_query]
-        raise NotImplementedError
+        raise NotImplementedError('Nested keyword queries aren\'t implemented yet.')
 
     def visit_keyword(self, node):
         # TODO This is a temporary solution for handling the Inspire keyword to ElasticSearch fieldname mapping, since
@@ -176,7 +176,7 @@ class ElasticSearchVisitor(Visitor):
             'citedby': 'citedby',
             'collaboration': 'collaborations.value',
             'date': 'earliest_date',
-            'doi': 'dois.value',
+            'doi': 'dois.value.raw',
             'eprint': 'arxiv_eprints.value.raw',
             'refersto': 'references.recid',
             'reportnumber': 'report_numbers.value',

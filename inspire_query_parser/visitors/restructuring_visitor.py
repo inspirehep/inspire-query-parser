@@ -191,13 +191,6 @@ class RestructuringVisitor(Visitor):
         return KeywordOp(keyword, value)
 
     def visit_nested_keyword_query(self, node):
-        keyword = Keyword(node.left)
-        value = node.right.accept(self)
-        if isinstance(value, ast.Value):
-            # Case of eager identification of a nested keyword query, while the query is a ValueQuery.
-            # Flatten nested keyword query into a simple keyword query.
-            return ast.KeywordOp(keyword, value)
-
         return ast.NestedKeywordOp(Keyword(node.left), node.right.accept(self))
 
     def visit_value(self, node):
