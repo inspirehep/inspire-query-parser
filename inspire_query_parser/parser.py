@@ -214,7 +214,7 @@ class SimpleValueUnit(LeafRule):
     """
     token_regex = re.compile(r"[^\s:)(]+", re.UNICODE)
 
-    arxiv_token_regex = re.compile(r"arxiv:" + token_regex.pattern, re.IGNORECASE)
+    arxiv_token_regex = re.compile(r"(arxiv:)(" + token_regex.pattern + ")", re.IGNORECASE)
     """Arxiv identifiers are special cases of tokens where the ":" symbol is allowed."""
 
     date_specifiers_regex = re.compile(r"({})\s*-\s*\d+".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
@@ -302,7 +302,7 @@ class SimpleValueUnit(LeafRule):
             # Attempt to parse arxiv identifier
             m = cls.arxiv_token_regex.match(text)
             if m:
-                t, r, found = text[len(m.group(0)):], m.group(0), True
+                t, r, found = text[len(m.group()):], m.group(2), True
             else:
                 # Attempt to parse a terminal token
                 t, r = SimpleValueUnit.parse_terminal_token(parser, text)
