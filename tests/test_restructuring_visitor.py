@@ -194,7 +194,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'refersto:1347300 and (reference:Ellis or reference "Ellis")',
             AndOp(
-                KeywordOp(Keyword('refersto'), Value('1347300')),
+                NestedKeywordOp(Keyword('refersto'), Value('1347300')),
                 OrOp(
                     KeywordOp(Keyword('cite'), Value('Ellis')),
                     KeywordOp(Keyword('cite'), ExactMatchValue('Ellis'))
@@ -313,7 +313,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             '-refersto:recid:1374998 and citedby:(A.A.Aguilar.Arevalo.1)',
             AndOp(
                 NotOp(NestedKeywordOp(Keyword('refersto'), KeywordOp(Keyword('recid'), Value('1374998')))),
-                KeywordOp(Keyword('citedby'), Value('A.A.Aguilar.Arevalo.1'))
+                NestedKeywordOp(Keyword('citedby'), Value('A.A.Aguilar.Arevalo.1'))
             )
          ),
         (
