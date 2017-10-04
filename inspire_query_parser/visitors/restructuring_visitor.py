@@ -37,7 +37,7 @@ from inspire_query_parser.ast import (AndOp, ExactMatchValue, Keyword,
                                       PartialMatchValue,
                                       QueryWithMalformedPart, RegexValue)
 from inspire_query_parser.parser import (And, ComplexValue,
-                                         SimpleValueBooleanQuery, Value)
+                                         SimpleValueBooleanQuery)
 from inspire_query_parser.utils.visitor_utils import \
     DATE_SPECIFIERS_CONVERSION_HANDLERS
 from inspire_query_parser.visitors.visitor_impl import Visitor
