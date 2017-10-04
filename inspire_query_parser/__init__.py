@@ -24,5 +24,5 @@
 
 from __future__ import absolute_import, print_function
 
-from . import config
-from .parsing_driver import parse_query
+from . import config  # noqa: F401
+from .parsing_driver import parse_query  # noqa: F401

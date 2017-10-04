@@ -26,10 +26,8 @@ from __future__ import print_function, unicode_literals
 import mock
 import pytest
 
-import inspire_query_parser
 from inspire_query_parser import parser
-from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
-                                         ES_MUST_QUERY, ES_SHOULD_QUERY)
+from inspire_query_parser.config import ES_MUST_QUERY, ES_SHOULD_QUERY
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.visitors.elastic_search_visitor import \
     ElasticSearchVisitor
