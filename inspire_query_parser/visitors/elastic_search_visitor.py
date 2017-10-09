@@ -45,6 +45,21 @@ class ElasticSearchVisitor(Visitor):
     Notes:
         The ElasticSearch query follows the 2.4 version DSL specification.
     """
+    def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
+        if not fieldnames:
+            field_specifier, field_specifier_value = 'default_field', '_all'
+        else:
+            field_specifier = 'fields'
+            field_specifier_value = fieldnames if isinstance(fieldnames, list) else [fieldnames]
+
+        return {
+            "query_string": {
+                "query": value,
+                field_specifier: field_specifier_value,
+                "analyze_wildcard": analyze_wildcard,
+            }
+        }
+
     def _generate_boolean_query(self, node):
         """Helper for generating a boolean query."""
         condition_a = node.left.accept(self)
@@ -158,13 +173,6 @@ class ElasticSearchVisitor(Visitor):
 
     # TODO Cannot be completed as of yet.
     def visit_nested_keyword_op(self, node):
-        # inner_query = node.op.accept(self)
-        # outer_query = {
-        #     "query": {
-        #
-        #     }
-        # }
-        # return [inner_query, outer_query]
         raise NotImplementedError('Nested keyword queries aren\'t implemented yet.')
 
     def visit_keyword(self, node):
@@ -175,7 +183,7 @@ class ElasticSearchVisitor(Visitor):
             'author': 'authors.full_name',
             'citedby': 'citedby',
             'collaboration': 'collaborations.value',
-            'date': 'earliest_date',
+            'date': ['earliest_date', 'preprint_date'],
             'doi': 'dois.value.raw',
             'eprint': 'arxiv_eprints.value.raw',
             'refersto': 'references.recid',
@@ -188,51 +196,53 @@ class ElasticSearchVisitor(Visitor):
         # If no keyword is found, return the original node value (case of an unknown keyword).
         return keyword_to_fieldname.get(node.value, node.value)
 
-    def visit_value(self, node, fieldname=None):
-        if not fieldname:
-            fieldname = '_all'
+    def visit_value(self, node, fieldnames=None):
+        if not fieldnames:
+            fieldnames = '_all'
 
         if node.contains_wildcard:
+            return self._generate_query_string_query(node.value, fieldnames, True)
+        else:
+            if isinstance(fieldnames, list):
+                return {
+                    'multi_match': {
+                        'fields': fieldnames,
+                        'query': node.value,
+                    }
+                }
+            else:
+                return {
+                    'match': {
+                        fieldnames: node.value,
+                    }
+                }
+
+    def visit_exact_match_value(self, node, fieldnames=None):
+        """Generates a term query (exact search in ElasticSearch)."""
+        if not fieldnames:
+            fieldnames = '_all'
+
+        if isinstance(fieldnames, list):
             return {
-                "query_string": {
-                    "query": node.value,
-                    "default_field": fieldname,
-                    "analyze_wildcard": True
+                'bool': {
+                    'should': [{'term': {field: node.value}} for field in fieldnames]
                 }
             }
         else:
             return {
-                'match': {
-                    fieldname: node.value
+                'term': {
+                    fieldnames: node.value,
                 }
             }
 
-    def visit_exact_match_value(self, node, fieldname=None):
-        """Generates a term query (exact search in ElasticSearch)."""
-        if not fieldname:
-            fieldname = '_all'
-
-        return {
-            'term': {
-                fieldname: node.value
-            }
-        }
-
-    def visit_partial_match_value(self, node, fieldname=None):
+    def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
-        if not fieldname:
-            fieldname = '_all'
-
+        # Add wildcard token as prefix and suffix.
         value = ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \
             node.value + \
             ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
-        return {
-            'query_string': {
-                'allow_leading_wildcard': True,
-                'default_field': fieldname,
-                'query': value
-            }
-        }
+
+        return self._generate_query_string_query(value, fieldnames, True)
 
     def visit_regex_value(self, node, fieldname):
         return {

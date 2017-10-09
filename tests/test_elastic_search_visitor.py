@@ -49,9 +49,9 @@ def test_elastic_search_visitor_find_author_partial_value_ellis():
     expected_es_query = \
         {
             "query_string": {
-                "allow_leading_wildcard": True,
-                "default_field": "authors.full_name",
-                "query": "*ellis*"
+                "analyze_wildcard": True,
+                "fields": ["authors.full_name"],
+                "query": "*ellis*",
             }
         }
 
@@ -210,9 +210,9 @@ def test_elastic_search_visitor_keyword_query_and_partial_value_query():
                     },
                     {
                         "query_string": {
-                            "allow_leading_wildcard": True,
+                            "analyze_wildcard": True,
                             "default_field": "_all",
-                            "query": "*skands*"
+                            "query": "*skands*",
                         }
                     }
                 ]
@@ -346,9 +346,9 @@ def test_elastic_search_visitor_wildcard_support():
                 "should": [
                     {
                         "query_string": {
+                            "analyze_wildcard": True,
+                            "fields": ["authors.full_name"],
                             "query": "*alge",
-                            "default_field": "authors.full_name",
-                            "analyze_wildcard": True
                         }
                     },
                     {
@@ -356,9 +356,9 @@ def test_elastic_search_visitor_wildcard_support():
                             "should": [
                                 {
                                     "query_string": {
-                                        "allow_leading_wildcard": True,
-                                        "default_field": "authors.full_name",
-                                        "query": "*alge*"
+                                        "analyze_wildcard": True,
+                                        "fields": ["authors.full_name"],
+                                        "query": "*alge*",
                                     }
                                 },
                                 {
@@ -432,7 +432,6 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     'inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES', ES_SHOULD_QUERY
 )
 def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_should():
-
     query_str = 'title γ-radiation and author'
     expected_es_query = \
         {
@@ -459,23 +458,84 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     assert generated_es_query == expected_es_query
 
 
-# TODO Cannot be completed as of yet.
-# def test_elastic_search_visitor_nested_keyword_query():
-#     query_str = 'referstox:author:Ellis, J'
-#     expected_es_queries = [
-#         {
-#             "query": {
-#                 "match": {
-#                     "authors.full_name": "Ellis, J"
-#                 }
-#             }
-#         },
-#         {
-#
-#         }
-#     ]
-#
-#     generated_es_queries = _parse_query(query_str)
-#     assert len(generated_es_queries) == len(expected_es_queries) and \
-#         generated_es_queries[0] == expected_es_queries[0] and \
-#         generated_es_queries[1] == expected_es_queries[1]
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list():
+    query_str = 'date 2000-10'
+    expected_es_query = \
+        {
+            "multi_match": {
+                "fields": ["earliest_date", "preprint_date"],
+                "query": "2000-10",
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_value_has_wildcard():
+    query_str = 'date 2000-10-*'
+    expected_es_query = \
+        {
+            "query_string": {
+                "analyze_wildcard": True,
+                "fields": ["earliest_date", "preprint_date"],
+                "query": "2000-10-*",
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_exact_match_value():
+    query_str = 'date "2000-10"'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {
+                        "term": {
+                            "earliest_date": "2000-10"
+                        }
+                    },
+                    {
+                        "term": {
+                            "preprint_date": "2000-10"
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_partial_match_value():
+    query_str = 'date \'2000-10\''
+    expected_es_query = \
+        {
+            "query_string": {
+                "analyze_wildcard": True,
+                "fields": ["earliest_date", "preprint_date"],
+                "query": "*2000-10*",
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_partial_match_value_with_wildcard():
+    query_str = 'date \'2000-10-*\''
+    expected_es_query = \
+        {
+            "query_string": {
+                "analyze_wildcard": True,
+                "fields": ["earliest_date", "preprint_date"],
+                "query": "*2000-10-*",
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
