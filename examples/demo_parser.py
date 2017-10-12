@@ -25,7 +25,7 @@ from __future__ import print_function, unicode_literals
 import sys
 
 from inspire_query_parser.parser import Query
-from inspire_query_parser.stateful_pypeg_parser import parse
+from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.utils.format_parse_tree import emit_tree_format
 from inspire_query_parser.visitors.restructuring_visitor import RestructuringVisitor
 
@@ -50,8 +50,10 @@ def repl():
 
 
 def print_query_and_parse_tree(query_str):
+    parser = StatefulParser()
     print('\033[94m' + "Parsing " + '\033[1m' + query_str + "" + '\033[0m')
-    print('\033[92m' + emit_tree_format(parse(query_str, Query).accept(RestructuringVisitor())) + '\033[0m')
+    _, parse_tree = parser.parse(query_str, Query)
+    print('\033[92m' + emit_tree_format(parse_tree.accept(RestructuringVisitor())) + '\033[0m')
     print("————————————————————————————————————————————————————————————————————————————————")
 
 

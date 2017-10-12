@@ -42,21 +42,3 @@ class StatefulParser(Parser):
         super(StatefulParser, self).__init__()
         self._parsing_parenthesized_terminal = False
         self._parsing_parenthesized_simple_values_expression = False
-
-
-def parse(text, thing):
-    """Wrapper method for creating a StatefulParser and then parsing text with thing grammar.
-
-
-    Raises:
-        SyntaxError: if text does not match the grammar in thing
-        ValueError:  if input does not match types
-        TypeError:   if output classes have wrong syntax for __init__()
-        GrammarTypeError:   if grammar contains an object of unknown type
-        GrammarValueError:  if grammar contains an illegal cardinality value
-    """
-    parser = StatefulParser()
-    t, r = parser.parse(text, thing)
-    if t:
-        raise parser.last_error
-    return r

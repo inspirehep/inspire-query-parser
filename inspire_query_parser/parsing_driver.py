@@ -70,7 +70,7 @@ def parse_query(query_str):
 
         if unrecognized_text:  # Usually, should never happen.
             msg = 'Parser returned unrecognized text: "' + unrecognized_text + \
-                  '" for query: "' + query_str + '". '
+                  '" for query: "' + query_str + '".'
 
             if query_str == unrecognized_text and parse_tree is None:
                 # Didn't recognize anything.
@@ -78,12 +78,11 @@ def parse_query(query_str):
                 return _generate_match_all_fields_query()
             else:
                 msg += 'Continuing with recognized parse tree.'
-
             logger.warn(msg)
 
     except SyntaxError as e:
         logger.warn('Parser syntax error (' + six.text_type(e) + ') with query: "' + query_str +
-                    '". Continuing with an empty query.')
+                    '". Continuing with a match_all with the given query.')
         return _generate_match_all_fields_query()
 
     # Try-Catch-all exceptions for visitors, so that search functionality never fails for the user.
