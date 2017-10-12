@@ -597,16 +597,20 @@ class Value(UnaryRule):
     Serves as an encapsulation of the listed rules.
     """
     grammar = attr('op', [
-        (omit(Literal("=")), SimpleValue),
-        RangeOp,
+        (optional(omit(Literal("="))), RangeOp),
         GreaterEqualOp,
         LessEqualOp,
         GreaterThanOp,
         LessThanOp,
-        ComplexValue,
-        ParenthesizedSimpleValues,
-        SimpleValueBooleanQuery,
-        SimpleValue,
+        (
+            optional(omit(Literal("="))),
+            [
+                ComplexValue,
+                ParenthesizedSimpleValues,
+                SimpleValueBooleanQuery,
+                SimpleValue
+            ]
+        )
     ])
 ########################
 
