@@ -44,6 +44,7 @@ install_requires=[
 docs_require = []
 
 tests_require = [
+    'flake8~=3.0,>=3.4.1,<3.5.0'  # Pin until pytest-flake8 picks up the update of flake8.
     'mock~=2.0,>=2.0.0',
     'pytest-cov~=2.0,>=2.5.1',
     'pytest-flake8~=0.0,>=0.8.1',
