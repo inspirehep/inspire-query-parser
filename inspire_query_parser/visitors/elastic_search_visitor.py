@@ -187,7 +187,7 @@ class ElasticSearchVisitor(Visitor):
             'doi': 'dois.value.raw',
             'eprint': 'arxiv_eprints.value.raw',
             'refersto': 'references.recid',
-            'reportnumber': 'report_numbers.value',
+            'reportnumber': 'report_numbers.value.fuzzy',
             'subject': 'inspire_categories.term',
             'title': 'titles.full_title',
             'topcite': 'citation_count',
