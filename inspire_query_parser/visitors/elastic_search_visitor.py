@@ -52,13 +52,16 @@ class ElasticSearchVisitor(Visitor):
             field_specifier = 'fields'
             field_specifier_value = fieldnames if isinstance(fieldnames, list) else [fieldnames]
 
-        return {
-            "query_string": {
-                "query": value,
+        query = {
+            'query_string': {
+                'query': value,
                 field_specifier: field_specifier_value,
-                "analyze_wildcard": analyze_wildcard,
             }
         }
+        if analyze_wildcard:
+            query['query_string']['analyze_wildcard'] = True
+
+        return query
 
     def _generate_boolean_query(self, node):
         """Helper for generating a boolean query."""
@@ -156,8 +159,15 @@ class ElasticSearchVisitor(Visitor):
         fieldname = node.left.accept(self)
         return node.right.accept(self, fieldname)
 
-    def visit_range_op(self, node, fieldname):
-        return self._generate_range_queries(fieldname, {'gte': node.left.value, 'lte': node.right.value})
+    def visit_range_op(self, node, fieldnames):
+        if isinstance(fieldnames, list):
+            return self._generate_query_string_query(
+                value='[' + node.left.value + ' TO ' + node.right.value + ']',
+                fieldnames=fieldnames,
+                analyze_wildcard=False
+            )
+
+        return self._generate_range_queries(fieldnames, {'gte': node.left.value, 'lte': node.right.value})
 
     def visit_greater_than_op(self, node, fieldname):
         return self._generate_range_queries(fieldname, {'gt': node.op.value})
@@ -183,7 +193,13 @@ class ElasticSearchVisitor(Visitor):
             'author': 'authors.full_name',
             'citedby': 'citedby',
             'collaboration': 'collaborations.value',
-            'date': ['earliest_date', 'preprint_date'],
+            'date': [
+                'earliest_date',
+                'imprints.date',
+                'preprint_date',
+                'publication_info.year',
+                'thesis_info.date',
+            ],
             'doi': 'dois.value.raw',
             'eprint': 'arxiv_eprints.value.raw',
             'refersto': 'references.recid',
