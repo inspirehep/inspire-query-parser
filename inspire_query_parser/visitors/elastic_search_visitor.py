@@ -204,7 +204,7 @@ class ElasticSearchVisitor(Visitor):
             'eprint': 'arxiv_eprints.value.raw',
             'refersto': 'references.recid',
             'reportnumber': 'report_numbers.value.fuzzy',
-            'subject': 'inspire_categories.term',
+            'subject': 'facet_inspire_categories',
             'title': 'titles.full_title',
             'type-code': 'document_type',
             'topcite': 'citation_count',
