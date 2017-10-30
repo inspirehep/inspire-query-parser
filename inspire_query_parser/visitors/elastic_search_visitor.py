@@ -190,6 +190,7 @@ class ElasticSearchVisitor(Visitor):
             'reportnumber': 'report_numbers.value.fuzzy',
             'subject': 'inspire_categories.term',
             'title': 'titles.full_title',
+            'type-code': 'document_type',
             'topcite': 'citation_count',
         }
 
