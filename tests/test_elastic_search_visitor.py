@@ -458,12 +458,18 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list():
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_simple_value():
     query_str = 'date 2000-10'
     expected_es_query = \
         {
             "multi_match": {
-                "fields": ["earliest_date", "preprint_date"],
+                "fields": [
+                    "earliest_date",
+                    "imprints.date",
+                    "preprint_date",
+                    "publication_info.year",
+                    "thesis_info.date",
+                ],
                 "query": "2000-10",
             }
         }
@@ -478,7 +484,13 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_val
         {
             "query_string": {
                 "analyze_wildcard": True,
-                "fields": ["earliest_date", "preprint_date"],
+                "fields": [
+                    "earliest_date",
+                    "imprints.date",
+                    "preprint_date",
+                    "publication_info.year",
+                    "thesis_info.date",
+                ],
                 "query": "2000-10-*",
             }
         }
@@ -500,9 +512,24 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_exa
                     },
                     {
                         "term": {
+                            "imprints.date": "2000-10"
+                        }
+                    },
+                    {
+                        "term": {
                             "preprint_date": "2000-10"
                         }
-                    }
+                    },
+                    {
+                        "term": {
+                            "publication_info.year": "2000-10"
+                        }
+                    },
+                    {
+                        "term": {
+                            "thesis_info.date": "2000-10"
+                        }
+                    },
                 ]
             }
         }
@@ -517,7 +544,13 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_par
         {
             "query_string": {
                 "analyze_wildcard": True,
-                "fields": ["earliest_date", "preprint_date"],
+                "fields": [
+                    "earliest_date",
+                    "imprints.date",
+                    "preprint_date",
+                    "publication_info.year",
+                    "thesis_info.date",
+                ],
                 "query": "*2000-10*",
             }
         }
@@ -532,8 +565,34 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_par
         {
             "query_string": {
                 "analyze_wildcard": True,
-                "fields": ["earliest_date", "preprint_date"],
+                "fields": [
+                    "earliest_date",
+                    "imprints.date",
+                    "preprint_date",
+                    "publication_info.year",
+                    "thesis_info.date",
+                ],
                 "query": "*2000-10-*",
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_range_value():
+    query_str = 'date 2000->2005'
+    expected_es_query = \
+        {
+            "query_string": {
+                "fields": [
+                    "earliest_date",
+                    "imprints.date",
+                    "preprint_date",
+                    "publication_info.year",
+                    "thesis_info.date",
+                ],
+                "query": "[2000 TO 2005]",
             }
         }
 
