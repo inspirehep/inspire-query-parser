@@ -423,7 +423,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             'date yesterday - 2 - ac 100',
             AndOp(
                 KeywordOp(Keyword('date'),
-                          Value(str(date.today().replace(day=date.today().day - 1) - relativedelta(days=2)))),
+                          Value(str(date.today() - relativedelta(days=3)))),
                 NotOp(KeywordOp(Keyword('author-count'), Value('100')))
             )
          ),
@@ -438,7 +438,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             'du > yesterday - 2',
             KeywordOp(
                 Keyword('date-updated'),
-                GreaterThanOp(Value(str((date.today().replace(day=date.today().day - 1) - relativedelta(days=2)))))
+                GreaterThanOp(Value(str((date.today() - relativedelta(days=3)))))
             )
          ),
 
