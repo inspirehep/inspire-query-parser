@@ -22,10 +22,9 @@
 
 from __future__ import absolute_import, unicode_literals
 
-import datetime
-import re
-
+from datetime import date
 from dateutil.relativedelta import relativedelta
+import re
 
 from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
                                          DATE_SPECIFIERS_COLLECTION,
@@ -84,7 +83,7 @@ def _convert_date_to_string(start_date, relative_delta=None):
 
 @register_date_conversion_handler(DATE_TODAY_REGEX_PATTERN)
 def convert_today_date_specifier(relative_date_specifier_suffix):
-    start_date = datetime.date.today()
+    start_date = date.today()
     relative_delta = (
         relativedelta(days=_extract_number_from_text(relative_date_specifier_suffix))
         if relative_date_specifier_suffix else None
@@ -95,7 +94,7 @@ def convert_today_date_specifier(relative_date_specifier_suffix):
 
 @register_date_conversion_handler(DATE_YESTERDAY_REGEX_PATTERN)
 def convert_yesterday_date_specifier(relative_date_specifier_suffix):
-    start_date = datetime.date.today().replace(day=datetime.date.today().day - 1)
+    start_date = date.today() - relativedelta(days=1)
     relative_delta = (
         relativedelta(days=_extract_number_from_text(relative_date_specifier_suffix))
         if relative_date_specifier_suffix else None
@@ -106,7 +105,7 @@ def convert_yesterday_date_specifier(relative_date_specifier_suffix):
 
 @register_date_conversion_handler(DATE_THIS_MONTH_REGEX_PATTERN)
 def convert_this_month_date(relative_date_specifier_suffix):
-    start_date = datetime.date.today().replace(day=1)
+    start_date = date.today().replace(day=1)
     relative_delta = (
         relativedelta(months=_extract_number_from_text(relative_date_specifier_suffix))
         if relative_date_specifier_suffix else None
@@ -117,7 +116,7 @@ def convert_this_month_date(relative_date_specifier_suffix):
 
 @register_date_conversion_handler(DATE_LAST_MONTH_REGEX_PATTERN)
 def convert_last_month_date(relative_date_specifier_suffix):
-    start_date = datetime.date.today().replace(day=1) - relativedelta(months=1)
+    start_date = date.today().replace(day=1) - relativedelta(months=1)
     relative_delta = (
         relativedelta(months=_extract_number_from_text(relative_date_specifier_suffix))
         if relative_date_specifier_suffix else None
