@@ -49,6 +49,7 @@ class CaseInsensitiveKeyword(Keyword):
             self.grammar
         except AttributeError:
             raise GrammarValueError(self.__class__.__name__ + " expects a grammar attribute (Enum).")
+
         keyword = keyword.lower()
         if keyword not in Keyword.table:
             Keyword.table[keyword] = self
@@ -57,13 +58,13 @@ class CaseInsensitiveKeyword(Keyword):
     @classmethod
     def parse(cls, parser, text, pos):
         """Checks if terminal token is a keyword after lower-casing it."""
-        m = cls.regex.match(text)
-        if m:
+        match = cls.regex.match(text)
+        if match:
             # Check if match is is not in the grammar of the specific keyword class.
-            if m.group(0).lower() not in cls.grammar:
-                result = text, SyntaxError(repr(m.group(0)) + " is not a member of " + repr(cls.grammar))
+            if match.group(0).lower() not in cls.grammar:
+                result = text, SyntaxError(repr(match.group(0)) + " is not a member of " + repr(cls.grammar))
             else:
-                result = text[len(m.group(0)):], cls(m.group(0))
+                result = text[len(match.group(0)):], cls(match.group(0))
         else:
             result = text, SyntaxError("expecting " + repr(cls.__name__))
         return result
@@ -168,8 +169,8 @@ class And(CIKeyword):
     regex = re.compile(r"(and|\+|&)", re.IGNORECASE)
     grammar = Enum(K("and"), K("+"), K("&"))
 
-    def __init__(self, keyword=None):
-        # Normalize different AND keywords
+    def __init__(self, *args):
+        # Normalize different AND keywords (ignore the keyword argument that was passed).
         super(And, self).__init__(BooleanOperator.AND)
 
 
@@ -181,8 +182,8 @@ class Or(CIKeyword):
     regex = re.compile(r"(or|\|)", re.IGNORECASE)
     grammar = Enum(K("or"), K("|"))
 
-    def __init__(self, keyword=None):
-        # Normalize different OR keywords
+    def __init__(self, *args):
+        # Normalize different OR keywords (ignore the keyword argument that was passed).
         super(Or, self).__init__(BooleanOperator.OR)
 
 
@@ -212,10 +213,10 @@ class InspireKeyword(LeafRule):
         normally isn't allowed.
         """
         try:
-            t, r = parser.parse(text, cls.grammar)
-            if r.lower() == 'texkey':
+            remaining_text, keyword = parser.parse(text, cls.grammar)
+            if keyword.lower() == 'texkey':
                 parser._parsing_texkey_expression = True
-            return t, InspireKeyword(r)
+            return remaining_text, InspireKeyword(keyword)
         except SyntaxError as e:
             parser._parsing_texkey_expression = False
             return text, e
@@ -269,20 +270,20 @@ class SimpleValueUnit(LeafRule):
             token_regex = cls.texkey_token_regex
             parser._parsing_texkey_expression = False
 
-        m = token_regex.match(text)
-        if m:
-            matched_token = m.group(0)
+        match = token_regex.match(text)
+        if match:
+            matched_token = match.group(0)
 
             # Check if token is a DSL keyword. Disable this check in the case where the parser isn't parsing a
             # parenthesized terminal.
             if not parser._parsing_parenthesized_terminal and matched_token.lower() in Keyword.table:
                 return text, SyntaxError("found DSL keyword: " + matched_token)
 
-            unrecognized_text = text[len(matched_token):]
+            remaining_text = text[len(matched_token):]
 
             # Attempt to recognize whether current terminal is followed by a ":", which definitely signifies that
             # we are parsing a keyword, and we shouldn't.
-            if cls.starts_with_colon.match(unrecognized_text):
+            if cls.starts_with_colon.match(remaining_text):
                 return text, \
                        SyntaxError("parsing a keyword (token followed by \":\"): \"" + repr(matched_token) + "\"")
 
@@ -293,7 +294,7 @@ class SimpleValueUnit(LeafRule):
                     and matched_token in INSPIRE_KEYWORDS_SET:
                 return text, SyntaxError("parsing a keyword (non shortened INSPIRE keyword)")
 
-            result = unrecognized_text, matched_token
+            result = remaining_text, matched_token
         else:
             result = text, SyntaxError("expecting match on " + repr(cls.token_regex.pattern))
         return result
@@ -319,25 +320,25 @@ class SimpleValueUnit(LeafRule):
         found = False
 
         # Attempt to parse date specifier
-        m = cls.date_specifiers_regex.match(text)
-        if m:
-            t, r, found = text[len(m.group(0)):], m.group(0), True
+        match = cls.date_specifiers_regex.match(text)
+        if match:
+            remaining_text, token, found = text[len(match.group(0)):], match.group(0), True
         else:
             # Attempt to parse arxiv identifier
-            m = cls.arxiv_token_regex.match(text)
-            if m:
-                t, r, found = text[len(m.group()):], m.group(2), True
+            match = cls.arxiv_token_regex.match(text)
+            if match:
+                remaining_text, token, found = text[len(match.group()):], match.group(2), True
             else:
                 # Attempt to parse a terminal token
-                t, r = SimpleValueUnit.parse_terminal_token(parser, text)
-                if type(r) != SyntaxError:
+                remaining_text, token = SimpleValueUnit.parse_terminal_token(parser, text)
+                if type(token) != SyntaxError:
                     found = True
                 else:
                     # Attempt to parse a terminal with parentheses
                     try:
                         # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
                         parser._parsing_parenthesized_terminal = True
-                        t, r = parser.parse(text, cls.parenthesized_token_grammar, pos)
+                        remaining_text, token = parser.parse(text, cls.parenthesized_token_grammar, pos)
 
                         found = True
                     except SyntaxError:
@@ -350,7 +351,7 @@ class SimpleValueUnit(LeafRule):
                         parser._parsing_parenthesized_terminal = False
 
         if found:
-            result = t, SimpleValueUnit(r)
+            result = remaining_text, SimpleValueUnit(token)
         else:
             result = text, SyntaxError("expecting match on " + cls.__name__)
 
@@ -374,34 +375,39 @@ class SimpleValue(LeafRule):
         else:
             self.value = six.text_type.strip(''.join([v.value for v in values]))
 
+    @staticmethod
+    def unconsume_and_reconstruct_input(remaining_text, recognized_tokens, complex_value_idx):
+        """Reconstruct input in case of consuming a keyword query or a value query with ComplexValue as value.
+
+        Un-consuming at most 3 elements and specifically (Keyword,) Whitespace and ComplexValue, while also
+        reconstructing parser's input text.
+
+        Example:
+            Given this query "author foo t 'bar'", r would be:
+                r = [SimpleValueUnit("foo"), Whitespace(" "), SimpleValueUnit("t"), Whitespace(" "),
+                    SimpleValueUnit("'bar'")]
+            thus after this method, r would be [SimpleValueUnit("foo"), Whitespace(" ")], while initial text will
+            have been reconstructed as "t 'bar' rest_of_the_text".
+        """
+        # Default slicing index: i.e. at most 3 elements will be unconsumed, Keyword, Whitespace and ComplexValue.
+        slicing_start_idx = 2
+
+        # Check whether the 3rd element from the end is an InspireKeyword. If not, a Value query with ComplexValue
+        # was consumed.
+        if not INSPIRE_PARSER_KEYWORDS.get(recognized_tokens[complex_value_idx - slicing_start_idx].value, None):
+            slicing_start_idx = 1
+
+        reconstructed_terminals = recognized_tokens[:complex_value_idx - slicing_start_idx]
+        reconstructed_text = '{} {}'.format(
+            ''.join([token.value for token in recognized_tokens[complex_value_idx - slicing_start_idx:]]),
+            remaining_text
+        )
+        return reconstructed_text, reconstructed_terminals
+
     @classmethod
     def parse(cls, parser, text, pos):
-
-        def unconsume_and_reconstruct_input():
-            """Reconstruct input in case of consuming a keyword query or a value query with ComplexValue as value.
-
-            Un-consuming at most 3 elements and specifically (Keyword,) Whitespace and ComplexValue, while also
-            reconstructing parser's input text.
-
-            Example:
-                Given this query "author foo t 'bar'", r would be:
-                    r = [SimpleValueUnit("foo"), Whitespace(" "), SimpleValueUnit("t"), Whitespace(" "),
-                        SimpleValueUnit("'bar'")]
-                thus after this method, r would be [SimpleValueUnit("foo"), Whitespace(" ")], while initial text will
-                have been reconstructed as "t 'bar' rest_of_the_text".
-            """
-            # Default slicing index: i.e. at most 3 elements will be unconsumed, Keyword, Whitespace and ComplexValue.
-            slicing_start_idx = 2
-            # Check whether the 3rd element from the end is an InspireKeyword.
-            if not INSPIRE_PARSER_KEYWORDS.get(r[idx - slicing_start_idx].value, None):
-                slicing_start_idx = 1
-
-            reconstructed_terminals = r[:idx - slicing_start_idx]
-            remaining_text = '{} {}'.format(''.join([v.value for v in r[idx - slicing_start_idx:]]), t)
-            return remaining_text, reconstructed_terminals
-
         try:
-            t, r = parser.parse(text, cls.grammar)
+            remaining_text, recognized_tokens = parser.parse(text, cls.grammar)
 
             # Covering a case of implicit-and when one of the SimpleValue tokens is a ComplexValue.
             # This means we either have a KeywordQuery or a ValueQuery with a ComplexValue.
@@ -409,16 +415,18 @@ class SimpleValue(LeafRule):
             # This means we have consumed a KeywordQuery (due to 'and' missing).
             # Same goes for "author foo 'bar'", but in this case we have a ValueQuery with a ComplexValue.
             found_complex_value = False
-            for idx, v in enumerate(r):
-                if ComplexValue.regex.match(v.value):
-                    remaining_text, reconstructed_terminals = unconsume_and_reconstruct_input()
+            for idx, token in enumerate(recognized_tokens):
+                if ComplexValue.regex.match(token.value):
+                    reconstructed_text, reconstructed_terminals = cls.unconsume_and_reconstruct_input(
+                        remaining_text, recognized_tokens, idx
+                    )
                     found_complex_value = True
                     break
 
             if found_complex_value:
-                result = remaining_text, SimpleValue(reconstructed_terminals)
+                result = reconstructed_text, SimpleValue(reconstructed_terminals)
             else:
-                result = t, SimpleValue(r)
+                result = remaining_text, SimpleValue(recognized_tokens)
 
         except SyntaxError as e:
             return text, e
@@ -488,10 +496,10 @@ class SimpleValueBooleanQuery(BooleanRule):
             if left_operand and operator:
                     # Attempt to parse a right operand
                     try:
-                        t, right_operand = parser.parse(text_after_bool_op, cls.grammar[2])
-                        result = t, SimpleValueBooleanQuery(left_operand,
-                                                            bool_op=operator,
-                                                            right=right_operand)
+                        remaining_text, right_operand = parser.parse(text_after_bool_op, cls.grammar[2])
+                        result = remaining_text, SimpleValueBooleanQuery(left_operand,
+                                                                         bool_op=operator,
+                                                                         right=right_operand)
                     except SyntaxError as e:  # Actual failure of parsing boolean query at terminals level
                         return text, e
 
@@ -525,8 +533,8 @@ class ParenthesizedSimpleValues(UnaryRule):
         """Using our own parse to enable the flag below."""
         try:
             parser._parsing_parenthesized_simple_values_expression = True
-            t, r = parser.parse(text, cls.grammar)
-            return t, r
+            remaining_text, recognized_tokens = parser.parse(text, cls.grammar)
+            return remaining_text, recognized_tokens
         except SyntaxError as e:
             return text, e
         finally:
