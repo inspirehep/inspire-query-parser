@@ -36,9 +36,13 @@ class StatefulParser(Parser):
             Signifies whether we are parsing a parenthesized simple values expression. Used for disabling the simple
             values parsing related check "stop on INSPIRE keyword", for allowing parsing more expressions and not
             restrict the input accepted by the parser.
+
+        _parsing_texkey_expression (bool):
+            Signifies whether we are parsing a `texkey` expression which has special value in which we must accept ':'.
     """
 
     def __init__(self):
         super(StatefulParser, self).__init__()
         self._parsing_parenthesized_terminal = False
         self._parsing_parenthesized_simple_values_expression = False
+        self._parsing_texkey_expression = False

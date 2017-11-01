@@ -204,6 +204,22 @@ class InspireKeyword(LeafRule):
     def __init__(self, value):
         self.value = INSPIRE_PARSER_KEYWORDS[value.lower()]
 
+    @classmethod
+    def parse(cls, parser,  text, pos):
+        """Parse InspireKeyword.
+
+        If the keyword is `texkey`, enable the parsing texkey expression flag, since its value contains ':' which
+        normally isn't allowed.
+        """
+        try:
+            t, r = parser.parse(text, cls.grammar)
+            if r.lower() == 'texkey':
+                parser._parsing_texkey_expression = True
+            return t, InspireKeyword(r)
+        except SyntaxError as e:
+            parser._parsing_texkey_expression = False
+            return text, e
+
 
 class SimpleValueUnit(LeafRule):
     """Represents either a terminal symbol (without parentheses) or a parenthesized SimpleValue.
@@ -213,6 +229,7 @@ class SimpleValueUnit(LeafRule):
 
     """
     token_regex = re.compile(r"[^\s:)(]+", re.UNICODE)
+    texkey_token_regex = re.compile(r"[^\s)(]+:[^\s)(]+", re.UNICODE)
 
     arxiv_token_regex = re.compile(r"(arxiv:)(" + token_regex.pattern + ")", re.IGNORECASE)
     """Arxiv identifiers are special cases of tokens where the ":" symbol is allowed."""
@@ -238,6 +255,8 @@ class SimpleValueUnit(LeafRule):
         """Parses a terminal token that doesn't contain parentheses nor colon symbol.
 
         Note:
+            Handles a special case of tokens where a ':' is needed (for `texkey` queries).
+
             If we're parsing text not in parentheses, then some DSL keywords (e.g. And, Or, Not, defined above) should
             not be recognized as terminals, thus we check if they are in the Keywords table (namespace like structure
             handled by PyPeg).
@@ -245,7 +264,12 @@ class SimpleValueUnit(LeafRule):
 
             Also, helps in supporting more implicit-and queries cases (last two checks).
         """
-        m = cls.token_regex.match(text)
+        token_regex = cls.token_regex
+        if parser._parsing_texkey_expression:
+            token_regex = cls.texkey_token_regex
+            parser._parsing_texkey_expression = False
+
+        m = token_regex.match(text)
         if m:
             matched_token = m.group(0)
 
