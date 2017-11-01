@@ -334,6 +334,24 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
          Query([Statement(Expression(SimpleQuery(
              SpiresKeywordQuery(InspireKeyword('title'), Value(SimpleValue('C-12(vec-p,vec-n)N-12 (g.s.,1+)'))))))])
          ),
+        ('find texkey Hirata:1992ku',
+         Query([Statement(Expression(SimpleQuery(
+             SpiresKeywordQuery(
+                 InspireKeyword('texkey'),
+                 Value(SimpleValue('Hirata:1992ku'))))))])
+         ),
+        ('find texkey:Hirata:1992ku',
+         Query([Statement(Expression(SimpleQuery(
+             InvenioKeywordQuery(
+                 InspireKeyword('texkey'),
+                 Value(SimpleValue('Hirata:1992ku'))))))])
+         ),
+        ('find texkey Hirata:1992*',
+         Query([Statement(Expression(SimpleQuery(
+             SpiresKeywordQuery(
+                 InspireKeyword('texkey'),
+                 Value(SimpleValue('Hirata:1992*'))))))])
+         ),
 
         # Regex
         ('author:/^Ellis, (J|John)$/',

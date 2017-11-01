@@ -442,7 +442,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             )
          ),
 
-        # Star queries
+        # Wildcard queries
         (
             'find a \'o*aigh\' and t "alge*" and date >2013',
             AndOp(
@@ -465,6 +465,10 @@ from inspire_query_parser.visitors.restructuring_visitor import \
                 )
             )
          ),
+        (
+            'find texkey Hirata:1992*',
+            KeywordOp(Keyword('texkey'), Value('Hirata:1992*', contains_wildcard=True))
+        ),
 
         # Unrecognized queries
         ('title and foo', MalformedQuery(['title', 'and', 'foo'])),
