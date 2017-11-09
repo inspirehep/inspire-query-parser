@@ -25,6 +25,8 @@ from __future__ import print_function, unicode_literals
 
 import mock
 
+from inspire_utils.name import generate_name_variations
+
 from inspire_query_parser import parser
 from inspire_query_parser.config import ES_MUST_QUERY, ES_SHOULD_QUERY
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
@@ -72,11 +74,24 @@ def test_elastic_search_visitor_find_author_exact_value_ellis():
 
 
 def test_elastic_search_visitor_find_author_simple_value_ellis():
-    query_str = 'f author ellis'
+    author_name = 'Ellis, John'
+    name_variations = generate_name_variations(author_name)
+    query_str = 'f author ' + author_name
     expected_es_query = \
         {
-            "match": {
-                "authors.full_name": "ellis"
+            "bool": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"term": {"authors.name_variations": name_variation}} for name_variation in name_variations
+                        ]
+                    }
+                },
+                "must": {
+                    "match": {
+                        "authors.full_name": "Ellis, John"
+                    }
+                }
             }
         }
 
@@ -85,14 +100,30 @@ def test_elastic_search_visitor_find_author_simple_value_ellis():
 
 
 def test_elastic_search_visitor_and_op_query():
-    query_str = 'author:ellis and title:boson'
+    author_name = 'Ellis, John'
+    name_variations = generate_name_variations(author_name)
+    query_str = 'author:' + author_name + ' and title:boson'
+
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
-                        "match": {
-                            "authors.full_name": "ellis"
+                        "bool": {
+                            "filter": {
+                                "bool": {
+                                    "should": [
+                                        {"term": {"authors.name_variations": name_variation}}
+                                        for name_variation
+                                        in name_variations
+                                    ]
+                                }
+                            },
+                            "must": {
+                                "match": {
+                                    "authors.full_name": "Ellis, John"
+                                }
+                            }
                         }
                     },
                     {
@@ -109,14 +140,30 @@ def test_elastic_search_visitor_and_op_query():
 
 
 def test_elastic_search_visitor_or_op_query():
-    query_str = 'author:ellis or title:boson'
+    author_name = 'Ellis, John'
+    name_variations = generate_name_variations(author_name)
+
+    query_str = 'author:' + author_name + ' or title:boson'
     expected_es_query = \
         {
             "bool": {
                 "should": [
                     {
-                        "match": {
-                            "authors.full_name": "ellis"
+                        "bool": {
+                            "filter": {
+                                "bool": {
+                                    "should": [
+                                        {"term": {"authors.name_variations": name_variation}}
+                                        for name_variation
+                                        in name_variations
+                                    ]
+                                }
+                            },
+                            "must": {
+                                "match": {
+                                    "authors.full_name": "Ellis, John"
+                                }
+                            }
                         }
                     },
                     {
@@ -280,13 +327,29 @@ def test_elastic_search_visitor_range_op():
 
 
 def test_elastic_search_visitor_not_op():
-    query_str = '-author ellis'
+    author_name = 'Ellis, John'
+    name_variations = generate_name_variations(author_name)
+
+    query_str = '-author ' + author_name
     expected_es_query = \
         {
             "bool": {
                 "must_not": [{
-                    "match": {
-                        "authors.full_name": "ellis"
+                    "bool": {
+                        "filter": {
+                            "bool": {
+                                "should": [
+                                    {"term": {"authors.name_variations": name_variation}}
+                                    for name_variation
+                                    in name_variations
+                                ]
+                            }
+                        },
+                        "must": {
+                            "match": {
+                                "authors.full_name": "Ellis, John"
+                            }
+                        }
                     }
                 }]
             }

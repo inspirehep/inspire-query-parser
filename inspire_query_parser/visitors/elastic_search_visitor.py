@@ -31,6 +31,8 @@ import logging
 
 from inspire_utils.helpers import force_list
 
+from inspire_utils.name import generate_name_variations
+
 from inspire_query_parser import ast
 from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
                                          ES_MUST_QUERY)
@@ -45,6 +47,61 @@ class ElasticSearchVisitor(Visitor):
     Notes:
         The ElasticSearch query follows the 2.4 version DSL specification.
     """
+    # TODO This is a temporary solution for handling the Inspire keyword to ElasticSearch fieldname mapping, since
+    # TODO Inspire mappings aren't in their own repository. Currently using the `records-hep` mapping.
+    KEYWORD_TO_ES_FIELDNAME = {
+        'author': 'authors.full_name',
+        'author-count': 'author_count',
+        'citedby': 'citedby',
+        'collaboration': 'collaborations.value',
+        'date': [
+            'earliest_date',
+            'imprints.date',
+            'preprint_date',
+            'publication_info.year',
+            'thesis_info.date',
+        ],
+        'doi': 'dois.value.raw',
+        'eprint': 'arxiv_eprints.value.raw',
+        'refersto': 'references.recid',
+        'reportnumber': 'report_numbers.value.fuzzy',
+        'subject': 'facet_inspire_categories',
+        'title': 'titles.full_title',
+        'type-code': 'document_type',
+        'topcite': 'citation_count',
+    }
+
+    AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
+
+    def _generate_author_query(self, author_name):
+        """Generates a match and a filter query handling specifically authors.
+
+        Notes:
+            The match query is generic enough to return many results. Then, using the filter clause we truncate these
+            so that we imitate legacy's behaviour on return more "exact" results. E.g. Searching for `Smith, John`
+            shouldn't return papers of 'Smith, Bob'.
+        """
+        # if self.generating_not_query:
+        #     raise ValueError("Should not be using this method when generating a not query for authors.")
+        name_variations = generate_name_variations(author_name)
+        return {
+            "bool": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"term": {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: name_variation}}
+                            for name_variation in name_variations
+                        ]
+                    }
+                },
+                "must": {
+                    "match": {
+                        ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author']: author_name
+                    }
+                }
+            }
+        }
+
     def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
         if not fieldnames:
             field_specifier, field_specifier_value = 'default_field', '_all'
@@ -169,33 +226,8 @@ class ElasticSearchVisitor(Visitor):
         raise NotImplementedError('Nested keyword queries aren\'t implemented yet.')
 
     def visit_keyword(self, node):
-        # TODO This is a temporary solution for handling the Inspire keyword to ElasticSearch fieldname mapping, since
-        # TODO Inspire mappings aren't in their own repository. Currently using the `records-hep` mapping.
-
-        keyword_to_fieldname = {
-            'author': 'authors.full_name',
-            'author-count': 'author_count',
-            'citedby': 'citedby',
-            'collaboration': 'collaborations.value',
-            'date': [
-                'earliest_date',
-                'imprints.date',
-                'preprint_date',
-                'publication_info.year',
-                'thesis_info.date',
-            ],
-            'doi': 'dois.value.raw',
-            'eprint': 'arxiv_eprints.value.raw',
-            'refersto': 'references.recid',
-            'reportnumber': 'report_numbers.value.fuzzy',
-            'subject': 'facet_inspire_categories',
-            'title': 'titles.full_title',
-            'type-code': 'document_type',
-            'topcite': 'citation_count',
-        }
-
         # If no keyword is found, return the original node value (case of an unknown keyword).
-        return keyword_to_fieldname.get(node.value, node.value)
+        return ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME.get(node.value, node.value)
 
     def visit_value(self, node, fieldnames=None):
         if not fieldnames:
@@ -212,6 +244,9 @@ class ElasticSearchVisitor(Visitor):
                     }
                 }
             else:
+                # Handle specialized author search
+                if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
+                    return self._generate_author_query(node.value)
                 return {
                     'match': {
                         fieldnames: node.value,
