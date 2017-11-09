@@ -174,6 +174,7 @@ class ElasticSearchVisitor(Visitor):
 
         keyword_to_fieldname = {
             'author': 'authors.full_name',
+            'author-count': 'author_count',
             'citedby': 'citedby',
             'collaboration': 'collaborations.value',
             'date': [
