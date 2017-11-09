@@ -206,7 +206,7 @@ INSPIRE_PARSER_KEYWORDS = {
     't': 'title',
 
     # texkey
-    'texkey': 'texkey',
+    'texkey': 'texkeys',
 
     # Topcite, i.e. citation count
     # Cited used to be for Invenio style syntax while topcite for SPIRES
