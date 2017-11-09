@@ -24,14 +24,30 @@ from __future__ import absolute_import, unicode_literals
 
 import mock
 
+from inspire_utils.name import generate_name_variations
+
 from inspire_query_parser.parsing_driver import parse_query
 
 
 def test_driver_with_simple_query():
-    query_str = 'author: ellis'
+    author_name = 'Ellis, John'
+    name_variations = generate_name_variations(author_name)
+
+    query_str = 'author: ' + author_name
     expected_es_query = {
-        "match": {
-            "authors.full_name": "ellis"
+        "bool": {
+            "filter": {
+                "bool": {
+                    "should": [
+                        {"term": {"authors.name_variations": name_variation}} for name_variation in name_variations
+                    ]
+                }
+            },
+            "must": {
+                "match": {
+                    "authors.full_name": "Ellis, John"
+                }
+            }
         }
     }
 
