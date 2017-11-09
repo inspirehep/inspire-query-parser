@@ -24,7 +24,6 @@
 from __future__ import print_function, unicode_literals
 
 import mock
-import pytest
 
 from inspire_query_parser import parser
 from inspire_query_parser.config import ES_MUST_QUERY, ES_SHOULD_QUERY
@@ -249,7 +248,6 @@ def test_elastic_search_visitor_keyword_query_and_exact_value_query():
     assert generated_es_query == expected_es_query
 
 
-@pytest.mark.xfail(reason="Date should be parsed and converted to mapping compliant date format.")
 def test_elastic_search_visitor_range_op():
     query_str = 'd 2015->2017 and cited:1->9'
     expected_es_query = \
@@ -258,10 +256,11 @@ def test_elastic_search_visitor_range_op():
                 "must": [
                     {
                         "range": {
-                            "earliest_date": {
-                                "gte": "2015",
-                                "lte": "2017"
-                            }
+                            "earliest_date": {"gte": "2015", "lte": "2017"},
+                            "imprints.date": {"gte": "2015", "lte": "2017"},
+                            "preprint_date": {"gte": "2015", "lte": "2017"},
+                            "publication_info.year": {"gte": "2015", "lte": "2017"},
+                            "thesis_info.date": {"gte": "2015", "lte": "2017"},
                         }
                     },
                     {
@@ -297,24 +296,23 @@ def test_elastic_search_visitor_not_op():
     assert generated_es_query == expected_es_query
 
 
-@pytest.mark.xfail(reason="Date should be parsed and converted to mapping compliant date format.")
-def test_elastic_search_visitor_gt_and_lt_op():
-    query_str = 'date > 2000-10 and date < 2000-12'
+def test_elastic_search_visitor_gte_and_lt_op():
+    query_str = 'cited 50+ and cited < 100'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "range": {
-                            "earliest_date": {
-                                "gt": "2000-10",
+                            "citation_count": {
+                                "gte": "50",
                             }
                         }
                     },
                     {
                         "range": {
-                            "earliest_date": {
-                                "lt": "2000-12"
+                            "citation_count": {
+                                "lt": "100"
                             }
                         }
                     }
@@ -584,15 +582,124 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_ran
     query_str = 'date 2000->2005'
     expected_es_query = \
         {
-            "query_string": {
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "[2000 TO 2005]",
+            "range": {
+                "earliest_date": {"gte": "2000", "lte": "2005"},
+                "imprints.date": {"gte": "2000", "lte": "2005"},
+                "preprint_date": {"gte": "2000", "lte": "2005"},
+                "publication_info.year": {"gte": "2000", "lte": "2005"},
+                "thesis_info.date": {"gte": "2000", "lte": "2005"},
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gt_op():
+    query_str = 'title γ-radiation and date > 2015'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": "γ-radiation"
+                        }
+                    },
+                    {
+                        "range": {
+                            "earliest_date": {"gt": "2015"},
+                            "imprints.date": {"gt": "2015"},
+                            "preprint_date": {"gt": "2015"},
+                            "publication_info.year": {"gt": "2015"},
+                            "thesis_info.date": {"gt": "2015"},
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gte_op():
+    query_str = 'title γ-radiation and date 2015+'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": "γ-radiation"
+                        }
+                    },
+                    {
+                        "range": {
+                            "earliest_date": {"gte": "2015"},
+                            "imprints.date": {"gte": "2015"},
+                            "preprint_date": {"gte": "2015"},
+                            "publication_info.year": {"gte": "2015"},
+                            "thesis_info.date": {"gte": "2015"},
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lt_op():
+    query_str = 'title γ-radiation and date < 2015'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": "γ-radiation"
+                        }
+                    },
+                    {
+                        "range": {
+                            "earliest_date": {"lt": "2015"},
+                            "imprints.date": {"lt": "2015"},
+                            "preprint_date": {"lt": "2015"},
+                            "publication_info.year": {"lt": "2015"},
+                            "thesis_info.date": {"lt": "2015"},
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lte_op():
+    query_str = 'title γ-radiation and date 2015-'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": "γ-radiation"
+                        }
+                    },
+                    {
+                        "range": {
+                            "earliest_date": {"lte": "2015"},
+                            "imprints.date": {"lte": "2015"},
+                            "preprint_date": {"lte": "2015"},
+                            "publication_info.year": {"lte": "2015"},
+                            "thesis_info.date": {"lte": "2015"},
+                        }
+                    }
+                ]
             }
         }
 

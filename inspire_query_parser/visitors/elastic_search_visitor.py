@@ -29,7 +29,7 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 
-import six
+from inspire_utils.helpers import force_list
 
 from inspire_query_parser import ast
 from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
@@ -78,31 +78,21 @@ class ElasticSearchVisitor(Visitor):
                 }
             }
 
-    def _generate_range_queries(self, fieldname, operators_values_sequence):
+    def _generate_range_queries(self, fieldnames, operator_value_pairs):
         """Generates ElasticSearch range query.
 
         Args:
-            fieldname (str): The fieldname on which the search is the range query is targeted on.
-            operators_values_sequence (dict): Contains (range_operator, value) pairs.
+            fieldnames (list): The fieldnames on which the search is the range query is targeted on,
+            operator_value_pairs (dict): Contains (range_operator, value) pairs.
                 The range_operator should be one of those supported by ElasticSearch (e.g. 'gt', 'lt', 'ge', 'le').
                 The value should be of type int or string.
 
         Notes:
             If the value type is not compatible, a warning is logged and the value is converted to string.
         """
-        sequence = {}
-        for k, v in operators_values_sequence.items():
-            if isinstance(v, (six.string_types, int)):
-                sequence[k] = v
-            else:
-                logger.warn(self.__class__.__name__ + ': Non compatible type for range query operator(' +
-                            k + '): Type of value:' + repr(type(v)) + ' with value: ' + repr(v) + '.' +
-                            '\nConverting to string.')
-                sequence[k] = six.string_types(v)
-
         return {
             'range': {
-                fieldname: sequence
+                fieldname: operator_value_pairs for fieldname in fieldnames
             }
         }
 
@@ -160,26 +150,19 @@ class ElasticSearchVisitor(Visitor):
         return node.right.accept(self, fieldname)
 
     def visit_range_op(self, node, fieldnames):
-        if isinstance(fieldnames, list):
-            return self._generate_query_string_query(
-                value='[' + node.left.value + ' TO ' + node.right.value + ']',
-                fieldnames=fieldnames,
-                analyze_wildcard=False
-            )
+        return self._generate_range_queries(force_list(fieldnames), {'gte': node.left.value, 'lte': node.right.value})
 
-        return self._generate_range_queries(fieldnames, {'gte': node.left.value, 'lte': node.right.value})
+    def visit_greater_than_op(self, node, fieldnames):
+        return self._generate_range_queries(force_list(fieldnames), {'gt': node.op.value})
 
-    def visit_greater_than_op(self, node, fieldname):
-        return self._generate_range_queries(fieldname, {'gt': node.op.value})
+    def visit_greater_equal_than_op(self, node, fieldnames):
+        return self._generate_range_queries(force_list(fieldnames), {'gte': node.op.value})
 
-    def visit_greater_equal_than_op(self, node, fieldname):
-        return self._generate_range_queries(fieldname, {'gte': node.op.value})
+    def visit_less_than_op(self, node, fieldnames):
+        return self._generate_range_queries(force_list(fieldnames), {'lt': node.op.value})
 
-    def visit_less_than_op(self, node, fieldname):
-        return self._generate_range_queries(fieldname, {'lt': node.op.value})
-
-    def visit_less_equal_than_op(self, node, fieldname):
-        return self._generate_range_queries(fieldname, {'lte': node.op.value})
+    def visit_less_equal_than_op(self, node, fieldnames):
+        return self._generate_range_queries(force_list(fieldnames), {'lte': node.op.value})
 
     # TODO Cannot be completed as of yet.
     def visit_nested_keyword_op(self, node):
