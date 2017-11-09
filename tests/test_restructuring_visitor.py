@@ -467,7 +467,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
          ),
         (
             'find texkey Hirata:1992*',
-            KeywordOp(Keyword('texkey'), Value('Hirata:1992*', contains_wildcard=True))
+            KeywordOp(Keyword('texkeys'), Value('Hirata:1992*', contains_wildcard=True))
         ),
 
         # Unrecognized queries
