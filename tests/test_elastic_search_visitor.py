@@ -73,6 +73,30 @@ def test_elastic_search_visitor_find_author_exact_value_ellis():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_find_author_generic_search():
+    query_str = 'f author Ellis'
+    expected_es_query = \
+        {
+            "bool": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"term": {ElasticSearchVisitor.AUTHORS_ALL_NAME_VARIATIONS_FIELD: 'Ellis'}}
+                        ]
+                    }
+                },
+                "must": {
+                    "match": {
+                        "authors.full_name": "Ellis"
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_find_author_simple_value_ellis():
     author_name = 'Ellis, John'
     name_variations = generate_name_variations(author_name)
@@ -83,7 +107,14 @@ def test_elastic_search_visitor_find_author_simple_value_ellis():
                 "filter": {
                     "bool": {
                         "should": [
-                            {"term": {"authors.name_variations": name_variation}} for name_variation in name_variations
+                            {
+                                "term": {
+                                    ElasticSearchVisitor.AUTHORS_SPECIFIC_NAME_VARIATIONS_FIELD:
+                                        name_variation
+                                }
+                            }
+                            for name_variation
+                            in name_variations
                         ]
                     }
                 },
@@ -113,7 +144,12 @@ def test_elastic_search_visitor_and_op_query():
                             "filter": {
                                 "bool": {
                                     "should": [
-                                        {"term": {"authors.name_variations": name_variation}}
+                                        {
+                                            "term": {
+                                                ElasticSearchVisitor.AUTHORS_SPECIFIC_NAME_VARIATIONS_FIELD:
+                                                    name_variation
+                                            }
+                                        }
                                         for name_variation
                                         in name_variations
                                     ]
@@ -153,7 +189,12 @@ def test_elastic_search_visitor_or_op_query():
                             "filter": {
                                 "bool": {
                                     "should": [
-                                        {"term": {"authors.name_variations": name_variation}}
+                                        {
+                                            "term": {
+                                                ElasticSearchVisitor.AUTHORS_SPECIFIC_NAME_VARIATIONS_FIELD:
+                                                    name_variation
+                                            }
+                                        }
                                         for name_variation
                                         in name_variations
                                     ]
@@ -339,7 +380,12 @@ def test_elastic_search_visitor_not_op():
                         "filter": {
                             "bool": {
                                 "should": [
-                                    {"term": {"authors.name_variations": name_variation}}
+                                    {
+                                        "term": {
+                                            ElasticSearchVisitor.AUTHORS_SPECIFIC_NAME_VARIATIONS_FIELD:
+                                                name_variation
+                                        }
+                                    }
                                     for name_variation
                                     in name_variations
                                 ]

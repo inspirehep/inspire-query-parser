@@ -39,7 +39,9 @@ def test_driver_with_simple_query():
             "filter": {
                 "bool": {
                     "should": [
-                        {"term": {"authors.name_variations": name_variation}} for name_variation in name_variations
+                        {"term": {"authors.name_variations.specific": name_variation}}
+                        for name_variation
+                        in name_variations
                     ]
                 }
             },
