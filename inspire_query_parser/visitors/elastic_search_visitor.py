@@ -71,7 +71,8 @@ class ElasticSearchVisitor(Visitor):
         'topcite': 'citation_count',
     }
 
-    AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
+    AUTHORS_ALL_NAME_VARIATIONS_FIELD = 'authors.name_variations.all'
+    AUTHORS_SPECIFIC_NAME_VARIATIONS_FIELD = 'authors.name_variations.specific'
 
     def _generate_author_query(self, author_name):
         """Generates a match and a filter query handling specifically authors.
@@ -84,12 +85,19 @@ class ElasticSearchVisitor(Visitor):
         # if self.generating_not_query:
         #     raise ValueError("Should not be using this method when generating a not query for authors.")
         name_variations = generate_name_variations(author_name)
+
+        name_variations_field = (
+            ElasticSearchVisitor.AUTHORS_ALL_NAME_VARIATIONS_FIELD
+            if len(name_variations) == 1
+            else ElasticSearchVisitor.AUTHORS_SPECIFIC_NAME_VARIATIONS_FIELD
+        )
+
         return {
             "bool": {
                 "filter": {
                     "bool": {
                         "should": [
-                            {"term": {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: name_variation}}
+                            {"term": {name_variations_field: name_variation}}
                             for name_variation in name_variations
                         ]
                     }
