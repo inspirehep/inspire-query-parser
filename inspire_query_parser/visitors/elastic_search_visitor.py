@@ -47,6 +47,8 @@ class ElasticSearchVisitor(Visitor):
     Notes:
         The ElasticSearch query follows the 2.4 version DSL specification.
     """
+
+    # ##### Configuration #####
     # TODO This is a temporary solution for handling the Inspire keyword to ElasticSearch fieldname mapping, since
     # TODO Inspire mappings aren't in their own repository. Currently using the `records-hep` mapping.
     KEYWORD_TO_ES_FIELDNAME = {
@@ -70,8 +72,15 @@ class ElasticSearchVisitor(Visitor):
         'type-code': 'document_type',
         'topcite': 'citation_count',
     }
+    """Mapping from keywords to ElasticSearch fields.
+
+    Note:
+        If a keyword should query multiple fields, then it's value in the mapping should be a list. This will generate
+        a ``multi_match`` query. Otherwise a ``match`` query is generated.
+    """
 
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
+    # ################
 
     def _generate_author_query(self, author_name):
         """Generates a match and a filter query handling specifically authors.
@@ -81,9 +90,8 @@ class ElasticSearchVisitor(Visitor):
             so that we imitate legacy's behaviour on return more "exact" results. E.g. Searching for `Smith, John`
             shouldn't return papers of 'Smith, Bob'.
         """
-        # if self.generating_not_query:
-        #     raise ValueError("Should not be using this method when generating a not query for authors.")
         name_variations = generate_name_variations(author_name)
+
         return {
             "bool": {
                 "filter": {
@@ -221,8 +229,7 @@ class ElasticSearchVisitor(Visitor):
     def visit_less_equal_than_op(self, node, fieldnames):
         return self._generate_range_queries(force_list(fieldnames), {'lte': node.op.value})
 
-    # TODO Cannot be completed as of yet.
-    def visit_nested_keyword_op(self, node):
+    def visit_nested_keyword_op(self, node):  # TODO Cannot be completed as of yet.
         raise NotImplementedError('Nested keyword queries aren\'t implemented yet.')
 
     def visit_keyword(self, node):
@@ -274,7 +281,8 @@ class ElasticSearchVisitor(Visitor):
     def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
         # Add wildcard token as prefix and suffix.
-        value = ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \
+        value = \
+            ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \
             node.value + \
             ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
 
