@@ -89,6 +89,10 @@ INSPIRE_PARSER_KEYWORDS = {
     # Conference number
     'cnum': 'confnumber',
 
+    # Control number
+    'control_number': 'control_number',
+    'recid': 'control_number',
+
     # Country
     'country': 'country',
     'cc': 'country',
@@ -171,9 +175,6 @@ INSPIRE_PARSER_KEYWORDS = {
 
     # rawref
     'rawref': 'rawref',
-
-    # recid
-    'recid': 'recid',
 
     # Reference
     'citation': 'reference',

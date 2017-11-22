@@ -312,7 +312,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             '-refersto:recid:1374998 and citedby:(A.A.Aguilar.Arevalo.1)',
             AndOp(
-                NotOp(NestedKeywordOp(Keyword('refersto'), KeywordOp(Keyword('recid'), Value('1374998')))),
+                NotOp(NestedKeywordOp(Keyword('refersto'), KeywordOp(Keyword('control_number'), Value('1374998')))),
                 NestedKeywordOp(Keyword('citedby'), Value('A.A.Aguilar.Arevalo.1'))
             )
          ),
@@ -330,7 +330,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             'citedby:refersto:recid:1432705',
             NestedKeywordOp(
                 Keyword('citedby'),
-                NestedKeywordOp(Keyword('refersto'), KeywordOp(Keyword('recid'), Value('1432705')))
+                NestedKeywordOp(Keyword('refersto'), KeywordOp(Keyword('control_number'), Value('1432705')))
             )
          ),
 
@@ -593,7 +593,7 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
         ),
         (
             'citedby:recid:902780',
-            NestedKeywordOp(Keyword('citedby'), KeywordOp(Keyword('recid'), Value('902780')))
+            NestedKeywordOp(Keyword('citedby'), KeywordOp(Keyword('control_number'), Value('902780')))
         ),
         ('eprint:arxiv:1706.04080', KeywordOp(Keyword('eprint'), Value('1706.04080'))),
         ('eprint:1706.04080', KeywordOp(Keyword('eprint'), Value('1706.04080'))),
