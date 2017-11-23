@@ -25,15 +25,21 @@ from __future__ import print_function, unicode_literals
 
 import mock
 
-from inspire_utils.name import generate_name_variations
-
 from inspire_query_parser import parser, parse_query
 from inspire_query_parser.config import ES_MUST_QUERY, ES_SHOULD_QUERY
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
-from inspire_query_parser.visitors.elastic_search_visitor import \
-    ElasticSearchVisitor
-from inspire_query_parser.visitors.restructuring_visitor import \
-    RestructuringVisitor
+from inspire_query_parser.visitors.elastic_search_visitor import ElasticSearchVisitor
+from inspire_query_parser.visitors.restructuring_visitor import RestructuringVisitor
+
+
+def ordered(obj):
+    # See https://stackoverflow.com/a/25851972
+    if isinstance(obj, dict):
+        return sorted((k, ordered(v)) for k, v in obj.items())
+    if isinstance(obj, list):
+        return sorted(ordered(x) for x in obj)
+    else:
+        return obj
 
 
 def _parse_query(query_str):
@@ -66,32 +72,6 @@ def test_elastic_search_visitor_find_author_exact_value_ellis():
         {
             "term": {
                 "authors.full_name": "ellis"
-            }
-        }
-
-    generated_es_query = _parse_query(query_str)
-    assert generated_es_query == expected_es_query
-
-
-def test_elastic_search_visitor_find_author_simple_value_ellis():
-    author_name = 'Ellis, John'
-    name_variations = generate_name_variations(author_name)
-    query_str = 'f author ' + author_name
-    expected_es_query = \
-        {
-            "bool": {
-                "filter": {
-                    "bool": {
-                        "should": [
-                            {"term": {"authors.name_variations": name_variation}} for name_variation in name_variations
-                        ]
-                    }
-                },
-                "must": {
-                    "match": {
-                        "authors.full_name": "Ellis, John"
-                    }
-                }
             }
         }
 
@@ -230,29 +210,17 @@ def test_elastic_search_visitor_find_exact_author_with_bai_partial_value_ellis()
 
 
 def test_elastic_search_visitor_and_op_query():
-    author_name = 'Ellis, John'
-    name_variations = generate_name_variations(author_name)
-    query_str = 'author:' + author_name + ' and title:boson'
+    query_str = 'subject: astrophysics and title:boson'
 
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
-                        "bool": {
-                            "filter": {
-                                "bool": {
-                                    "should": [
-                                        {"term": {"authors.name_variations": name_variation}}
-                                        for name_variation
-                                        in name_variations
-                                    ]
-                                }
-                            },
-                            "must": {
-                                "match": {
-                                    "authors.full_name": "Ellis, John"
-                                }
+                        "match": {
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
+                                "operator": "and",
                             }
                         }
                     },
@@ -273,29 +241,16 @@ def test_elastic_search_visitor_and_op_query():
 
 
 def test_elastic_search_visitor_or_op_query():
-    author_name = 'Ellis, John'
-    name_variations = generate_name_variations(author_name)
-
-    query_str = 'author:' + author_name + ' or title:boson'
+    query_str = 'subject: astrophysics or title boson'
     expected_es_query = \
         {
             "bool": {
                 "should": [
                     {
-                        "bool": {
-                            "filter": {
-                                "bool": {
-                                    "should": [
-                                        {"term": {"authors.name_variations": name_variation}}
-                                        for name_variation
-                                        in name_variations
-                                    ]
-                                }
-                            },
-                            "must": {
-                                "match": {
-                                    "authors.full_name": "Ellis, John"
-                                }
+                        "match": {
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
+                                "operator": "and",
                             }
                         }
                     },
@@ -477,31 +432,20 @@ def test_elastic_search_visitor_range_op():
 
 
 def test_elastic_search_visitor_not_op():
-    author_name = 'Ellis, John'
-    name_variations = generate_name_variations(author_name)
-
-    query_str = '-author ' + author_name
+    query_str = '-subject astrophysics'
     expected_es_query = \
         {
             "bool": {
-                "must_not": [{
-                    "bool": {
-                        "filter": {
-                            "bool": {
-                                "should": [
-                                    {"term": {"authors.name_variations": name_variation}}
-                                    for name_variation
-                                    in name_variations
-                                ]
-                            }
-                        },
-                        "must": {
-                            "match": {
-                                "authors.full_name": "Ellis, John"
+                "must_not": [
+                    {
+                        "match": {
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
+                                "operator": "and",
                             }
                         }
                     }
-                }]
+                ]
             }
         }
 
@@ -1299,3 +1243,389 @@ def test_elastic_search_visitor_does_not_query_bai_field_if_name_contains_dot_an
 
     generated_es_query = _parse_query(query_str)
     assert bai_field not in str(generated_es_query)
+
+
+def test_elastic_search_visitor_author_lastname():
+    query_str = 'a ellis'
+    expected_query = {
+        "bool": {
+            "filter": {
+                "bool": {
+                    "should": [
+                        {
+                            "term": {
+                                "authors.name_variations": "ellis"
+                            }
+                        }
+                    ]
+                }
+            },
+            "must": {
+                "match": {
+                    "authors.full_name": "ellis"
+                }
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
+def test_elastic_search_visitor_author_lastname_initial():
+    query_str = 'a ellis, j'
+    expected_query = {
+        "bool": {
+            "filter": {
+                "bool": {
+                    "should": [
+                        {
+                            "term": {
+                                "authors.name_variations": "j ellis"
+                            }
+                        },
+                        {
+                            "term": {
+                                "authors.name_variations": "ellis j"
+                            }
+                        }
+                    ]
+                }
+            },
+            "must": {
+                "match": {
+                    "authors.full_name": "ellis, j"
+                }
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
+def test_elastic_search_visitor_author_lastname_firstname():
+    query_str = 'a ellis, john'
+
+    expected_query = {
+        "bool": {
+            "filter": {
+                "bool": {
+                    "should": [
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john ellis"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john ellis"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john ellis"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis john"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john ellis"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis j"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john ellis"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john e"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis john"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john ellis"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis john"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis john"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis john"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis j"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis john"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john e"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis j"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john ellis"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis j"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis john"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis j"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis j"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "ellis j"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john e"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john e"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john ellis"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john e"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis john"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john e"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "ellis j"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "authors.name_variations": "john e"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.full_name": {
+                                                "operator": "and",
+                                                "query": "john e"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            "must": {
+                "match": {
+                    "authors.full_name": "ellis, john"
+                }
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)

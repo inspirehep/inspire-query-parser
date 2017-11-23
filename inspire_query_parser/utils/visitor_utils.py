@@ -26,6 +26,9 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import re
+from unidecode import unidecode
+
+from inspire_utils.name import ParsedName
 
 from inspire_utils.date import PartialDate
 
@@ -35,6 +38,80 @@ from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
                                          DATE_THIS_MONTH_REGEX_PATTERN,
                                          DATE_TODAY_REGEX_PATTERN,
                                          DATE_YESTERDAY_REGEX_PATTERN)
+
+
+def author_name_contains_fullnames(author_name):
+    """Recognizes whether the name contains full name parts and not initials or only lastname.
+
+    Returns:
+          bool: True if name has only full name parts, e.g. 'Ellis John', False otherwise. So for example, False is
+            returned for 'Ellis, J.' or 'Ellis'.
+    """
+    def _is_initial(name_part):
+        return len(name_part) == 1 or u'.' in name_part
+
+    parsed_name = ParsedName(author_name)
+
+    if len(parsed_name) == 1:
+        return False
+    elif any([_is_initial(name_part) for name_part in parsed_name]):
+        return False
+
+    return True
+
+
+def _name_variation_has_only_initials(name):
+    """Detects whether the name variation consists only from initials."""
+    def _is_initial(name_variation):
+        return len(name_variation) == 1 or u'.' in name_variation
+
+    parsed_name = ParsedName.loads(name)
+
+    return all([_is_initial(name_part) for name_part in parsed_name])
+
+
+def generate_minimal_name_variations(author_name):
+    """Generate a small number of name variations.
+
+    Notes:
+        Unidecodes the name, so that we use its transliterated version, since this is how the field is being indexed.
+
+        For names with more than one part, {lastname} x {non lastnames, non lastnames initial} variations.
+        Additionally, it generates the swapped version of those, for supporting queries like ``Mele Salvatore`` which
+        ``ParsedName`` parses as lastname: Salvatore and firstname: Mele. So in those cases, we need to generate both
+        ``Mele, Salvatore`` and ``Mele, S``.
+
+        Wherever, the '-' is replaced by ' ', it's done because it's the way the name variations are being index, thus
+        we want our minimal name variations to be generated identically. This has to be done after the creation of
+        ParsedName, otherwise the name is parsed differently. E.g. 'Caro-Estevez' as is, it's a lastname, if we replace
+        the '-' with ' ', then it's a firstname and lastname.
+    """
+    parsed_name = ParsedName.loads(unidecode(author_name))
+
+    if len(parsed_name) > 1:
+        lastnames = parsed_name.last.replace('-', ' ')
+
+        non_lastnames = ' '.join(
+            parsed_name.first_list + parsed_name.middle_list + parsed_name.suffix_list
+        )
+        # Strip extra whitespace added if any of middle_list and suffix_list are empty.
+        non_lastnames = non_lastnames.strip().replace('-', ' ')
+
+        # Adding into a set first, so as to drop identical name variations.
+        return list({
+            name_variation.lower()
+            for name_variation
+            in [
+                lastnames + ' ' + non_lastnames,
+                lastnames + ' ' + non_lastnames[0],
+                non_lastnames + ' ' + lastnames,
+                non_lastnames + ' ' + lastnames[0],
+            ]
+            if not _name_variation_has_only_initials(name_variation)
+        })
+    else:
+        return [parsed_name.dumps().replace('-', ' ').lower()]
+
 
 # #### Date specifiers related utils ####
 ANY_PREFIX_AND_A_NUMBER = re.compile('(.+)(\d+)')
