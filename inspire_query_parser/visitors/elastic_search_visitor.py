@@ -28,10 +28,12 @@ visitor and converts it to an ElasticSearch query.
 from __future__ import absolute_import, unicode_literals
 
 import logging
+import re
 
 from inspire_utils.helpers import force_list
 
 from inspire_utils.name import generate_name_variations
+from pypeg2 import whitespace
 
 from inspire_query_parser import ast
 from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
@@ -39,6 +41,11 @@ from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERI
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
 logger = logging.getLogger(__name__)
+
+
+class FieldVariations(object):
+    search = 'search'
+    raw = 'raw'
 
 
 class ElasticSearchVisitor(Visitor):
@@ -80,7 +87,43 @@ class ElasticSearchVisitor(Visitor):
     """
 
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
+    AUTHORS_BAI_FIELD = 'authors.ids.value'
+    BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
     # ################
+
+    # #### Helpers ####
+    def _generate_fieldnames_if_bai_query(self, node_value, bai_field_variation, query_bai_field_if_dots_in_name):
+        """Generates new fieldnames in case of BAI query.
+
+        Args:
+            node_value (six.text_type): The node's value (i.e. author name).
+            bai_field_variation (six.text_type): Which field variation to query ('search' or 'raw').
+            query_bai_field_if_dots_in_name (bool): Whether to query BAI field (in addition to author's name field)
+                if dots exist in the name and name contains no whitespace.
+
+        Returns:
+            list: Fieldnames to query on, in case of BAI query or None, otherwise.
+
+        Raises:
+            ValueError, if ``field_variation`` is not one of ('search', 'raw').
+        """
+        if bai_field_variation not in (FieldVariations.search, FieldVariations.raw):
+            raise ValueError('Non supported field variation "{}".'.format(bai_field_variation))
+
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] and \
+                ElasticSearchVisitor.BAI_REGEX.match(node_value):
+            return [ElasticSearchVisitor.AUTHORS_BAI_FIELD + '.' + bai_field_variation]
+
+        elif not whitespace.match(node_value) and\
+                query_bai_field_if_dots_in_name and\
+                ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] and\
+                '.' in node_value:
+            # Case of partial BAI, e.g. ``J.Smith``.
+            return [ElasticSearchVisitor.AUTHORS_BAI_FIELD + '.' + bai_field_variation] + \
+                   force_list(ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'])
+
+        else:
+            return None
 
     def _generate_author_query(self, author_name):
         """Generates a match and a filter query handling specifically authors.
@@ -129,7 +172,6 @@ class ElasticSearchVisitor(Visitor):
         return query
 
     def _generate_boolean_query(self, node):
-        """Helper for generating a boolean query."""
         condition_a = node.left.accept(self)
         condition_b = node.right.accept(self)
 
@@ -160,6 +202,7 @@ class ElasticSearchVisitor(Visitor):
                 fieldname: operator_value_pairs for fieldname in fieldnames
             }
         }
+    # ################
 
     def visit_empty_query(self, node):
         return {'match_all': {}}
@@ -241,7 +284,15 @@ class ElasticSearchVisitor(Visitor):
             fieldnames = '_all'
 
         if node.contains_wildcard:
-            return self._generate_query_string_query(node.value, fieldnames, True)
+            bai_fieldnames = self._generate_fieldnames_if_bai_query(
+                node.value,
+                bai_field_variation=FieldVariations.search,
+                query_bai_field_if_dots_in_name=True
+            )
+
+            return self._generate_query_string_query(node.value,
+                                                     fieldnames=bai_fieldnames or fieldnames,
+                                                     analyze_wildcard=True)
         else:
             if isinstance(fieldnames, list):
                 return {
@@ -251,9 +302,22 @@ class ElasticSearchVisitor(Visitor):
                     }
                 }
             else:
-                # Handle specialized author search
                 if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
+                    bai_fieldnames = self._generate_fieldnames_if_bai_query(
+                        node.value,
+                        bai_field_variation=FieldVariations.search,
+                        query_bai_field_if_dots_in_name=True
+                    )
+                    if bai_fieldnames:
+                        if len(bai_fieldnames) == 1:
+                            return {"match": {bai_fieldnames[0]: node.value}}
+                        else:
+                            # Not an exact BAI pattern match, but node's value looks like BAI (no spaces and dots),
+                            # e.g. `S.Mele`. In this case generate a partial match query.
+                            return self.visit_partial_match_value(node, bai_fieldnames)
+
                     return self._generate_author_query(node.value)
+
                 return {
                     'match': {
                         fieldnames: node.value,
@@ -263,20 +327,21 @@ class ElasticSearchVisitor(Visitor):
     def visit_exact_match_value(self, node, fieldnames=None):
         """Generates a term query (exact search in ElasticSearch)."""
         if not fieldnames:
-            fieldnames = '_all'
-
-        if isinstance(fieldnames, list):
-            return {
-                'bool': {
-                    'should': [{'term': {field: node.value}} for field in fieldnames]
-                }
-            }
+            fieldnames = ['_all']
         else:
-            return {
-                'term': {
-                    fieldnames: node.value,
-                }
-            }
+            fieldnames = force_list(fieldnames)
+
+        bai_fieldnames = self._generate_fieldnames_if_bai_query(
+            node.value,
+            bai_field_variation=FieldVariations.raw,
+            query_bai_field_if_dots_in_name=False
+        )
+
+        term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+        if len(term_queries) > 1:
+            return {'bool': {'should': term_queries}}
+        else:
+            return term_queries[0]
 
     def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
@@ -286,7 +351,15 @@ class ElasticSearchVisitor(Visitor):
             node.value + \
             ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
 
-        return self._generate_query_string_query(value, fieldnames, True)
+        bai_fieldnames = self._generate_fieldnames_if_bai_query(
+            node.value,
+            bai_field_variation=FieldVariations.search,
+            query_bai_field_if_dots_in_name=True
+        )
+
+        return self._generate_query_string_query(value,
+                                                 fieldnames=bai_fieldnames or fieldnames,
+                                                 analyze_wildcard=True)
 
     def visit_regex_value(self, node, fieldname):
         return {

@@ -768,3 +768,100 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lte
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_handles_bai_simple_value():
+    query_str = 'a A.Einstein.1'
+    expected_es_query = \
+        {
+            "match": {
+                "authors.ids.value.search": "A.Einstein.1"
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_handles_bai_exact_value():
+    query_str = 'a "A.Einstein.1"'
+    expected_es_query = \
+        {
+            "term": {
+                "authors.ids.value.raw": "A.Einstein.1"
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_partial_bai_value():
+    query_str = "a 'A.Einstein.1' and a 'S.Mele'"
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "query_string": {
+                            "analyze_wildcard": True,
+                            "fields": ["authors.ids.value.search"],
+                            "query": "*A.Einstein.1*"
+                        }
+                    },
+                    {
+                        "query_string": {
+                            "analyze_wildcard": True,
+                            "fields": ["authors.ids.value.search", "authors.full_name"],
+                            "query": "*S.Mele*"
+                        }
+                    },
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_handles_wildcard_simple_and_partial_bai_like_queries():
+    query_str = "a S.Mele* and 'S.Mel*'"
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "query_string": {
+                            "analyze_wildcard": True,
+                            "fields": ["authors.ids.value.search", "authors.full_name"],
+                            "query": "S.Mele*"
+                        }
+                    },
+                    {
+                        "query_string": {
+                            "analyze_wildcard": True,
+                            "fields": ["authors.ids.value.search", "authors.full_name"],
+                            "query": "*S.Mel*"
+                        }
+                    },
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_author_name_contains_dot_and_no_spaces():
+    query_str = 'a S.Mele'
+    expected_es_query = \
+        {
+            "query_string": {
+                "analyze_wildcard": True,
+                "fields": ["authors.ids.value.search", "authors.full_name"],
+                "query": "*S.Mele*"
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
