@@ -114,9 +114,9 @@ class ElasticSearchVisitor(Visitor):
                 ElasticSearchVisitor.BAI_REGEX.match(node_value):
             return [ElasticSearchVisitor.AUTHORS_BAI_FIELD + '.' + bai_field_variation]
 
-        elif not whitespace.match(node_value) and\
-                query_bai_field_if_dots_in_name and\
-                ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] and\
+        elif not whitespace.search(node_value) and \
+                query_bai_field_if_dots_in_name and \
+                ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] and \
                 '.' in node_value:
             # Case of partial BAI, e.g. ``J.Smith``.
             return [ElasticSearchVisitor.AUTHORS_BAI_FIELD + '.' + bai_field_variation] + \
