@@ -865,3 +865,11 @@ def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_author_n
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_does_not_query_bai_field_if_name_contains_dot_and_spaces():
+    query_str = 'a S. Mele'
+    bai_field = "authors.ids.value.search"
+
+    generated_es_query = _parse_query(query_str)
+    assert bai_field not in str(generated_es_query)
