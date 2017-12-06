@@ -29,10 +29,15 @@ from __future__ import absolute_import, unicode_literals
 
 import logging
 import re
+from unicodedata import normalize
 
 from inspire_utils.helpers import force_list
 
-from inspire_utils.name import generate_name_variations, normalize_name
+from inspire_utils.name import (
+    generate_name_variations,
+    normalize_name,
+)
+
 from pypeg2 import whitespace
 
 from inspire_query_parser import ast
@@ -73,6 +78,7 @@ class ElasticSearchVisitor(Visitor):
         'doi': 'dois.value.raw',
         'eprint': 'arxiv_eprints.value.raw',
         'irn': 'external_system_identifiers.value.raw',
+        'exact-author': 'authors.full_name_normalized',
         'refersto': 'references.recid',
         'reportnumber': 'report_numbers.value.fuzzy',
         'subject': 'facet_inspire_categories',
@@ -156,6 +162,30 @@ class ElasticSearchVisitor(Visitor):
             }
         }
 
+    def _generate_exact_author_query(self, author_name_or_bai):
+        """Generates a term query handling authors and BAIs.
+
+        Notes:
+            If given value is a BAI, search for the provided value in the raw field variation of
+            `ElasticSearchVisitor.AUTHORS_BAI_FIELD`.
+            Otherwise, the value will be procesed in the same way as the indexed value (i.e. lowercased and normalized
+            (inspire_utils.normalize_name and then NFKC normalization).
+            E.g. Searching for 'Smith, J.' is the same as searching for: 'Smith, J', 'smith, j.', 'smith j', 'j smith',
+            'j. smith', 'J Smith', 'J. Smith'.
+        """
+        if ElasticSearchVisitor.BAI_REGEX.match(author_name_or_bai):
+            return self._generate_term_query(
+                '.'.join((ElasticSearchVisitor.AUTHORS_BAI_FIELD, FieldVariations.raw)),
+                author_name_or_bai
+            )
+        else:
+            author_name = normalize('NFKC', normalize_name(author_name_or_bai)).lower()
+            return self._generate_term_query(
+                ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['exact-author'],
+                author_name
+            )
+
+    # TODO: move helper method to a utils module.
     def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
         if not fieldnames:
             field_specifier, field_specifier_value = 'default_field', '_all'
@@ -173,6 +203,14 @@ class ElasticSearchVisitor(Visitor):
             query['query_string']['analyze_wildcard'] = True
 
         return query
+
+    # TODO: move helper method to a utils module.
+    def _generate_term_query(self, fieldname, value):
+        return {
+            'term': {
+                fieldname: value
+            }
+        }
 
     def _generate_boolean_query(self, node):
         condition_a = node.left.accept(self)
@@ -324,6 +362,9 @@ class ElasticSearchVisitor(Visitor):
 
                     return self._generate_author_query(node.value)
 
+                elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
+                    return self._generate_exact_author_query(node.value)
+
                 elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['irn'] == fieldnames:
                     return {'term': {fieldnames: ''.join(('SPIRES-', node.value))}}
 
@@ -343,6 +384,9 @@ class ElasticSearchVisitor(Visitor):
         else:
             fieldnames = force_list(fieldnames)
 
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames[0]:
+            return self._generate_exact_author_query(node.value)
+
         bai_fieldnames = self._generate_fieldnames_if_bai_query(
             node.value,
             bai_field_variation=FieldVariations.raw,
@@ -350,6 +394,7 @@ class ElasticSearchVisitor(Visitor):
         )
 
         term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+
         if len(term_queries) > 1:
             return {'bool': {'should': term_queries}}
         else:
@@ -357,6 +402,9 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
+            return self._generate_exact_author_query(node.value)
+
         # Add wildcard token as prefix and suffix.
         value = \
             ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \
