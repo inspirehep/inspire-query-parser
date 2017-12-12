@@ -135,6 +135,13 @@ from inspire_query_parser.visitors.restructuring_visitor import \
                 NotOp(KeywordOp(Keyword('title'), PartialMatchValue('boson')))
             )
          ),
+        (
+                'topcite 2+ and skands',
+                AndOp(
+                    KeywordOp(Keyword('topcite'), GreaterEqualThanOp(Value('2'))),
+                    ValueOp(Value('skands'))
+                )
+        ),
 
         # ##### Boolean operators at terminals level ####
         (
@@ -152,7 +159,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'ellis and not title \'boson\'',
             AndOp(
-                Value('ellis'),
+                ValueOp(Value('ellis')),
                 NotOp(KeywordOp(Keyword('title'), PartialMatchValue('boson')))
             )
          ),
@@ -194,7 +201,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'refersto:1347300 and (reference:Ellis or reference "Ellis")',
             AndOp(
-                NestedKeywordOp(Keyword('refersto'), Value('1347300')),
+                NestedKeywordOp(Keyword('refersto'), ValueOp(Value('1347300'))),
                 OrOp(
                     KeywordOp(Keyword('cite'), Value('Ellis')),
                     KeywordOp(Keyword('cite'), ExactMatchValue('Ellis'))
@@ -212,7 +219,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         # Simple phrases
         ('ellis', ValueOp(Value('ellis'))),
         ('\'ellis\'', ValueOp(PartialMatchValue('ellis'))),
-        ('(ellis and smith)', AndOp(Value('ellis'), Value('smith'))),
+        ('(ellis and smith)', AndOp(ValueOp(Value('ellis')), ValueOp(Value('smith')))),
 
         # Parenthesized keyword query values (working also with SPIRES operators - doesn't on legacy)
         (
@@ -313,7 +320,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             '-refersto:recid:1374998 and citedby:(A.A.Aguilar.Arevalo.1)',
             AndOp(
                 NotOp(NestedKeywordOp(Keyword('refersto'), KeywordOp(Keyword('control_number'), Value('1374998')))),
-                NestedKeywordOp(Keyword('citedby'), Value('A.A.Aguilar.Arevalo.1'))
+                NestedKeywordOp(Keyword('citedby'), ValueOp(Value('A.A.Aguilar.Arevalo.1')))
             )
          ),
         (
@@ -497,14 +504,14 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
         (
             'sungtae cho or 1301.7261',
             OrOp(
-                Value('sungtae cho'),
-                Value('1301.7261')
+                ValueOp(Value('sungtae cho')),
+                ValueOp(Value('1301.7261'))
             )
         ),
         (
             'raffaele d\'agnolo and not cn cms',
             AndOp(
-                Value('raffaele d\'agnolo'),
+                ValueOp(Value('raffaele d\'agnolo')),
                 NotOp(KeywordOp(Keyword('collaboration'), Value('cms')))
             )
         ),
@@ -570,7 +577,7 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
                 OrOp(
                     AndOp(
                         KeywordOp(Keyword('author'), PartialMatchValue('H Okada')),
-                        Value('hep-ph')
+                        ValueOp(Value('hep-ph'))
                     ),
                     OrOp(
                         KeywordOp(Keyword('title'), PartialMatchValue('Dark matter in supersymmetric U(1(B-L) model')),
@@ -583,7 +590,7 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
             'author:"Takayanagi, Tadashi" or hep-th/0010101',
             OrOp(
                 KeywordOp(Keyword('author'), ExactMatchValue('Takayanagi, Tadashi')),
-                Value('hep-th/0010101')
+                ValueOp(Value('hep-th/0010101'))
             )
         ),
         pytest.param(
