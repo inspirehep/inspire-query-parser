@@ -210,7 +210,10 @@ class ElasticSearchVisitor(Visitor):
     def visit_value_op(self, node):
         return {
             'match': {
-                "_all": node.op.value
+                "_all": {
+                    "query": node.op.value,
+                    "operator": "and",
+                }
             }
         }
 
@@ -320,7 +323,10 @@ class ElasticSearchVisitor(Visitor):
 
                 return {
                     'match': {
-                        fieldnames: node.value,
+                        fieldnames: {
+                            "query": node.value,
+                            "operator": "and",
+                        }
                     }
                 }
 

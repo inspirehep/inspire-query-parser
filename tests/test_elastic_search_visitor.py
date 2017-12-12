@@ -128,7 +128,10 @@ def test_elastic_search_visitor_and_op_query():
                     },
                     {
                         "match": {
-                            "titles.full_title": "boson"
+                            "titles.full_title": {
+                                "query": "boson",
+                                "operator": "and",
+                            }
                         }
                     }
                 ]
@@ -168,7 +171,10 @@ def test_elastic_search_visitor_or_op_query():
                     },
                     {
                         "match": {
-                            "titles.full_title": "boson"
+                            "titles.full_title": {
+                                "query":  "boson",
+                                "operator": "and",
+                            }
                         }
                     }
                 ]
@@ -183,7 +189,10 @@ def test_elastic_search_visitor_unknown_keyword_simple_value():
     query_str = 'unknown_keyword:bar'
     expected_es_query = {
         "match": {
-            "unknown_keyword": "bar"
+            "unknown_keyword": {
+                "query": "bar",
+                "operator": "and",
+            }
         }
     }
 
@@ -195,7 +204,10 @@ def test_elastic_search_visitor_dotted_keyword_simple_value():
     query_str = 'dotted.keyword:bar'
     expected_es_query = {
         "match": {
-            "dotted.keyword": "bar"
+            "dotted.keyword": {
+                "query":  "bar",
+                "operator": "and",
+            }
         }
     }
 
@@ -207,7 +219,10 @@ def test_elastic_search_visitor_value_query():
     query_str = 'foo bar'
     expected_es_query = {
         "match": {
-            "_all": "foo bar"
+            "_all": {
+                "query": "foo bar",
+                "operator": "and",
+            }
         }
     }
 
@@ -230,7 +245,10 @@ def test_elastic_search_visitor_keyword_query_and_value_query():
                     },
                     {
                         "match": {
-                            "_all": "skands"
+                            "_all": {
+                                "query": "skands",
+                                "operator": "and",
+                            }
                         }
                     }
                 ]
@@ -472,7 +490,10 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": "γ-radiation"
+                            "titles.full_title": {
+                                "query": "γ-radiation",
+                                "operator": "and",
+                            }
                         }
                     },
                     {
@@ -500,7 +521,10 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": "γ-radiation"
+                            "titles.full_title": {
+                                "query": "γ-radiation",
+                                "operator": "and",
+                            }
                         }
                     }
                 ],
@@ -666,7 +690,10 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gt_
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": "γ-radiation"
+                            "titles.full_title": {
+                                "query": "γ-radiation",
+                                "operator": "and",
+                            }
                         }
                     },
                     {
@@ -694,7 +721,10 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gte
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": "γ-radiation"
+                            "titles.full_title": {
+                                "query": "γ-radiation",
+                                "operator": "and",
+                            }
                         }
                     },
                     {
@@ -722,7 +752,10 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lt_
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": "γ-radiation"
+                            "titles.full_title": {
+                                "query": "γ-radiation",
+                                "operator": "and",
+                            }
                         }
                     },
                     {
@@ -750,7 +783,10 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lte
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": "γ-radiation"
+                            "titles.full_title": {
+                                "query": "γ-radiation",
+                                "operator": "and",
+                            }
                         }
                     },
                     {
