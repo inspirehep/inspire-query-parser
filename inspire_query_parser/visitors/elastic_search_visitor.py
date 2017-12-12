@@ -207,7 +207,7 @@ class ElasticSearchVisitor(Visitor):
     def visit_empty_query(self, node):
         return {'match_all': {}}
 
-    def visit_value_query(self, node):
+    def visit_value_op(self, node):
         return {
             'match': {
                 "_all": node.op.value

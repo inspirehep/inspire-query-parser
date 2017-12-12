@@ -35,7 +35,7 @@ from inspire_query_parser.ast import (AndOp, EmptyQuery, ExactMatchValue,
                                       NestedKeywordOp, NotOp, OrOp,
                                       PartialMatchValue,
                                       QueryWithMalformedPart, RangeOp,
-                                      RegexValue, Value, ValueQuery)
+                                      RegexValue, Value, ValueOp)
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.visitors.restructuring_visitor import \
     RestructuringVisitor
@@ -210,8 +210,8 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         ),
 
         # Simple phrases
-        ('ellis', ValueQuery(Value('ellis'))),
-        ('\'ellis\'', ValueQuery(PartialMatchValue('ellis'))),
+        ('ellis', ValueOp(Value('ellis'))),
+        ('\'ellis\'', ValueOp(PartialMatchValue('ellis'))),
         ('(ellis and smith)', AndOp(Value('ellis'), Value('smith'))),
 
         # Parenthesized keyword query values (working also with SPIRES operators - doesn't on legacy)

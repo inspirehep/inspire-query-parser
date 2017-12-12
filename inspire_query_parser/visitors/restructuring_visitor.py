@@ -98,7 +98,7 @@ class RestructuringVisitor(Visitor):
                     or isinstance(result, ast.PartialMatchValue) \
                     or isinstance(result, ast.RegexValue):
                 # The only Values that can be standalone queries are the above.
-                return ast.ValueQuery(result)
+                return ast.ValueOp(result)
         else:
             # Case in which we have both a recognized query and a malformed one.
             return QueryWithMalformedPart(result[0], result[1])
