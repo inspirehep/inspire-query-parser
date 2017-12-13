@@ -139,7 +139,7 @@ class NestedKeywordOp(BinaryOp):
     pass
 
 
-class ValueQuery(UnaryOp):
+class ValueOp(UnaryOp):
     pass
 
 

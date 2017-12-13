@@ -35,7 +35,7 @@ from inspire_query_parser import ast
 from inspire_query_parser.ast import (AndOp, ExactMatchValue, Keyword,
                                       KeywordOp, NotOp, OrOp,
                                       PartialMatchValue,
-                                      QueryWithMalformedPart, RegexValue)
+                                      QueryWithMalformedPart, RegexValue, ValueOp)
 from inspire_query_parser.parser import (And, ComplexValue,
                                          SimpleValueBooleanQuery)
 from inspire_query_parser.utils.visitor_utils import \
@@ -48,14 +48,12 @@ logger = logging.getLogger(__name__)
 def _convert_simple_value_boolean_query_to_and_boolean_queries(tree, keyword):
     """Chain SimpleValueBooleanQuery values into chained AndOp queries with the given current Keyword."""
 
-    def _create_keyword_op_node(value_node):
-        """Creates a KeywordOp node, with the given Keyword argument and the given Value node of the closure."""
-        if isinstance(value_node, NotOp):
-            keyword_op_node = NotOp(KeywordOp(keyword, value_node.op))
-        else:
-            keyword_op_node = KeywordOp(keyword, value_node)
+    def _create_operator_node(value_node):
+        """Creates a KeywordOp or a ValueOp node."""
+        base_node = value_node.op if isinstance(value_node, NotOp) else value_node
+        updated_base_node = KeywordOp(keyword, base_node) if keyword else ValueOp(base_node)
 
-        return keyword_op_node
+        return NotOp(updated_base_node) if isinstance(value_node, NotOp) else updated_base_node
 
     def _get_bool_op_type(bool_op):
         return AndOp if isinstance(bool_op, And) else OrOp
@@ -65,10 +63,10 @@ def _convert_simple_value_boolean_query_to_and_boolean_queries(tree, keyword):
     previous_tree = tree
 
     while True:  # Walk down the tree while building the new AndOp queries subtree.
-        current_tree.left = _create_keyword_op_node(previous_tree.left) if keyword else previous_tree.left
+        current_tree.left = _create_operator_node(previous_tree.left)
 
         if not isinstance(previous_tree.right, SimpleValueBooleanQuery):
-            current_tree.right = _create_keyword_op_node(previous_tree.right) if keyword else previous_tree.right
+            current_tree.right = _create_operator_node(previous_tree.right)
             break
 
         previous_tree = previous_tree.right
@@ -98,7 +96,7 @@ class RestructuringVisitor(Visitor):
                     or isinstance(result, ast.PartialMatchValue) \
                     or isinstance(result, ast.RegexValue):
                 # The only Values that can be standalone queries are the above.
-                return ast.ValueQuery(result)
+                return ast.ValueOp(result)
         else:
             # Case in which we have both a recognized query and a malformed one.
             return QueryWithMalformedPart(result[0], result[1])
@@ -145,6 +143,9 @@ class RestructuringVisitor(Visitor):
         if isinstance(node, SimpleValueBooleanQuery):
             # Case in which the node is a simple value boolean query not paired with a keyword query. e.g. 'foo and bar'
             return _convert_simple_value_boolean_query_to_and_boolean_queries(node, None)
+        elif isinstance(node, ast.Value):
+            # Case in which the node is a SimpleQuery(Value(...)) e.g. for a value query "Ellis"
+            return ast.ValueOp(node)
 
         return node
 
