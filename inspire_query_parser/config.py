@@ -145,6 +145,9 @@ INSPIRE_PARSER_KEYWORDS = {
     'fulltext': 'fulltext',
     'ft': 'fulltext',
 
+    # SPIRES identifiers
+    'irn': 'irn',
+
     # Job related
     'position': 'title',
     'region': 'region',

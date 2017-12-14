@@ -99,6 +99,19 @@ def test_elastic_search_visitor_find_author_simple_value_ellis():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_find_spires_identifier_simple_value():
+    query_str = 'irn 3665763'
+    expected_es_query = \
+        {
+            "term": {
+                "external_system_identifiers.value.raw": "SPIRES-3665763"
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_and_op_query():
     author_name = 'Ellis, John'
     name_variations = generate_name_variations(author_name)

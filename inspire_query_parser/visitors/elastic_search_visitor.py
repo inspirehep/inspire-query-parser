@@ -72,6 +72,7 @@ class ElasticSearchVisitor(Visitor):
         ],
         'doi': 'dois.value.raw',
         'eprint': 'arxiv_eprints.value.raw',
+        'irn': 'external_system_identifiers.value.raw',
         'refersto': 'references.recid',
         'reportnumber': 'report_numbers.value.fuzzy',
         'subject': 'facet_inspire_categories',
@@ -320,6 +321,9 @@ class ElasticSearchVisitor(Visitor):
                             return self.visit_partial_match_value(node, bai_fieldnames)
 
                     return self._generate_author_query(node.value)
+
+                elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['irn'] == fieldnames:
+                    return {'term': {fieldnames: ''.join(('SPIRES-', node.value))}}
 
                 return {
                     'match': {
