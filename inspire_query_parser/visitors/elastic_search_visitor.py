@@ -32,7 +32,7 @@ import re
 
 from inspire_utils.helpers import force_list
 
-from inspire_utils.name import generate_name_variations
+from inspire_utils.name import generate_name_variations, normalize_name
 from pypeg2 import whitespace
 
 from inspire_query_parser import ast
@@ -111,14 +111,16 @@ class ElasticSearchVisitor(Visitor):
         if bai_field_variation not in (FieldVariations.search, FieldVariations.raw):
             raise ValueError('Non supported field variation "{}".'.format(bai_field_variation))
 
+        normalized_author_name = normalize_name(node_value).strip('.')
+
         if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] and \
                 ElasticSearchVisitor.BAI_REGEX.match(node_value):
             return [ElasticSearchVisitor.AUTHORS_BAI_FIELD + '.' + bai_field_variation]
 
-        elif not whitespace.search(node_value) and \
+        elif not whitespace.search(normalized_author_name) and \
                 query_bai_field_if_dots_in_name and \
                 ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] and \
-                '.' in node_value:
+                '.' in normalized_author_name:
             # Case of partial BAI, e.g. ``J.Smith``.
             return [ElasticSearchVisitor.AUTHORS_BAI_FIELD + '.' + bai_field_variation] + \
                    force_list(ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'])
