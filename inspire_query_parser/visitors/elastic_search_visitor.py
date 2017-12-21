@@ -224,7 +224,7 @@ class ElasticSearchVisitor(Visitor):
         return {
             'query_string': {
                 'default_field': '_all',
-                'query': ' '.join(node.children)
+                'query': ' '.join([word.strip(':') for word in node.children])
             }
         }
 
