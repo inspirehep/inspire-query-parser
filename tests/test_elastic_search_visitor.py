@@ -478,12 +478,12 @@ def test_elastic_search_visitor_empty_query():
 
 
 def test_elastic_search_visitor_with_malformed_query():
-    query_str = 'title and foo'
+    query_str = 't: and t: electroweak'
     expected_es_query = \
         {
             "query_string": {
                 "default_field": "_all",
-                "query": "title and foo"
+                "query": "t and t electroweak"
             }
         }
 
@@ -496,7 +496,7 @@ def test_elastic_search_visitor_with_malformed_query():
 )
 def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_must():
 
-    query_str = 'title γ-radiation and author'
+    query_str = 'title γ-radiation and: author:'
     expected_es_query = \
         {
             "bool": {
