@@ -26,6 +26,8 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 import re
 
+from inspire_utils.date import PartialDate
+
 from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
                                          DATE_SPECIFIERS_COLLECTION,
                                          DATE_THIS_MONTH_REGEX_PATTERN,
@@ -123,3 +125,36 @@ def convert_last_month_date(relative_date_specifier_suffix):
     )
 
     return _convert_date_to_string(start_date, relative_delta)
+
+
+ES_MAPPING_HEP_DATE_ONLY_YEAR = {
+    'publication_info.year',
+}
+"""Contains all the dates that contain always only a year date."""
+
+
+def update_date_value_in_operator_value_pairs_for_fieldname(fieldname, operator_value_pairs):
+    """Normalizes a date value in operator_value_pairs.
+
+    Notes:
+        On a ``ValueError`` an empty operator_value_pairs is returned.
+
+        In case the fieldname is in `ES_MAPPING_HEP_DATE_ONLY_YEAR`, then the date is normalized and then only its year
+        value is used. This is needed for ElasticSearch to be able to do comparisons on dates that have only year, which
+        fails if being queried with a date with more .
+    """
+    updated_operator_value_pairs = {}
+    for operator, value in operator_value_pairs.iteritems():
+        try:
+            normalized_date = PartialDate.parse(value)
+        except ValueError:
+            return {}
+
+        if fieldname in ES_MAPPING_HEP_DATE_ONLY_YEAR:
+            date_value = PartialDate.from_parts(normalized_date.year).dumps()
+        else:
+            date_value = normalized_date.dumps()
+
+        updated_operator_value_pairs[operator] = date_value
+
+    return updated_operator_value_pairs

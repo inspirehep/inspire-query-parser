@@ -39,6 +39,7 @@ from inspire_query_parser import ast
 from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
                                          ES_MUST_QUERY)
 from inspire_query_parser.visitors.visitor_impl import Visitor
+from inspire_query_parser.utils.visitor_utils import update_date_value_in_operator_value_pairs_for_fieldname
 
 logger = logging.getLogger(__name__)
 
@@ -178,18 +179,18 @@ class ElasticSearchVisitor(Visitor):
         condition_a = node.left.accept(self)
         condition_b = node.right.accept(self)
 
+        bool_body = [condition for condition in [condition_a, condition_b] if condition]
+        if not bool_body:
+            return {}
         return \
             {
                 'bool': {
-                    ('must' if isinstance(node, ast.AndOp) else 'should'): [
-                        condition_a,
-                        condition_b
-                    ]
+                    ('must' if isinstance(node, ast.AndOp) else 'should'): bool_body
                 }
             }
 
     def _generate_range_queries(self, fieldnames, operator_value_pairs):
-        """Generates ElasticSearch range query.
+        """Generates ElasticSearch range queries.
 
         Args:
             fieldnames (list): The fieldnames on which the search is the range query is targeted on,
@@ -198,13 +199,45 @@ class ElasticSearchVisitor(Visitor):
                 The value should be of type int or string.
 
         Notes:
-            If the value type is not compatible, a warning is logged and the value is converted to string.
+            A bool should query with multiple range sub-queries is generated so that even if one of the multiple fields
+            is missing from a document, ElasticSearch will be able to match some records.
+
+            In the case of a 'date' keyword query, it updates date values after normalizing them by using
+            :meth:`inspire_query_parser.utils.visitor_utils.update_date_value_in_operator_value_pairs_for_fieldname`.
+            Additionally, in the aforementioned case, if a malformed date has been given, then the the method will
+            return an empty dictionary.
         """
-        return {
-            'range': {
-                fieldname: operator_value_pairs for fieldname in fieldnames
-            }
-        }
+
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+            range_queries = []
+            for fieldname in fieldnames:
+                updated_operator_value_pairs = \
+                    update_date_value_in_operator_value_pairs_for_fieldname(fieldname, operator_value_pairs)
+
+                if not updated_operator_value_pairs:
+                    break  # Malformed date
+                else:
+                    range_queries.append({
+                        'range': {
+                            fieldname: updated_operator_value_pairs
+                        }
+                    })
+        else:
+            range_queries = [{
+                    'range': {
+                        fieldname: operator_value_pairs
+                    }
+                }
+                for fieldname in fieldnames
+            ]
+
+        if len(range_queries) == 0:
+            return {}
+        if len(range_queries) == 1:
+            return range_queries[0]
+
+        return {'bool': {'should': range_queries}}
+
     # ################
 
     def visit_empty_query(self, node):
