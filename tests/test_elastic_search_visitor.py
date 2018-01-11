@@ -615,20 +615,100 @@ def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_r
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_value_has_wildcard():
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_day():
     query_str = 'date 2000-10-*'
     expected_es_query = \
         {
-            "query_string": {
-                "analyze_wildcard": True,
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "2000-10-*",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month():
+    query_str = 'date 2015-*'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"imprints.date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"preprint_date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"publication_info.year": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"thesis_info.date": {"gte": "2015", "lt": "2016"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_as_month_part():
+    query_str = 'date 2015-1*'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"imprints.date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"preprint_date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"publication_info.year": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"thesis_info.date": {"gte": "2015", "lt": "2016"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_year_drops_date_query():
+    query_str = 'date 201* and title collider'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "collider",
+                                "operator": "and",
+                            }
+                        }
+                    },
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month_drops_date_query():
+    query_str = 'date 2000-*-01 and title collider'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "collider",
+                                "operator": "and",
+                            }
+                        }
+                    },
+                ]
             }
         }
 
@@ -675,7 +755,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_exact_match_value():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_partial_match_value():
+def test_elastic_search_visitor_with_date_multi_field_and_partial_value():
     query_str = "date '2000-10'"
     expected_es_query = \
         {
@@ -698,16 +778,14 @@ def test_elastic_search_visitor_with_date_multi_field_and_partial_value_with_wil
     query_str = 'date \'2000-10-*\''
     expected_es_query = \
         {
-            "query_string": {
-                "analyze_wildcard": True,
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "*2000-10-*",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                ]
             }
         }
 

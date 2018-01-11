@@ -36,11 +36,12 @@ from inspire_utils.name import generate_name_variations, normalize_name
 from pypeg2 import whitespace
 
 from inspire_query_parser import ast
+from inspire_query_parser.ast import GenericValue
 from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
                                          ES_MUST_QUERY)
 from inspire_query_parser.visitors.visitor_impl import Visitor
 from inspire_query_parser.utils.visitor_utils import update_date_value_in_operator_value_pairs_for_fieldname, \
-    ES_RANGE_EQ_OPERATOR, truncate_date_value_according_on_date_field
+    ES_RANGE_EQ_OPERATOR, _truncate_date_value_according_on_date_field, _truncate_wildcard_from_date
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,28 @@ class ElasticSearchVisitor(Visitor):
                 }
             }
         }
+
+    def _generate_date_with_wildcard_query(self, date_value):
+        """Helper for generating a date keyword query containing a wildcard.
+
+        Returns:
+            (dict): The date query containing the wildcard or an empty dict in case the date value is malformed.
+
+        The policy followed here is quite conservative on what it accepts as valid input. Look into
+        :meth:`inspire_query_parser.utils.visitor_utils for more information.
+        """
+        if date_value.endswith(GenericValue.WILDCARD_TOKEN):
+            try:
+                date_value = _truncate_wildcard_from_date(date_value)
+            except ValueError:
+                # Drop date query.
+                return {}
+
+            return self._generate_range_queries(self.KEYWORD_TO_ES_FIELDNAME['date'],
+                                                {ES_RANGE_EQ_OPERATOR: date_value})
+        else:
+            # Drop date query with wildcard not as suffix, e.g. 2000-1*-31
+            return {}
 
     def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
         if not fieldnames:
@@ -324,6 +347,9 @@ class ElasticSearchVisitor(Visitor):
             fieldnames = '_all'
 
         if node.contains_wildcard:
+            if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+                return self._generate_date_with_wildcard_query(node.value)
+
             bai_fieldnames = self._generate_fieldnames_if_bai_query(
                 node.value,
                 bai_field_variation=FieldVariations.search,
@@ -389,7 +415,7 @@ class ElasticSearchVisitor(Visitor):
         )
 
         if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
-            term_queries = [{'term': {field: truncate_date_value_according_on_date_field(field, node.value).dumps()}}
+            term_queries = [{'term': {field: _truncate_date_value_according_on_date_field(field, node.value).dumps()}}
                             for field
                             in fieldnames]
         else:
@@ -405,6 +431,9 @@ class ElasticSearchVisitor(Visitor):
         if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
             # Date queries with partial values are transformed into range queries, among the given and the exact
             # next date, according to the granularity of the given date.
+            if node.contains_wildcard:
+                return self._generate_date_with_wildcard_query(node.value)
+
             return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
 
         # Add wildcard token as prefix and suffix.

@@ -29,6 +29,7 @@ import re
 
 from inspire_utils.date import PartialDate
 
+from inspire_query_parser.ast import GenericValue
 from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
                                          DATE_SPECIFIERS_COLLECTION,
                                          DATE_THIS_MONTH_REGEX_PATTERN,
@@ -137,7 +138,36 @@ ES_RANGE_EQ_OPERATOR = 'eq'
 """Additional (internal to the parser) range operator, for handling date equality queries as ranges."""
 
 
-def truncate_date_value_according_on_date_field(field, date_value):
+def _truncate_wildcard_from_date(date_value):
+    """Truncate wildcard from date parts.
+
+    Returns:
+        (str) The truncated date.
+
+    Raises:
+        ValueError, on either unsupported date separator (currently only ' ' and '-' are supported), or if there's a
+        wildcard in the year.
+
+    Notes:
+        Either whole date part is wildcard, in which we ignore it and do a range query on the
+        remaining parts, or some numbers are wildcards, where again, we ignore this part.
+        Reason: From 3M queries, 0.01% were date keyword queries with the wildcard operator.
+    """
+    if ' ' in date_value:
+        date_parts = date_value.split(' ')
+    elif '-' in date_value:
+        date_parts = date_value.split('-')
+    else:
+        # Either unsupported separators or wildcard in year, e.g. '201*'.
+        raise ValueError("Erroneous date value: %s.", date_value)
+
+    if GenericValue.WILDCARD_TOKEN in date_parts[-1]:
+        del date_parts[-1]
+
+    return '-'.join(date_parts)
+
+
+def _truncate_date_value_according_on_date_field(field, date_value):
     """Truncates date value (to year only) according to the given date field.
 
     Args:
@@ -165,7 +195,7 @@ def truncate_date_value_according_on_date_field(field, date_value):
     return truncated_date
 
 
-def get_next_date_from_partial_date(partial_date):
+def _get_next_date_from_partial_date(partial_date):
     """Calculates the next date from the given partial date.
 
     Args:
@@ -201,14 +231,14 @@ def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_valu
         On a ``ValueError`` an empty operator_value_pairs is returned.
     """
     updated_operator_value_pairs = {}
-    for operator, value in operator_value_pairs.iteritems():
-        modified_date = truncate_date_value_according_on_date_field(field, value)
+    for operator, value in operator_value_pairs.items():
+        modified_date = _truncate_date_value_according_on_date_field(field, value)
         if not modified_date:
             return {}
 
         if operator == ES_RANGE_EQ_OPERATOR:
             updated_operator_value_pairs['gte'] = modified_date.dumps()
-            updated_operator_value_pairs['lt'] = get_next_date_from_partial_date(modified_date)
+            updated_operator_value_pairs['lt'] = _get_next_date_from_partial_date(modified_date)
         else:
             updated_operator_value_pairs[operator] = modified_date.dumps()
 
