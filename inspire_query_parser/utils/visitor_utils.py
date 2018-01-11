@@ -137,6 +137,34 @@ ES_RANGE_EQ_OPERATOR = 'eq'
 """Additional (internal to the parser) range operator, for handling date equality queries as ranges."""
 
 
+def truncate_date_value_according_on_date_field(field, date_value):
+    """Truncates date value (to year only) according to the given date field.
+
+    Args:
+        field (unicode): The field for which the date value will be used to query on.
+        date_value (str): The date value that is going to be truncated to its year.
+
+    Returns:
+        PartialDate: The possibly truncated date, on success. None, otherwise.
+
+    Notes:
+        In case the fieldname is in `ES_MAPPING_HEP_DATE_ONLY_YEAR`, then the date is normalized and then only its year
+        value is used. This is needed for ElasticSearch to be able to do comparisons on dates that have only year, which
+        fails if being queried with a date with more .
+    """
+    try:
+        partial_date = PartialDate.parse(date_value)
+    except ValueError:
+        return None
+
+    if field in ES_MAPPING_HEP_DATE_ONLY_YEAR:
+        truncated_date = PartialDate.from_parts(partial_date.year)
+    else:
+        truncated_date = partial_date
+
+    return truncated_date
+
+
 def get_next_date_from_partial_date(partial_date):
     """Calculates the next date from the given partial date.
 
@@ -144,7 +172,7 @@ def get_next_date_from_partial_date(partial_date):
         partial_date (inspire_utils.date.PartialDate): The partial date whose next date should be calculated.
 
     Returns:
-        (str): The next date from the given partial date.
+        str: The next date from the given partial date.
     """
     relativedelta_arg = 'years'
     if partial_date.month and not partial_date.day:
@@ -171,22 +199,12 @@ def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_valu
 
     Notes:
         On a ``ValueError`` an empty operator_value_pairs is returned.
-
-        In case the fieldname is in `ES_MAPPING_HEP_DATE_ONLY_YEAR`, then the date is normalized and then only its year
-        value is used. This is needed for ElasticSearch to be able to do comparisons on dates that have only year, which
-        fails if being queried with a date with more .
     """
     updated_operator_value_pairs = {}
     for operator, value in operator_value_pairs.iteritems():
-        try:
-            partial_date = PartialDate.parse(value)
-        except ValueError:
+        modified_date = truncate_date_value_according_on_date_field(field, value)
+        if not modified_date:
             return {}
-
-        if field in ES_MAPPING_HEP_DATE_ONLY_YEAR:
-            modified_date = PartialDate.from_parts(partial_date.year)
-        else:
-            modified_date = partial_date
 
         if operator == ES_RANGE_EQ_OPERATOR:
             updated_operator_value_pairs['gte'] = modified_date.dumps()

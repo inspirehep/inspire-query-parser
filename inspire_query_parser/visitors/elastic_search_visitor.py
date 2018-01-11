@@ -40,7 +40,7 @@ from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERI
                                          ES_MUST_QUERY)
 from inspire_query_parser.visitors.visitor_impl import Visitor
 from inspire_query_parser.utils.visitor_utils import update_date_value_in_operator_value_pairs_for_fieldname, \
-    ES_RANGE_EQ_OPERATOR
+    ES_RANGE_EQ_OPERATOR, truncate_date_value_according_on_date_field
 
 logger = logging.getLogger(__name__)
 
@@ -388,7 +388,13 @@ class ElasticSearchVisitor(Visitor):
             query_bai_field_if_dots_in_name=False
         )
 
-        term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+            term_queries = [{'term': {field: truncate_date_value_according_on_date_field(field, node.value).dumps()}}
+                            for field
+                            in fieldnames]
+        else:
+            term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+
         if len(term_queries) > 1:
             return {'bool': {'should': term_queries}}
         else:

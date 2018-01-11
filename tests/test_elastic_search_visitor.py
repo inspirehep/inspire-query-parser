@@ -636,7 +636,7 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_val
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_exact_match_value():
+def test_elastic_search_visitor_with_date_multi_field_and_exact_match_value():
     query_str = 'date "2000-10"'
     expected_es_query = \
         {
@@ -659,7 +659,7 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_exa
                     },
                     {
                         "term": {
-                            "publication_info.year": "2000-10"
+                            "publication_info.year": "2000"
                         }
                     },
                     {
