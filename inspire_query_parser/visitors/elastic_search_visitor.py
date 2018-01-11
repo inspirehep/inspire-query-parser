@@ -402,6 +402,11 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+            # Date queries with partial values are transformed into range queries, among the given and the exact
+            # next date, according to the granularity of the given date.
+            return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
+
         # Add wildcard token as prefix and suffix.
         value = \
             ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \

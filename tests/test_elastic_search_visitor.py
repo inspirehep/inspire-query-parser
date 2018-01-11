@@ -675,20 +675,18 @@ def test_elastic_search_visitor_with_date_multi_field_and_exact_match_value():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_partial_match_value():
-    query_str = 'date \'2000-10\''
+def test_elastic_search_visitor_with_date_multi_field_and_partial_match_value():
+    query_str = "date '2000-10'"
     expected_es_query = \
         {
-            "query_string": {
-                "analyze_wildcard": True,
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "*2000-10*",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                ]
             }
         }
 
