@@ -558,19 +558,56 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_simple_value():
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_only_year_fields():
     query_str = 'date 2000-10'
     expected_es_query = \
         {
-            "multi_match": {
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "2000-10",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_year():
+    query_str = 'date 2017-12'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2017-12", "lt": "2018-01"}}},
+                    {"range": {"imprints.date": {"gte": "2017-12", "lt": "2018-01"}}},
+                    {"range": {"preprint_date": {"gte": "2017-12", "lt": "2018-01"}}},
+                    {"range": {"publication_info.year": {"gte": "2017", "lt": "2018"}}},
+                    {"range": {"thesis_info.date": {"gte": "2017-12", "lt": "2018-01"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_month():
+    query_str = 'date 2017-10-31'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
+                    {"range": {"imprints.date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
+                    {"range": {"preprint_date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
+                    {"range": {"publication_info.year": {"gte": "2017", "lt": "2018"}}},
+                    {"range": {"thesis_info.date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
+                ]
             }
         }
 
@@ -699,7 +736,8 @@ def test_elastic_search_visitor_with_date_multi_field_and_range_op():
 
 
 def test_elastic_search_visitor_with_date_multi_field_range_within_same_year():
-    # This works fine, since the range operator is including the edges, otherwise it would result in returning nothing.
+    # This kind of query works fine (regarding the ``publication_info.year``), since the range operator is including
+    # its bounds, otherwise we would get no records.
     query_str = 'date 2000-01->2000-04'
     expected_es_query = {
         "bool": {

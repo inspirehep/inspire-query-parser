@@ -39,7 +39,8 @@ from inspire_query_parser import ast
 from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
                                          ES_MUST_QUERY)
 from inspire_query_parser.visitors.visitor_impl import Visitor
-from inspire_query_parser.utils.visitor_utils import update_date_value_in_operator_value_pairs_for_fieldname
+from inspire_query_parser.utils.visitor_utils import update_date_value_in_operator_value_pairs_for_fieldname, \
+    ES_RANGE_EQ_OPERATOR
 
 logger = logging.getLogger(__name__)
 
@@ -334,6 +335,11 @@ class ElasticSearchVisitor(Visitor):
                                                      analyze_wildcard=True)
         else:
             if isinstance(fieldnames, list):
+                if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+                    # Date queries with simple values are transformed into range queries, among the given and the exact
+                    # next date, according to the granularity of the given date.
+                    return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
+
                 return {
                     'multi_match': {
                         'fields': fieldnames,

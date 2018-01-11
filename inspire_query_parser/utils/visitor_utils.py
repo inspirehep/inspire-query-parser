@@ -24,6 +24,7 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from dateutil.parser import parse
 import re
 
 from inspire_utils.date import PartialDate
@@ -132,9 +133,41 @@ ES_MAPPING_HEP_DATE_ONLY_YEAR = {
 }
 """Contains all the dates that contain always only a year date."""
 
+ES_RANGE_EQ_OPERATOR = 'eq'
+"""Additional (internal to the parser) range operator, for handling date equality queries as ranges."""
 
-def update_date_value_in_operator_value_pairs_for_fieldname(fieldname, operator_value_pairs):
-    """Normalizes a date value in operator_value_pairs.
+
+def get_next_date_from_partial_date(partial_date):
+    """Calculates the next date from the given partial date.
+
+    Args:
+        partial_date (inspire_utils.date.PartialDate): The partial date whose next date should be calculated.
+
+    Returns:
+        (str): The next date from the given partial date.
+    """
+    relativedelta_arg = 'years'
+    if partial_date.month and not partial_date.day:
+        relativedelta_arg = 'months'
+    elif partial_date.month and partial_date.day:
+        relativedelta_arg = 'days'
+
+    next_date = parse(partial_date.dumps()) + relativedelta(**{relativedelta_arg: 1})
+    return PartialDate.from_parts(
+        next_date.year,
+        next_date.month if partial_date.month else None,
+        next_date.day if partial_date.day else None
+    ).dumps()
+
+
+def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_value_pairs):
+    """Updates (operator, date value) pairs by normalizing the date according to the given field.
+
+    Args:
+        field (unicode): The fieldname for which the operator-value pairs are being generated.
+        operator_value_pairs (dict): ES range operator {'gt', 'gte', 'lt', 'lte'} along with a value.
+            Additionally, if the operator is ``ES_RANGE_EQ_OPERATOR``, then it is indicated that the method should
+            generate both a lower and an upper bound operator-value pairs, with the given date_value.
 
     Notes:
         On a ``ValueError`` an empty operator_value_pairs is returned.
@@ -146,15 +179,19 @@ def update_date_value_in_operator_value_pairs_for_fieldname(fieldname, operator_
     updated_operator_value_pairs = {}
     for operator, value in operator_value_pairs.iteritems():
         try:
-            normalized_date = PartialDate.parse(value)
+            partial_date = PartialDate.parse(value)
         except ValueError:
             return {}
 
-        if fieldname in ES_MAPPING_HEP_DATE_ONLY_YEAR:
-            date_value = PartialDate.from_parts(normalized_date.year).dumps()
+        if field in ES_MAPPING_HEP_DATE_ONLY_YEAR:
+            modified_date = PartialDate.from_parts(partial_date.year)
         else:
-            date_value = normalized_date.dumps()
+            modified_date = partial_date
 
-        updated_operator_value_pairs[operator] = date_value
+        if operator == ES_RANGE_EQ_OPERATOR:
+            updated_operator_value_pairs['gte'] = modified_date.dumps()
+            updated_operator_value_pairs['lt'] = get_next_date_from_partial_date(modified_date)
+        else:
+            updated_operator_value_pairs[operator] = modified_date.dumps()
 
     return updated_operator_value_pairs
