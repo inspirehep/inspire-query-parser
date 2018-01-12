@@ -30,6 +30,7 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import re
 
+import six
 from inspire_utils.helpers import force_list
 
 from inspire_utils.name import generate_name_variations, normalize_name
@@ -262,6 +263,27 @@ class ElasticSearchVisitor(Visitor):
 
         return {'bool': {'should': range_queries}}
 
+    @staticmethod
+    def _generate_malformed_query(data):
+        """Generates a query on the ``_all`` field with all the query content.
+
+        Args:
+            data (six.text_type or list): The query in the format of ``six.text_type`` (when used from parsing driver)
+                or ``list`` when used from withing the ES visitor.
+        """
+        if isinstance(data, six.text_type):
+            # Remove colon character (special character for ES)
+            query_str = data.replace(':', ' ')
+        else:
+            query_str = ' '.join([word.strip(':') for word in data.children])
+
+        return {
+            'query_string': {
+                'default_field': '_all',
+                'query': query_str
+            }
+        }
+
     # ################
 
     def visit_empty_query(self, node):
@@ -278,12 +300,7 @@ class ElasticSearchVisitor(Visitor):
         }
 
     def visit_malformed_query(self, node):
-        return {
-            'query_string': {
-                'default_field': '_all',
-                'query': ' '.join([word.strip(':') for word in node.children])
-            }
-        }
+        return ElasticSearchVisitor._generate_malformed_query(node)
 
     def visit_query_with_malformed_part(self, node):
         query = {

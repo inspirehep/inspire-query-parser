@@ -104,4 +104,8 @@ def parse_query(query_str):
         )
         return _generate_match_all_fields_query()
 
+    if not es_query:
+        # Case where an empty query was generated (i.e. date query with malformed date, e.g. "d < 200").
+        return _generate_match_all_fields_query()
+
     return es_query

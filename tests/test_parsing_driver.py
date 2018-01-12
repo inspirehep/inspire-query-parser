@@ -126,3 +126,18 @@ def test_driver_with_es_visitor_error(mocked_es_visitor):
     es_query = parse_query(query_str)
 
     assert es_query == expected_es_query
+
+
+def test_driver_with_es_visitor_empty_query_generates_a_query_against_all():
+    query_str = 'd < 200'
+    expected_es_query = {
+        'multi_match': {
+            'query': 'd < 200',
+            'fields': ['_all'],
+            'zero_terms_query': 'all'
+        }
+    }
+
+    es_query = parse_query(query_str)
+
+    assert es_query == expected_es_query
