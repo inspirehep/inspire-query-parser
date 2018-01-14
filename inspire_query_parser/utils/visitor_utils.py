@@ -39,6 +39,12 @@ from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
 # #### Date specifiers related utils ####
 ANY_PREFIX_AND_A_NUMBER = re.compile('(.+)(\d+)')
 
+# ES query constants that provide rounding of dates on query time, according to the date "resolution" the user gave.
+# More here: https://www.elastic.co/guide/en/elasticsearch/reference/6.1/common-options.html#date-math
+ES_DATE_MATH_ROUNDING_YEAR = "||/y"
+ES_DATE_MATH_ROUNDING_MONTH = "||/M"
+ES_DATE_MATH_ROUNDING_DAY = "||/d"
+
 
 def _compile_date_regexes(date_specifier_patterns):
     date_specifier_regexes = {}
@@ -202,7 +208,7 @@ def _get_next_date_from_partial_date(partial_date):
         partial_date (inspire_utils.date.PartialDate): The partial date whose next date should be calculated.
 
     Returns:
-        str: The next date from the given partial date.
+        PartialDate: The next date from the given partial date.
     """
     relativedelta_arg = 'years'
     if partial_date.month and not partial_date.day:
@@ -215,11 +221,39 @@ def _get_next_date_from_partial_date(partial_date):
         next_date.year,
         next_date.month if partial_date.month else None,
         next_date.day if partial_date.day else None
-    ).dumps()
+    )
+
+
+def _get_proper_elastic_search_date_rounding_format(partial_date):
+    """Returns the proper ES date math unit according to the "resolution" of the partial_date.
+
+    Args:
+        partial_date (PartialDate): The partial date for which the date math unit is.
+
+    Returns:
+        (str): The ES date math unit format.
+
+    Notes:
+        This is needed for supporting range queries on dates, i.e. rounding them up or down according to
+        the ES range operator.
+        For example, without this, a query like 'date > 2010-11', would return documents with date '2010-11-15', due to
+        the date value of the query being interpreted by ES as '2010-11-01 01:00:00'. By using the suffixes for rounding
+        up or down, the date value of the query is interpreted as '2010-11-30T23:59:59.999', thus not returning the
+        document with date '2010-11-15', as the user would expect. See:
+        https://www.elastic.co/guide/en/elasticsearch/reference/6.1/query-dsl-range-query.html#_date_math_and_rounding
+    """
+    es_date_math_unit = ES_DATE_MATH_ROUNDING_YEAR
+
+    if partial_date.month and partial_date.day:
+        es_date_math_unit = ES_DATE_MATH_ROUNDING_DAY
+    elif partial_date.month and not partial_date.day:
+        es_date_math_unit = ES_DATE_MATH_ROUNDING_MONTH
+
+    return es_date_math_unit
 
 
 def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_value_pairs):
-    """Updates (operator, date value) pairs by normalizing the date according to the given field.
+    """Updates (operator, date value) pairs by normalizing the date value according to the given field.
 
     Args:
         field (unicode): The fieldname for which the operator-value pairs are being generated.
@@ -237,9 +271,13 @@ def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_valu
             return {}
 
         if operator == ES_RANGE_EQ_OPERATOR:
-            updated_operator_value_pairs['gte'] = modified_date.dumps()
-            updated_operator_value_pairs['lt'] = _get_next_date_from_partial_date(modified_date)
+            updated_operator_value_pairs['gte'] = \
+                modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(modified_date)
+
+            next_date = _get_next_date_from_partial_date(modified_date)
+            updated_operator_value_pairs['lt'] = next_date.dumps() + _get_proper_elastic_search_date_rounding_format(next_date)
         else:
-            updated_operator_value_pairs[operator] = modified_date.dumps()
+            updated_operator_value_pairs[operator] = \
+                modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(modified_date)
 
     return updated_operator_value_pairs

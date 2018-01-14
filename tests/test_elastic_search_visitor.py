@@ -335,11 +335,11 @@ def test_elastic_search_visitor_range_op():
                     {
                         "bool": {
                             "should": [
-                                {"range": {"earliest_date": {"gte": "2015", "lte": "2017"}}},
-                                {"range": {"imprints.date": {"gte": "2015", "lte": "2017"}}},
-                                {"range": {"preprint_date": {"gte": "2015", "lte": "2017"}}},
-                                {"range": {"publication_info.year": {"gte": "2015", "lte": "2017"}}},
-                                {"range": {"thesis_info.date": {"gte": "2015", "lte": "2017"}}},
+                                {"range": {"earliest_date": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"imprints.date": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"preprint_date": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"publication_info.year": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"thesis_info.date": {"gte": "2015||/y", "lte": "2017||/y"}}},
                             ]
                         }
                     },
@@ -564,11 +564,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_o
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
-                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
                 ]
             }
         }
@@ -583,11 +583,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_r
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2017-12", "lt": "2018-01"}}},
-                    {"range": {"imprints.date": {"gte": "2017-12", "lt": "2018-01"}}},
-                    {"range": {"preprint_date": {"gte": "2017-12", "lt": "2018-01"}}},
-                    {"range": {"publication_info.year": {"gte": "2017", "lt": "2018"}}},
-                    {"range": {"thesis_info.date": {"gte": "2017-12", "lt": "2018-01"}}},
+                    {"range": {"earliest_date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2017||/y", "lt": "2018||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
                 ]
             }
         }
@@ -602,11 +602,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_r
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
-                    {"range": {"imprints.date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
-                    {"range": {"preprint_date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
-                    {"range": {"publication_info.year": {"gte": "2017", "lt": "2018"}}},
-                    {"range": {"thesis_info.date": {"gte": "2017-10-31", "lt": "2017-11-01"}}},
+                    {"range": {"earliest_date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
+                    {"range": {"imprints.date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
+                    {"range": {"preprint_date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
+                    {"range": {"publication_info.year": {"gte": "2017||/y", "lt": "2018||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
                 ]
             }
         }
@@ -621,11 +621,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
-                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
                 ]
             }
         }
@@ -640,11 +640,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"imprints.date": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"preprint_date": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"publication_info.year": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"thesis_info.date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"earliest_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"imprints.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"preprint_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"publication_info.year": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
                 ]
             }
         }
@@ -659,11 +659,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"imprints.date": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"preprint_date": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"publication_info.year": {"gte": "2015", "lt": "2016"}}},
-                    {"range": {"thesis_info.date": {"gte": "2015", "lt": "2016"}}},
+                    {"range": {"earliest_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"imprints.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"preprint_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"publication_info.year": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
                 ]
             }
         }
@@ -761,11 +761,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_partial_value():
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
-                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
                 ]
             }
         }
@@ -780,11 +780,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_partial_value_with_wil
         {
             "bool": {
                 "should": [
-                    {"range": {"earliest_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"imprints.date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"preprint_date": {"gte": "2000-10", "lt": "2000-11"}}},
-                    {"range": {"publication_info.year": {"gte": "2000", "lt": "2001"}}},
-                    {"range": {"thesis_info.date": {"gte": "2000-10", "lt": "2000-11"}}},
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
                 ]
             }
         }
@@ -798,11 +798,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_range_op():
     expected_es_query = {
         "bool": {
             "should": [
-                {"range": {"earliest_date": {"gte": "2000-01", "lte": "2001-01"}}},
-                {"range": {"imprints.date": {"gte": "2000-01", "lte": "2001-01"}}},
-                {"range": {"preprint_date": {"gte": "2000-01", "lte": "2001-01"}}},
-                {"range": {"publication_info.year": {"gte": "2000", "lte": "2001"}}},
-                {"range": {"thesis_info.date": {"gte": "2000-01", "lte": "2001-01"}}},
+                {"range": {"earliest_date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
+                {"range": {"imprints.date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
+                {"range": {"preprint_date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
+                {"range": {"publication_info.year": {"gte": "2000||/y", "lte": "2001||/y"}}},
+                {"range": {"thesis_info.date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
             ]
         }
     }
@@ -818,11 +818,11 @@ def test_elastic_search_visitor_with_date_multi_field_range_within_same_year():
     expected_es_query = {
         "bool": {
             "should": [
-                {"range": {"earliest_date": {"gte": "2000-01", "lte": "2000-04"}}},
-                {"range": {"imprints.date": {"gte": "2000-01", "lte": "2000-04"}}},
-                {"range": {"preprint_date": {"gte": "2000-01", "lte": "2000-04"}}},
-                {"range": {"publication_info.year": {"gte": "2000", "lte": "2000"}}},
-                {"range": {"thesis_info.date": {"gte": "2000-01", "lte": "2000-04"}}},
+                {"range": {"earliest_date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
+                {"range": {"imprints.date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
+                {"range": {"preprint_date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
+                {"range": {"publication_info.year": {"gte": "2000||/y", "lte": "2000||/y"}}},
+                {"range": {"thesis_info.date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
             ]
         }
     }
@@ -848,11 +848,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_gt_op():
                     {
                         "bool": {
                             "should": [
-                                {"range": {"earliest_date": {"gt": "2015"}}},
-                                {"range": {"imprints.date": {"gt": "2015"}}},
-                                {"range": {"preprint_date": {"gt": "2015"}}},
-                                {"range": {"publication_info.year": {"gt": "2015"}}},
-                                {"range": {"thesis_info.date": {"gt": "2015"}}},
+                                {"range": {"earliest_date": {"gt": "2015||/y"}}},
+                                {"range": {"imprints.date": {"gt": "2015||/y"}}},
+                                {"range": {"preprint_date": {"gt": "2015||/y"}}},
+                                {"range": {"publication_info.year": {"gt": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"gt": "2015||/y"}}},
                             ]
                         }
                     }
@@ -881,11 +881,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_gte_op():
                     {
                         "bool": {
                             "should": [
-                                {"range": {"earliest_date": {"gte": "2015"}}},
-                                {"range": {"imprints.date": {"gte": "2015"}}},
-                                {"range": {"preprint_date": {"gte": "2015"}}},
-                                {"range": {"publication_info.year": {"gte": "2015"}}},
-                                {"range": {"thesis_info.date": {"gte": "2015"}}},
+                                {"range": {"earliest_date": {"gte": "2015||/y"}}},
+                                {"range": {"imprints.date": {"gte": "2015||/y"}}},
+                                {"range": {"preprint_date": {"gte": "2015||/y"}}},
+                                {"range": {"publication_info.year": {"gte": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"gte": "2015||/y"}}},
                             ]
                         }
                     }
@@ -914,11 +914,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_lt_op():
                     {
                         "bool": {
                             "should": [
-                                {"range": {"earliest_date": {"lt": "2015-08"}}},
-                                {"range": {"imprints.date": {"lt": "2015-08"}}},
-                                {"range": {"preprint_date": {"lt": "2015-08"}}},
-                                {"range": {"publication_info.year": {"lt": "2015"}}},
-                                {"range": {"thesis_info.date": {"lt": "2015-08"}}},
+                                {"range": {"earliest_date": {"lt": "2015-08||/M"}}},
+                                {"range": {"imprints.date": {"lt": "2015-08||/M"}}},
+                                {"range": {"preprint_date": {"lt": "2015-08||/M"}}},
+                                {"range": {"publication_info.year": {"lt": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"lt": "2015-08||/M"}}},
                             ]
                         }
                     }
@@ -947,11 +947,11 @@ def test_elastic_search_visitor_with_date_multi_field_and_lte_op():
                     {
                         "bool": {
                             "should": [
-                                {"range": {"earliest_date": {"lte": "2015-08-30"}}},
-                                {"range": {"imprints.date": {"lte": "2015-08-30"}}},
-                                {"range": {"preprint_date": {"lte": "2015-08-30"}}},
-                                {"range": {"publication_info.year": {"lte": "2015"}}},
-                                {"range": {"thesis_info.date": {"lte": "2015-08-30"}}},
+                                {"range": {"earliest_date": {"lte": "2015-08-30||/d"}}},
+                                {"range": {"imprints.date": {"lte": "2015-08-30||/d"}}},
+                                {"range": {"preprint_date": {"lte": "2015-08-30||/d"}}},
+                                {"range": {"publication_info.year": {"lte": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"lte": "2015-08-30||/d"}}},
                             ]
                         }
                     }
