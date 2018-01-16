@@ -209,6 +209,129 @@ def test_elastic_search_visitor_find_exact_author_with_bai_partial_value_ellis()
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_find_journal_title_simple_value():
+    query_str = 'j Phys.Lett.B'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "match": {"publication_info.journal_title": "Phys.Lett.B"}
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_journal_title_and_new_style_vol_simple_value():
+    query_str = 'j Phys.Lett.B,351'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "must": [
+                            {"match": {"publication_info.journal_title": "Phys.Lett.B"}},
+                            {"match": {"publication_info.journal_volume": "351"}}
+                        ]
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_journal_title_and_old_style_vol_simple_value():
+    query_str = 'j Phys.Lett.,B351'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "must": [
+                            {"match": {"publication_info.journal_title": "Phys.Lett.B"}},
+                            {"match": {"publication_info.journal_volume": "351"}}
+                        ]
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_page_simple_value():
+    query_str = 'j Phys.Lett.B,351,123'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "match": {
+                                    "publication_info.journal_title": "Phys.Lett.B"
+                                }
+                            },
+                            {
+                                "match": {
+                                    "publication_info.journal_volume": "351"
+                                }
+                            },
+                            {
+                                "bool": {
+                                    "should": [
+                                        {
+                                            "match": {
+                                                "publication_info.page_start": "123"
+                                            }
+                                        },
+                                        {
+                                            "match": {
+                                                "publication_info.artid": "123"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_es_query)
+
+
+def test_elastic_search_visitor_exact_journal_query_is_the_same_as_simple_value():
+    simple_value_query_str = 'j Phys.Lett.B,351,123'
+    exact_value_query_str = 'j "Phys.Lett.B,351,123"'
+
+    generated_simple_value_es_query = _parse_query(simple_value_query_str)
+    generated_exact_value_es_query = _parse_query(exact_value_query_str)
+
+    assert ordered(generated_simple_value_es_query) == ordered(generated_exact_value_es_query)
+
+
+def test_elastic_search_visitor_partial_journal_query_is_the_same_as_simple_value():
+    simple_value_query_str = 'j Phys.Lett.B,351,123'
+    partial_value_query_str = "j 'Phys.Lett.B,351,123'"
+
+    generated_simple_value_es_query = _parse_query(simple_value_query_str)
+    generated_partial_value_es_query = _parse_query(partial_value_query_str)
+
+    assert ordered(generated_simple_value_es_query) == ordered(generated_partial_value_es_query)
+
+
 def test_elastic_search_visitor_and_op_query():
     query_str = 'subject: astrophysics and title:boson'
 
@@ -290,7 +413,7 @@ def test_elastic_search_visitor_dotted_keyword_simple_value():
     expected_es_query = {
         "match": {
             "dotted.keyword": {
-                "query":  "bar",
+                "query": "bar",
                 "operator": "and",
             }
         }

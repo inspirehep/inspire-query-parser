@@ -260,10 +260,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'find (j phys.rev. and vol d85) or (j phys.rev.lett.,62,1825)',
             OrOp(
-                AndOp(
-                    KeywordOp(Keyword('journal'), Value('phys.rev.')),
-                    KeywordOp(Keyword('volume'), Value('d85'))
-                ),
+                KeywordOp(Keyword('journal'), Value('phys.rev.,d85')),
                 KeywordOp(Keyword('journal'), Value('phys.rev.lett.,62,1825'))
             )
          ),
@@ -485,7 +482,74 @@ from inspire_query_parser.visitors.restructuring_visitor import \
                 KeywordOp(Keyword('title'), Value('γ-radiation')),
                 MalformedQuery(['and', 'and'])
             )
-         )
+         ),
+        ('find j Nucl.Phys.,A531,11', KeywordOp(Keyword('journal'), Value('Nucl.Phys.,A531,11'))),
+        (
+            'find j Nucl.Phys. and j Nucl.Phys.',
+            AndOp(
+                KeywordOp(Keyword('journal'), Value('Nucl.Phys.')),
+                KeywordOp(Keyword('journal'), Value('Nucl.Phys.'))
+            )
+        ),
+        (
+            'find j Nucl.Phys. and vol A351 and author ellis',
+            AndOp(
+                KeywordOp(Keyword('journal'), Value('Nucl.Phys.,A351')),
+                KeywordOp(Keyword('author'), Value('ellis'))
+            )
+        ),
+        (
+            'find j Nucl.Phys. and vol A351 and author ellis and author smith and ea john',
+            AndOp(
+                KeywordOp(Keyword('journal'), Value('Nucl.Phys.,A351')),
+                AndOp(
+                    KeywordOp(Keyword('author'), Value('ellis')),
+                    AndOp(
+                        KeywordOp(Keyword('author'), Value('smith')),
+                        KeywordOp(Keyword('exact-author'), Value('john'))
+                    )
+                )
+            )
+        ),
+        ('find j Nucl.Phys. and vol A531', KeywordOp(Keyword('journal'), Value('Nucl.Phys.,A531'))),
+        (
+            'find j Nucl.Phys. and author ellis',
+            AndOp(
+                KeywordOp(Keyword('journal'), Value('Nucl.Phys.')),
+                KeywordOp(Keyword('author'), Value('ellis'))
+            )
+        ),
+        (
+            'find author ellis and j Nucl.Phys. and vol B351 and title Collider',
+            AndOp(
+                KeywordOp(Keyword('author'), Value('ellis')),
+                AndOp(
+                    KeywordOp(Keyword('journal'), Value('Nucl.Phys.,B351')),
+                    KeywordOp(Keyword('title'), Value('Collider'))
+                )
+            )
+        ),
+        (
+            'find author ellis and j Nucl.Phys. and vol B351 and title Collider',
+            AndOp(
+                KeywordOp(Keyword('author'), Value('ellis')),
+                AndOp(
+                    KeywordOp(Keyword('journal'), Value('Nucl.Phys.,B351')),
+                    KeywordOp(Keyword('title'), Value('Collider'))
+                )
+            )
+        ),
+        ('find j Nucl.Phys. and not vol A531', KeywordOp(Keyword('journal'), Value('Nucl.Phys.'))),
+        (
+            'find j Nucl.Phys. and not vol A531 and a ellis and a john',
+            AndOp(
+                KeywordOp(Keyword('journal'), Value('Nucl.Phys.')),
+                AndOp(
+                    KeywordOp(Keyword('author'), Value('ellis')),
+                    KeywordOp(Keyword('author'), Value('john'))
+                )
+            )
+        )
     ]
 )
 def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
@@ -494,6 +558,19 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
     restructuring_visitor = RestructuringVisitor()
     _, parse_tree = stateful_parser.parse(query_str, parser.Query)
     parse_tree = parse_tree.accept(restructuring_visitor)
+
+    assert parse_tree == expected_parse_tree
+
+
+def test_foo_bar():
+    query_str = 'find j Nucl.Phys. and not vol A531 and a ellis'
+    print("Parsing: " + query_str)
+    stateful_parser = StatefulParser()
+    restructuring_visitor = RestructuringVisitor()
+    _, parse_tree = stateful_parser.parse(query_str, parser.Query)
+    parse_tree = parse_tree.accept(restructuring_visitor)
+    expected_parse_tree = AndOp(KeywordOp(Keyword('journal'), Value('Nucl.Phys.')),
+                                KeywordOp(Keyword('author'), Value('ellis')))
 
     assert parse_tree == expected_parse_tree
 
