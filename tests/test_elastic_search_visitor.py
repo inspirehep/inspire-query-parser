@@ -209,6 +209,113 @@ def test_elastic_search_visitor_find_exact_author_with_bai_partial_value_ellis()
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_find_journal_title_simple_value():
+    query_str = 'j foo'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "must": [
+                            {"match": {"publication_info.journal_title": "foo"}}
+                        ]
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_journal_title_and_vol_simple_value():
+    query_str = 'j foo,bar'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "must": [
+                            {"match": {"publication_info.journal_title": "foo"}},
+                            {"match": {"publication_info.journal_volume": "bar"}}
+                        ]
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_page_simple_value():
+    query_str = 'j foo,bar,baz'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {
+                        "nested": {
+                            "path": "publication_info",
+                            "query": {
+                                "bool": {
+                                    "must": [
+                                        {
+                                            "match": {
+                                                "publication_info.journal_title": "foo"
+                                            }
+                                        },
+                                        {
+                                            "match": {
+                                                "publication_info.journal_volume": "bar"
+                                            }
+                                        },
+                                        {
+                                            "match": {
+                                                "publication_info.page_start": "baz"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "nested": {
+                            "path": "publication_info",
+                            "query": {
+                                "bool": {
+                                    "must": [
+                                        {
+                                            "match": {
+                                                "publication_info.journal_title": "foo"
+                                            }
+                                        },
+                                        {
+                                            "match": {
+                                                "publication_info.journal_volume": "bar"
+                                            }
+                                        },
+                                        {
+                                            "match": {
+                                                "publication_info.artid": "baz"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_and_op_query():
     query_str = 'subject: astrophysics and title:boson'
 
