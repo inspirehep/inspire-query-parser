@@ -27,7 +27,7 @@ import mock
 
 from inspire_utils.name import generate_name_variations
 
-from inspire_query_parser import parser
+from inspire_query_parser import parser, parse_query
 from inspire_query_parser.config import ES_MUST_QUERY, ES_SHOULD_QUERY
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.visitors.elastic_search_visitor import \
@@ -333,12 +333,14 @@ def test_elastic_search_visitor_range_op():
             "bool": {
                 "must": [
                     {
-                        "range": {
-                            "earliest_date": {"gte": "2015", "lte": "2017"},
-                            "imprints.date": {"gte": "2015", "lte": "2017"},
-                            "preprint_date": {"gte": "2015", "lte": "2017"},
-                            "publication_info.year": {"gte": "2015", "lte": "2017"},
-                            "thesis_info.date": {"gte": "2015", "lte": "2017"},
+                        "bool": {
+                            "should": [
+                                {"range": {"earliest_date": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"imprints.date": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"preprint_date": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"publication_info.year": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                                {"range": {"thesis_info.date": {"gte": "2015||/y", "lte": "2017||/y"}}},
+                            ]
                         }
                     },
                     {
@@ -556,19 +558,18 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_simple_value():
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_only_year_fields():
     query_str = 'date 2000-10'
     expected_es_query = \
         {
-            "multi_match": {
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "2000-10",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                ]
             }
         }
 
@@ -576,20 +577,56 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_sim
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_value_has_wildcard():
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_year():
+    query_str = 'date 2017-12'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2017||/y", "lt": "2018||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2017-12||/M", "lt": "2018-01||/M"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_month():
+    query_str = 'date 2017-10-31'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
+                    {"range": {"imprints.date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
+                    {"range": {"preprint_date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
+                    {"range": {"publication_info.year": {"gte": "2017||/y", "lt": "2018||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2017-10-31||/d", "lt": "2017-11-01||/d"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_day():
     query_str = 'date 2000-10-*'
     expected_es_query = \
         {
-            "query_string": {
-                "analyze_wildcard": True,
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "2000-10-*",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                ]
             }
         }
 
@@ -597,7 +634,126 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_val
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_exact_match_value():
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month():
+    query_str = 'date 2015-*'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"imprints.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"preprint_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"publication_info.year": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_as_month_part():
+    query_str = 'date 2015-1*'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"imprints.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"preprint_date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"publication_info.year": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2015||/y", "lt": "2016||/y"}}},
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_one_query_date_multi_field_and_wildcard_infix_generates_to_all_field():
+    query_str = 'date: 2017-*-12'
+    expected_es_query = \
+        {
+            "multi_match": {
+                "fields": ["_all"],
+                "query": "date 2017-*-12",
+                "zero_terms_query": "all",
+            }
+        }
+
+    generated_es_query = parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_two_queries_date_multi_field_and_wildcard_infix_drops_date():
+    query_str = 'date: 2017-*-12 and title collider'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "collider",
+                                "operator": "and",
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_year_drops_date_query():
+    query_str = 'date 201* and title collider'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "collider",
+                                "operator": "and",
+                            }
+                        }
+                    },
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month_drops_date_query():
+    query_str = 'date 2000-*-01 and title collider'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "collider",
+                                "operator": "and",
+                            }
+                        }
+                    },
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_exact_match_value():
     query_str = 'date "2000-10"'
     expected_es_query = \
         {
@@ -620,7 +776,7 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_exa
                     },
                     {
                         "term": {
-                            "publication_info.year": "2000-10"
+                            "publication_info.year": "2000"
                         }
                     },
                     {
@@ -636,20 +792,18 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_exa
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_partial_match_value():
-    query_str = 'date \'2000-10\''
+def test_elastic_search_visitor_with_date_multi_field_and_partial_value():
+    query_str = "date '2000-10'"
     expected_es_query = \
         {
-            "query_string": {
-                "analyze_wildcard": True,
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "*2000-10*",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                ]
             }
         }
 
@@ -657,20 +811,18 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_par
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_partial_match_value_with_wildcard():
+def test_elastic_search_visitor_with_date_multi_field_and_partial_value_with_wildcard():
     query_str = 'date \'2000-10-*\''
     expected_es_query = \
         {
-            "query_string": {
-                "analyze_wildcard": True,
-                "fields": [
-                    "earliest_date",
-                    "imprints.date",
-                    "preprint_date",
-                    "publication_info.year",
-                    "thesis_info.date",
-                ],
-                "query": "*2000-10-*",
+            "bool": {
+                "should": [
+                    {"range": {"earliest_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"imprints.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"preprint_date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                    {"range": {"publication_info.year": {"gte": "2000||/y", "lt": "2001||/y"}}},
+                    {"range": {"thesis_info.date": {"gte": "2000-10||/M", "lt": "2000-11||/M"}}},
+                ]
             }
         }
 
@@ -678,24 +830,45 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_par
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_range_value():
-    query_str = 'date 2000->2005'
-    expected_es_query = \
-        {
-            "range": {
-                "earliest_date": {"gte": "2000", "lte": "2005"},
-                "imprints.date": {"gte": "2000", "lte": "2005"},
-                "preprint_date": {"gte": "2000", "lte": "2005"},
-                "publication_info.year": {"gte": "2000", "lte": "2005"},
-                "thesis_info.date": {"gte": "2000", "lte": "2005"},
-            }
+def test_elastic_search_visitor_with_date_multi_field_and_range_op():
+    query_str = 'date 2000-01->2001-01'
+    expected_es_query = {
+        "bool": {
+            "should": [
+                {"range": {"earliest_date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
+                {"range": {"imprints.date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
+                {"range": {"preprint_date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
+                {"range": {"publication_info.year": {"gte": "2000||/y", "lte": "2001||/y"}}},
+                {"range": {"thesis_info.date": {"gte": "2000-01||/M", "lte": "2001-01||/M"}}},
+            ]
         }
+    }
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gt_op():
+def test_elastic_search_visitor_with_date_multi_field_range_within_same_year():
+    # This kind of query works fine (regarding the ``publication_info.year``), since the range operator is including
+    # its bounds, otherwise we would get no records.
+    query_str = 'date 2000-01->2000-04'
+    expected_es_query = {
+        "bool": {
+            "should": [
+                {"range": {"earliest_date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
+                {"range": {"imprints.date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
+                {"range": {"preprint_date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
+                {"range": {"publication_info.year": {"gte": "2000||/y", "lte": "2000||/y"}}},
+                {"range": {"thesis_info.date": {"gte": "2000-01||/M", "lte": "2000-04||/M"}}},
+            ]
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_multi_field_and_gt_op():
     query_str = 'title γ-radiation and date > 2015'
     expected_es_query = \
         {
@@ -710,12 +883,14 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gt_
                         }
                     },
                     {
-                        "range": {
-                            "earliest_date": {"gt": "2015"},
-                            "imprints.date": {"gt": "2015"},
-                            "preprint_date": {"gt": "2015"},
-                            "publication_info.year": {"gt": "2015"},
-                            "thesis_info.date": {"gt": "2015"},
+                        "bool": {
+                            "should": [
+                                {"range": {"earliest_date": {"gt": "2015||/y"}}},
+                                {"range": {"imprints.date": {"gt": "2015||/y"}}},
+                                {"range": {"preprint_date": {"gt": "2015||/y"}}},
+                                {"range": {"publication_info.year": {"gt": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"gt": "2015||/y"}}},
+                            ]
                         }
                     }
                 ]
@@ -726,7 +901,7 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gt_
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gte_op():
+def test_elastic_search_visitor_with_date_multi_field_and_gte_op():
     query_str = 'title γ-radiation and date 2015+'
     expected_es_query = \
         {
@@ -741,12 +916,14 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gte
                         }
                     },
                     {
-                        "range": {
-                            "earliest_date": {"gte": "2015"},
-                            "imprints.date": {"gte": "2015"},
-                            "preprint_date": {"gte": "2015"},
-                            "publication_info.year": {"gte": "2015"},
-                            "thesis_info.date": {"gte": "2015"},
+                        "bool": {
+                            "should": [
+                                {"range": {"earliest_date": {"gte": "2015||/y"}}},
+                                {"range": {"imprints.date": {"gte": "2015||/y"}}},
+                                {"range": {"preprint_date": {"gte": "2015||/y"}}},
+                                {"range": {"publication_info.year": {"gte": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"gte": "2015||/y"}}},
+                            ]
                         }
                     }
                 ]
@@ -757,8 +934,8 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gte
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lt_op():
-    query_str = 'title γ-radiation and date < 2015'
+def test_elastic_search_visitor_with_date_multi_field_and_lt_op():
+    query_str = 'title γ-radiation and date < 2015-08'
     expected_es_query = \
         {
             "bool": {
@@ -772,12 +949,14 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lt_
                         }
                     },
                     {
-                        "range": {
-                            "earliest_date": {"lt": "2015"},
-                            "imprints.date": {"lt": "2015"},
-                            "preprint_date": {"lt": "2015"},
-                            "publication_info.year": {"lt": "2015"},
-                            "thesis_info.date": {"lt": "2015"},
+                        "bool": {
+                            "should": [
+                                {"range": {"earliest_date": {"lt": "2015-08||/M"}}},
+                                {"range": {"imprints.date": {"lt": "2015-08||/M"}}},
+                                {"range": {"preprint_date": {"lt": "2015-08||/M"}}},
+                                {"range": {"publication_info.year": {"lt": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"lt": "2015-08||/M"}}},
+                            ]
                         }
                     }
                 ]
@@ -788,8 +967,8 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lt_
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lte_op():
-    query_str = 'title γ-radiation and date 2015-'
+def test_elastic_search_visitor_with_date_multi_field_and_lte_op():
+    query_str = 'title γ-radiation and date 2015-08-30-'
     expected_es_query = \
         {
             "bool": {
@@ -803,12 +982,72 @@ def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_lte
                         }
                     },
                     {
-                        "range": {
-                            "earliest_date": {"lte": "2015"},
-                            "imprints.date": {"lte": "2015"},
-                            "preprint_date": {"lte": "2015"},
-                            "publication_info.year": {"lte": "2015"},
-                            "thesis_info.date": {"lte": "2015"},
+                        "bool": {
+                            "should": [
+                                {"range": {"earliest_date": {"lte": "2015-08-30||/d"}}},
+                                {"range": {"imprints.date": {"lte": "2015-08-30||/d"}}},
+                                {"range": {"preprint_date": {"lte": "2015-08-30||/d"}}},
+                                {"range": {"publication_info.year": {"lte": "2015||/y"}}},
+                                {"range": {"thesis_info.date": {"lte": "2015-08-30||/d"}}},
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_malformed_drops_boolean_query_2nd_part():
+    query_str = 'title γ-radiation and date > 2015_08'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "γ-radiation",
+                                "operator": "and",
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_date_malformed_drops_boolean_query_both_parts():
+    query_str = 'date > 2015_08 and date < 2016_10'
+    expected_es_query = {}  # Equivalent to match_all query.
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_drops_empty_body_boolean_queries():
+    query_str = 'date > 2015_08 and date < 2016_10 and title γ-radiation'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "bool": {
+                            "must": [
+                                {
+                                    "match": {
+                                        "titles.full_title": {
+                                            "query": "γ-radiation",
+                                            "operator": "and",
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 ]

@@ -30,15 +30,19 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import re
 
+import six
 from inspire_utils.helpers import force_list
 
 from inspire_utils.name import generate_name_variations, normalize_name
 from pypeg2 import whitespace
 
 from inspire_query_parser import ast
+from inspire_query_parser.ast import GenericValue
 from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
                                          ES_MUST_QUERY)
 from inspire_query_parser.visitors.visitor_impl import Visitor
+from inspire_query_parser.utils.visitor_utils import update_date_value_in_operator_value_pairs_for_fieldname, \
+    ES_RANGE_EQ_OPERATOR, _truncate_date_value_according_on_date_field, _truncate_wildcard_from_date
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +160,28 @@ class ElasticSearchVisitor(Visitor):
             }
         }
 
+    def _generate_date_with_wildcard_query(self, date_value):
+        """Helper for generating a date keyword query containing a wildcard.
+
+        Returns:
+            (dict): The date query containing the wildcard or an empty dict in case the date value is malformed.
+
+        The policy followed here is quite conservative on what it accepts as valid input. Look into
+        :meth:`inspire_query_parser.utils.visitor_utils for more information.
+        """
+        if date_value.endswith(GenericValue.WILDCARD_TOKEN):
+            try:
+                date_value = _truncate_wildcard_from_date(date_value)
+            except ValueError:
+                # Drop date query.
+                return {}
+
+            return self._generate_range_queries(self.KEYWORD_TO_ES_FIELDNAME['date'],
+                                                {ES_RANGE_EQ_OPERATOR: date_value})
+        else:
+            # Drop date query with wildcard not as suffix, e.g. 2000-1*-31
+            return {}
+
     def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
         if not fieldnames:
             field_specifier, field_specifier_value = 'default_field', '_all'
@@ -178,18 +204,18 @@ class ElasticSearchVisitor(Visitor):
         condition_a = node.left.accept(self)
         condition_b = node.right.accept(self)
 
+        bool_body = [condition for condition in [condition_a, condition_b] if condition]
+        if not bool_body:
+            return {}
         return \
             {
                 'bool': {
-                    ('must' if isinstance(node, ast.AndOp) else 'should'): [
-                        condition_a,
-                        condition_b
-                    ]
+                    ('must' if isinstance(node, ast.AndOp) else 'should'): bool_body
                 }
             }
 
     def _generate_range_queries(self, fieldnames, operator_value_pairs):
-        """Generates ElasticSearch range query.
+        """Generates ElasticSearch range queries.
 
         Args:
             fieldnames (list): The fieldnames on which the search is the range query is targeted on,
@@ -198,13 +224,66 @@ class ElasticSearchVisitor(Visitor):
                 The value should be of type int or string.
 
         Notes:
-            If the value type is not compatible, a warning is logged and the value is converted to string.
+            A bool should query with multiple range sub-queries is generated so that even if one of the multiple fields
+            is missing from a document, ElasticSearch will be able to match some records.
+
+            In the case of a 'date' keyword query, it updates date values after normalizing them by using
+            :meth:`inspire_query_parser.utils.visitor_utils.update_date_value_in_operator_value_pairs_for_fieldname`.
+            Additionally, in the aforementioned case, if a malformed date has been given, then the the method will
+            return an empty dictionary.
         """
+
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+            range_queries = []
+            for fieldname in fieldnames:
+                updated_operator_value_pairs = \
+                    update_date_value_in_operator_value_pairs_for_fieldname(fieldname, operator_value_pairs)
+
+                if not updated_operator_value_pairs:
+                    break  # Malformed date
+                else:
+                    range_queries.append({
+                        'range': {
+                            fieldname: updated_operator_value_pairs
+                        }
+                    })
+        else:
+            range_queries = [{
+                    'range': {
+                        fieldname: operator_value_pairs
+                    }
+                }
+                for fieldname in fieldnames
+            ]
+
+        if len(range_queries) == 0:
+            return {}
+        if len(range_queries) == 1:
+            return range_queries[0]
+
+        return {'bool': {'should': range_queries}}
+
+    @staticmethod
+    def _generate_malformed_query(data):
+        """Generates a query on the ``_all`` field with all the query content.
+
+        Args:
+            data (six.text_type or list): The query in the format of ``six.text_type`` (when used from parsing driver)
+                or ``list`` when used from withing the ES visitor.
+        """
+        if isinstance(data, six.text_type):
+            # Remove colon character (special character for ES)
+            query_str = data.replace(':', ' ')
+        else:
+            query_str = ' '.join([word.strip(':') for word in data.children])
+
         return {
-            'range': {
-                fieldname: operator_value_pairs for fieldname in fieldnames
+            'query_string': {
+                'default_field': '_all',
+                'query': query_str
             }
         }
+
     # ################
 
     def visit_empty_query(self, node):
@@ -221,12 +300,7 @@ class ElasticSearchVisitor(Visitor):
         }
 
     def visit_malformed_query(self, node):
-        return {
-            'query_string': {
-                'default_field': '_all',
-                'query': ' '.join([word.strip(':') for word in node.children])
-            }
-        }
+        return ElasticSearchVisitor._generate_malformed_query(node)
 
     def visit_query_with_malformed_part(self, node):
         query = {
@@ -290,6 +364,9 @@ class ElasticSearchVisitor(Visitor):
             fieldnames = '_all'
 
         if node.contains_wildcard:
+            if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+                return self._generate_date_with_wildcard_query(node.value)
+
             bai_fieldnames = self._generate_fieldnames_if_bai_query(
                 node.value,
                 bai_field_variation=FieldVariations.search,
@@ -301,6 +378,11 @@ class ElasticSearchVisitor(Visitor):
                                                      analyze_wildcard=True)
         else:
             if isinstance(fieldnames, list):
+                if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+                    # Date queries with simple values are transformed into range queries, among the given and the exact
+                    # next date, according to the granularity of the given date.
+                    return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
+
                 return {
                     'multi_match': {
                         'fields': fieldnames,
@@ -349,7 +431,13 @@ class ElasticSearchVisitor(Visitor):
             query_bai_field_if_dots_in_name=False
         )
 
-        term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+            term_queries = [{'term': {field: _truncate_date_value_according_on_date_field(field, node.value).dumps()}}
+                            for field
+                            in fieldnames]
+        else:
+            term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+
         if len(term_queries) > 1:
             return {'bool': {'should': term_queries}}
         else:
@@ -357,6 +445,14 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+            # Date queries with partial values are transformed into range queries, among the given and the exact
+            # next date, according to the granularity of the given date.
+            if node.contains_wildcard:
+                return self._generate_date_with_wildcard_query(node.value)
+
+            return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
+
         # Add wildcard token as prefix and suffix.
         value = \
             ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \

@@ -24,8 +24,12 @@ from __future__ import absolute_import, unicode_literals
 
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from dateutil.parser import parse
 import re
 
+from inspire_utils.date import PartialDate
+
+from inspire_query_parser.ast import GenericValue
 from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
                                          DATE_SPECIFIERS_COLLECTION,
                                          DATE_THIS_MONTH_REGEX_PATTERN,
@@ -34,6 +38,12 @@ from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
 
 # #### Date specifiers related utils ####
 ANY_PREFIX_AND_A_NUMBER = re.compile('(.+)(\d+)')
+
+# ES query constants that provide rounding of dates on query time, according to the date "resolution" the user gave.
+# More here: https://www.elastic.co/guide/en/elasticsearch/reference/6.1/common-options.html#date-math
+ES_DATE_MATH_ROUNDING_YEAR = "||/y"
+ES_DATE_MATH_ROUNDING_MONTH = "||/M"
+ES_DATE_MATH_ROUNDING_DAY = "||/d"
 
 
 def _compile_date_regexes(date_specifier_patterns):
@@ -123,3 +133,153 @@ def convert_last_month_date(relative_date_specifier_suffix):
     )
 
     return _convert_date_to_string(start_date, relative_delta)
+
+
+ES_MAPPING_HEP_DATE_ONLY_YEAR = {
+    'publication_info.year',
+}
+"""Contains all the dates that contain always only a year date."""
+
+ES_RANGE_EQ_OPERATOR = 'eq'
+"""Additional (internal to the parser) range operator, for handling date equality queries as ranges."""
+
+
+def _truncate_wildcard_from_date(date_value):
+    """Truncate wildcard from date parts.
+
+    Returns:
+        (str) The truncated date.
+
+    Raises:
+        ValueError, on either unsupported date separator (currently only ' ' and '-' are supported), or if there's a
+        wildcard in the year.
+
+    Notes:
+        Either whole date part is wildcard, in which we ignore it and do a range query on the
+        remaining parts, or some numbers are wildcards, where again, we ignore this part.
+        Reason: From 3M queries, 0.01% were date keyword queries with the wildcard operator.
+    """
+    if ' ' in date_value:
+        date_parts = date_value.split(' ')
+    elif '-' in date_value:
+        date_parts = date_value.split('-')
+    else:
+        # Either unsupported separators or wildcard in year, e.g. '201*'.
+        raise ValueError("Erroneous date value: %s.", date_value)
+
+    if GenericValue.WILDCARD_TOKEN in date_parts[-1]:
+        del date_parts[-1]
+
+    return '-'.join(date_parts)
+
+
+def _truncate_date_value_according_on_date_field(field, date_value):
+    """Truncates date value (to year only) according to the given date field.
+
+    Args:
+        field (unicode): The field for which the date value will be used to query on.
+        date_value (str): The date value that is going to be truncated to its year.
+
+    Returns:
+        PartialDate: The possibly truncated date, on success. None, otherwise.
+
+    Notes:
+        In case the fieldname is in `ES_MAPPING_HEP_DATE_ONLY_YEAR`, then the date is normalized and then only its year
+        value is used. This is needed for ElasticSearch to be able to do comparisons on dates that have only year, which
+        fails if being queried with a date with more .
+    """
+    try:
+        partial_date = PartialDate.parse(date_value)
+    except ValueError:
+        return None
+
+    if field in ES_MAPPING_HEP_DATE_ONLY_YEAR:
+        truncated_date = PartialDate.from_parts(partial_date.year)
+    else:
+        truncated_date = partial_date
+
+    return truncated_date
+
+
+def _get_next_date_from_partial_date(partial_date):
+    """Calculates the next date from the given partial date.
+
+    Args:
+        partial_date (inspire_utils.date.PartialDate): The partial date whose next date should be calculated.
+
+    Returns:
+        PartialDate: The next date from the given partial date.
+    """
+    relativedelta_arg = 'years'
+
+    if partial_date.month:
+        relativedelta_arg = 'months'
+    if partial_date.day:
+        relativedelta_arg = 'days'
+
+    next_date = parse(partial_date.dumps()) + relativedelta(**{relativedelta_arg: 1})
+    return PartialDate.from_parts(
+        next_date.year,
+        next_date.month if partial_date.month else None,
+        next_date.day if partial_date.day else None
+    )
+
+
+def _get_proper_elastic_search_date_rounding_format(partial_date):
+    """Returns the proper ES date math unit according to the "resolution" of the partial_date.
+
+    Args:
+        partial_date (PartialDate): The partial date for which the date math unit is.
+
+    Returns:
+        (str): The ES date math unit format.
+
+    Notes:
+        This is needed for supporting range queries on dates, i.e. rounding them up or down according to
+        the ES range operator.
+        For example, without this, a query like 'date > 2010-11', would return documents with date '2010-11-15', due to
+        the date value of the query being interpreted by ES as '2010-11-01 01:00:00'. By using the suffixes for rounding
+        up or down, the date value of the query is interpreted as '2010-11-30T23:59:59.999', thus not returning the
+        document with date '2010-11-15', as the user would expect. See:
+        https://www.elastic.co/guide/en/elasticsearch/reference/6.1/query-dsl-range-query.html#_date_math_and_rounding
+    """
+    es_date_math_unit = ES_DATE_MATH_ROUNDING_YEAR
+
+    if partial_date.month:
+        es_date_math_unit = ES_DATE_MATH_ROUNDING_MONTH
+    if partial_date.day:
+        es_date_math_unit = ES_DATE_MATH_ROUNDING_DAY
+
+    return es_date_math_unit
+
+
+def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_value_pairs):
+    """Updates (operator, date value) pairs by normalizing the date value according to the given field.
+
+    Args:
+        field (unicode): The fieldname for which the operator-value pairs are being generated.
+        operator_value_pairs (dict): ES range operator {'gt', 'gte', 'lt', 'lte'} along with a value.
+            Additionally, if the operator is ``ES_RANGE_EQ_OPERATOR``, then it is indicated that the method should
+            generate both a lower and an upper bound operator-value pairs, with the given date_value.
+
+    Notes:
+        On a ``ValueError`` an empty operator_value_pairs is returned.
+    """
+    updated_operator_value_pairs = {}
+    for operator, value in operator_value_pairs.items():
+        modified_date = _truncate_date_value_according_on_date_field(field, value)
+        if not modified_date:
+            return {}
+
+        if operator == ES_RANGE_EQ_OPERATOR:
+            updated_operator_value_pairs['gte'] = \
+                modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(modified_date)
+
+            next_date = _get_next_date_from_partial_date(modified_date)
+            updated_operator_value_pairs['lt'] = \
+                next_date.dumps() + _get_proper_elastic_search_date_rounding_format(next_date)
+        else:
+            updated_operator_value_pairs[operator] = \
+                modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(modified_date)
+
+    return updated_operator_value_pairs
