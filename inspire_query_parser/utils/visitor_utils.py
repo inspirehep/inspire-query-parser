@@ -211,9 +211,10 @@ def _get_next_date_from_partial_date(partial_date):
         PartialDate: The next date from the given partial date.
     """
     relativedelta_arg = 'years'
-    if partial_date.month and not partial_date.day:
+
+    if partial_date.month:
         relativedelta_arg = 'months'
-    elif partial_date.month and partial_date.day:
+    if partial_date.day:
         relativedelta_arg = 'days'
 
     next_date = parse(partial_date.dumps()) + relativedelta(**{relativedelta_arg: 1})
@@ -244,10 +245,10 @@ def _get_proper_elastic_search_date_rounding_format(partial_date):
     """
     es_date_math_unit = ES_DATE_MATH_ROUNDING_YEAR
 
-    if partial_date.month and partial_date.day:
-        es_date_math_unit = ES_DATE_MATH_ROUNDING_DAY
-    elif partial_date.month and not partial_date.day:
+    if partial_date.month:
         es_date_math_unit = ES_DATE_MATH_ROUNDING_MONTH
+    if partial_date.day:
+        es_date_math_unit = ES_DATE_MATH_ROUNDING_DAY
 
     return es_date_math_unit
 
@@ -275,7 +276,8 @@ def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_valu
                 modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(modified_date)
 
             next_date = _get_next_date_from_partial_date(modified_date)
-            updated_operator_value_pairs['lt'] = next_date.dumps() + _get_proper_elastic_search_date_rounding_format(next_date)
+            updated_operator_value_pairs['lt'] = \
+                next_date.dumps() + _get_proper_elastic_search_date_rounding_format(next_date)
         else:
             updated_operator_value_pairs[operator] = \
                 modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(modified_date)
