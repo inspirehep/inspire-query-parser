@@ -27,7 +27,7 @@ import mock
 
 from inspire_utils.name import generate_name_variations
 
-from inspire_query_parser import parser
+from inspire_query_parser import parser, parse_query
 from inspire_query_parser.config import ES_MUST_QUERY, ES_SHOULD_QUERY
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 from inspire_query_parser.visitors.elastic_search_visitor import \
@@ -669,6 +669,43 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
         }
 
     generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_one_query_date_multi_field_and_wildcard_infix_generates_to_all_field():
+    query_str = 'date: 2017-*-12'
+    expected_es_query = \
+        {
+            "multi_match": {
+                "fields": ["_all"],
+                "query": "date 2017-*-12",
+                "zero_terms_query": "all",
+            }
+        }
+
+    generated_es_query = parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_two_queries_date_multi_field_and_wildcard_infix_drops_date():
+    query_str = 'date: 2017-*-12 and title collider'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "collider",
+                                "operator": "and",
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = parse_query(query_str)
     assert generated_es_query == expected_es_query
 
 

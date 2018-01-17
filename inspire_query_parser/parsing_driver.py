@@ -54,7 +54,9 @@ def parse_query(query_str):
         query_str argument.
     """
     def _generate_match_all_fields_query():
-        return {'multi_match': {'query': query_str, 'fields': ['_all'], 'zero_terms_query': 'all'}}
+        # Strip colon character (special character for ES)
+        stripped_query_str = ' '.join(query_str.replace(':', ' ').split())
+        return {'multi_match': {'query': stripped_query_str, 'fields': ['_all'], 'zero_terms_query': 'all'}}
 
     if not isinstance(query_str, six.text_type):
         query_str = six.text_type(query_str.decode('utf-8'))
