@@ -257,7 +257,7 @@ def test_elastic_search_visitor_or_op_query():
                     {
                         "match": {
                             "titles.full_title": {
-                                "query":  "boson",
+                                "query": "boson",
                                 "operator": "and",
                             }
                         }
@@ -558,17 +558,16 @@ def test_elastic_search_visitor_with_malformed_query():
     'inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES', ES_MUST_QUERY
 )
 def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_must():
-
-    query_str = 'title γ-radiation and: author:'
+    query_str = 'subject astrophysics and: author:'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": {
-                                "query": "γ-radiation",
-                                "operator": "and",
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
+                                "operator": "and"
                             }
                         }
                     },
@@ -590,16 +589,16 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     'inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES', ES_SHOULD_QUERY
 )
 def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_should():
-    query_str = 'title γ-radiation and author'
+    query_str = 'subject astrophysics and author'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": {
-                                "query": "γ-radiation",
-                                "operator": "and",
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
+                                "operator": "and"
                             }
                         }
                     }
@@ -929,17 +928,17 @@ def test_elastic_search_visitor_with_date_multi_field_range_within_same_year():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_gt_op():
-    query_str = 'title γ-radiation and date > 2015'
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gt_op():
+    query_str = 'subject astrophysics and date > 2015'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": {
-                                "query": "γ-radiation",
-                                "operator": "and",
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
+                                "operator": "and"
                             }
                         }
                     },
@@ -962,17 +961,17 @@ def test_elastic_search_visitor_with_date_multi_field_and_gt_op():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_gte_op():
-    query_str = 'title γ-radiation and date 2015+'
+def test_elastic_search_visitor_with_multi_match_when_es_field_is_a_list_and_gte_op():
+    query_str = 'subject astrophysics and date 2015+'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": {
-                                "query": "γ-radiation",
-                                "operator": "and",
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
+                                "operator": "and"
                             }
                         }
                     },
@@ -996,15 +995,15 @@ def test_elastic_search_visitor_with_date_multi_field_and_gte_op():
 
 
 def test_elastic_search_visitor_with_date_multi_field_and_lt_op():
-    query_str = 'title γ-radiation and date < 2015-08'
+    query_str = 'subject astrophysics and date < 2015-08'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": {
-                                "query": "γ-radiation",
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
                                 "operator": "and",
                             }
                         }
@@ -1029,15 +1028,15 @@ def test_elastic_search_visitor_with_date_multi_field_and_lt_op():
 
 
 def test_elastic_search_visitor_with_date_multi_field_and_lte_op():
-    query_str = 'title γ-radiation and date 2015-08-30-'
+    query_str = 'subject astrophysics and date 2015-08-30-'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": {
-                                "query": "γ-radiation",
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
                                 "operator": "and",
                             }
                         }
@@ -1062,15 +1061,15 @@ def test_elastic_search_visitor_with_date_multi_field_and_lte_op():
 
 
 def test_elastic_search_visitor_with_date_malformed_drops_boolean_query_2nd_part():
-    query_str = 'title γ-radiation and date > 2015_08'
+    query_str = 'subject astrophysics and date > 2015_08'
     expected_es_query = \
         {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "titles.full_title": {
-                                "query": "γ-radiation",
+                            "facet_inspire_categories": {
+                                "query": "astrophysics",
                                 "operator": "and",
                             }
                         }
@@ -1092,7 +1091,7 @@ def test_elastic_search_visitor_with_date_malformed_drops_boolean_query_both_par
 
 
 def test_elastic_search_visitor_drops_empty_body_boolean_queries():
-    query_str = 'date > 2015_08 and date < 2016_10 and title γ-radiation'
+    query_str = 'date > 2015_08 and date < 2016_10 and subject astrophysics'
     expected_es_query = \
         {
             "bool": {
@@ -1102,8 +1101,8 @@ def test_elastic_search_visitor_drops_empty_body_boolean_queries():
                             "must": [
                                 {
                                     "match": {
-                                        "titles.full_title": {
-                                            "query": "γ-radiation",
+                                        "facet_inspire_categories": {
+                                            "query": "astrophysics",
                                             "operator": "and",
                                         }
                                     }
@@ -1629,3 +1628,114 @@ def test_elastic_search_visitor_author_lastname_firstname():
 
     generated_es_query = _parse_query(query_str)
     assert ordered(generated_es_query) == ordered(expected_query)
+
+
+def test_elastic_search_visitor_with_simple_title():
+    query_str = 't string theory'
+    expected_es_query = \
+        {
+            "match": {
+                "titles.full_title": {
+                    "query": "string theory",
+                    "operator": "and"
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_word_and_symbol():
+    # Symbol being the "n-body".
+    query_str = 't n-body separable'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "n-body separable",
+                                "operator": "and"
+                            }
+                        }
+                    },
+                    {
+                        "match": {
+                            "titles.full_title.search": "n-body"
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_word_and_two_symbols():
+    # Symbol being the "n-body".
+    query_str = 't n-body two-body separable'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "n-body two-body separable",
+                                "operator": "and"
+                            }
+                        }
+                    },
+                    {
+                        "bool": {
+                            "must": [
+                                {
+                                    "match": {
+                                        "titles.full_title.search": "n-body"
+                                    }
+                                },
+                                {
+                                    "match": {
+                                        "titles.full_title.search": "two-body"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_with_word_and_symbol_containing_unicode_characters():
+    # Symbol being the "n-body".
+    query_str = 't γ-radiation separable'
+    expected_es_query = \
+        {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "titles.full_title": {
+                                "query": "γ-radiation separable",
+                                "operator": "and"
+                            }
+                        }
+                    },
+                    {
+                        "match": {
+                            "titles.full_title.search": "γ-radiation"
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
