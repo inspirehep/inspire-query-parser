@@ -516,11 +516,7 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
             )
         ),
         ('a kondrashuk', KeywordOp(Keyword('author'), Value('kondrashuk'))),
-        pytest.param(
-            'a r.j.hill.1',
-            KeywordOp(Keyword('exact-author'), Value('r.j.hill.1')),
-            marks=pytest.mark.xfail(reason="Keyword used should be exact-author (since value is a BAI).")
-        ),
+        ('a r.j.hill.1', KeywordOp(Keyword('author'), Value('r.j.hill.1'))),
         (
             'a fileviez perez,p or p. f. perez',
             OrOp(
@@ -562,11 +558,7 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
                 )
             )
         ),
-        pytest.param(
-            'ea wu, xing gang',
-            KeywordOp(Keyword('author'), Value('wu, xing gang')),
-            marks=pytest.mark.xfail(reason="Keyword should be author (with this kind of value).")
-        ),
+        ('ea wu, xing gang', KeywordOp(Keyword('exact-author'), Value('wu, xing gang'))),
         ('abstract: part*', KeywordOp(Keyword('abstract'), Value('part*', contains_wildcard=True))),
         (
             "(author:'Hiroshi Okada' OR (author:'H Okada' hep-ph) OR "
@@ -593,11 +585,7 @@ def test_restructuring_visitor_functionality(query_str, expected_parse_tree):
                 ValueOp(Value('hep-th/0010101'))
             )
         ),
-        pytest.param(
-            'ea:matt visser',
-            KeywordOp(Keyword('author'), Value('matt visser')),
-            marks=pytest.mark.xfail(reason="Keyword should be author (with this kind of value).")
-        ),
+        ('ea:matt visser', KeywordOp(Keyword('exact-author'), Value('matt visser'))),
         (
             'citedby:recid:902780',
             NestedKeywordOp(Keyword('citedby'), KeywordOp(Keyword('control_number'), Value('902780')))
