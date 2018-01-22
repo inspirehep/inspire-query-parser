@@ -20,13 +20,112 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 from pytest import raises
 
-from inspire_query_parser.utils.visitor_utils import _truncate_wildcard_from_date
+from inspire_query_parser.utils.visitor_utils import (
+    _truncate_wildcard_from_date,
+    author_name_contains_fullnames,
+    generate_minimal_name_variations,
+)
 
 from test_utils import parametrize
+
+
+@parametrize({
+    'Name with full name parts': {
+        'name': 'mele salvatore', 'expected_answer': True
+    },
+    'Lastname only': {
+        'name': 'mele', 'expected_answer': False
+    },
+    'Lastname, initial(Firstname)': {
+        'name': 'mele s', 'expected_answer': False
+    },
+    'Lastname, initial(Firstname).': {
+        'name': 'mele s.', 'expected_answer': False
+    },
+})
+def test_author_name_contains_fullnames(name, expected_answer):
+    assert expected_answer == author_name_contains_fullnames(name)
+
+
+def test_generate_minimal_name_variations_lastname_firstname():
+    name = 'Ellis, John'
+    expected_variations = {
+        'ellis john',
+        'ellis j',
+        'john ellis',
+        'john e',
+    }
+
+    assert expected_variations == set(generate_minimal_name_variations(name))
+
+
+def test_generate_minimal_name_variations_firstname_lastname():
+    name = 'John Ellis'
+    expected_variations = {
+        'ellis john',
+        'ellis j',
+        'john ellis',
+        'john e',
+    }
+
+    assert expected_variations == set(generate_minimal_name_variations(name))
+
+
+def test_generate_minimal_name_variations_with_dotted_initial():
+    name = 'Oz, Y.'
+    expected_variations = {
+        'oz y.',
+        'oz y',
+        'y. oz',
+    }
+
+    result = generate_minimal_name_variations(name)
+
+    assert len(expected_variations) == len(result)
+
+    assert expected_variations == set(generate_minimal_name_variations(name))
+
+
+def test_generate_minimal_name_variations_without_dotted_initial_doesnt_generate_same_variation():
+    name = 'Oz, Y'
+    expected_variations = {
+        'oz y',
+        'y oz',
+    }
+
+    result = generate_minimal_name_variations(name)
+
+    assert len(expected_variations) == len(result)
+
+    assert expected_variations == set(result)
+
+
+def test_generate_minimal_name_variations_with_initial_strips_multiple_consecutive_whitespace():
+    name = 'oz,y'
+    expected_variations = {
+        'oz y',
+        'y oz',
+    }
+
+    assert expected_variations == set(generate_minimal_name_variations(name))
+
+
+def test_generate_minimal_name_variations_with_lastname_lowercases():
+    name = 'Mele'
+    expected_variations = ['mele']
+
+    assert expected_variations == generate_minimal_name_variations(name)
+
+
+def test_generate_minimal_name_variations_with_dashed_lastname():
+    name = 'Caro-Estevez'
+    expected_variations = ['caro estevez']
+
+    assert expected_variations == generate_minimal_name_variations(name)
 
 
 @parametrize({

@@ -27,31 +27,30 @@ visitor and converts it to an ElasticSearch query.
 
 from __future__ import absolute_import, unicode_literals
 
+from itertools import product
 import logging
+from pypeg2 import whitespace
 import re
+import six
 from unicodedata import normalize
 
-import six
 from inspire_utils.helpers import force_list
-
-from inspire_utils.name import (
-    generate_name_variations,
-    normalize_name,
-)
-
-from pypeg2 import whitespace
+from inspire_utils.name import normalize_name
 
 from inspire_query_parser import ast
-from inspire_query_parser.ast import GenericValue
-from inspire_query_parser.config import (DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
-                                         ES_MUST_QUERY)
-from inspire_query_parser.visitors.visitor_impl import Visitor
+from inspire_query_parser.config import (
+    DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES,
+    ES_MUST_QUERY,
+)
 from inspire_query_parser.utils.visitor_utils import (
-    update_date_value_in_operator_value_pairs_for_fieldname,
     ES_RANGE_EQ_OPERATOR,
     _truncate_date_value_according_on_date_field,
-    _truncate_wildcard_from_date
+    _truncate_wildcard_from_date,
+    author_name_contains_fullnames,
+    generate_minimal_name_variations,
+    update_date_value_in_operator_value_pairs_for_fieldname,
 )
+from inspire_query_parser.visitors.visitor_impl import Visitor
 
 logger = logging.getLogger(__name__)
 
@@ -143,27 +142,61 @@ class ElasticSearchVisitor(Visitor):
             return None
 
     def _generate_author_query(self, author_name):
-        """Generates a match and a filter query handling specifically authors.
+        """Generates a query handling specifically authors.
 
         Notes:
             The match query is generic enough to return many results. Then, using the filter clause we truncate these
-            so that we imitate legacy's behaviour on return more "exact" results. E.g. Searching for `Smith, John`
+            so that we imitate legacy's behaviour on returning more "exact" results. E.g. Searching for `Smith, John`
             shouldn't return papers of 'Smith, Bob'.
-        """
-        name_variations = generate_name_variations(author_name)
 
-        return {
-            "bool": {
-                "filter": {
-                    "bool": {
-                        "should": [
-                            {"term": {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: name_variation}}
-                            for name_variation in name_variations
+            Additionally, doing a ``match`` with ``"operator": "and"`` in order to be even more exact in our search, by
+            requiring that ``full_name`` field contains both
+        """
+        name_variations = [name_variation.lower()
+                           for name_variation
+                           in generate_minimal_name_variations(author_name)]
+
+        # When the query contains sufficient data, i.e. full names, e.g. ``Mele, Salvatore`` (and not ``Mele, S`` or
+        # ``Mele``) we can improve our filtering in order to filter out results containing records with authors that
+        # have the same non lastnames prefix, e.g. 'Mele, Samuele'.
+        if author_name_contains_fullnames(author_name):
+            specialized_author_filter = [
+                {
+                    'bool': {
+                        'must': [
+                            {
+                                'term': {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: names_variation[0]}
+                            },
+                            {
+                                'match': {
+                                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author']: {
+                                        'query': names_variation[1],
+                                        'operator': 'and'
+                                    }
+                                }
+                            }
                         ]
                     }
+                } for names_variation
+                in product(name_variations, name_variations)
+            ]
+
+        else:
+            # In the case of initials or even single lastname search, filter with only the name variations.
+            specialized_author_filter = [
+                {'term': {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: name_variation}}
+                for name_variation in name_variations
+            ]
+
+        return {
+            'bool': {
+                'filter': {
+                    'bool': {
+                        'should': specialized_author_filter
+                    }
                 },
-                "must": {
-                    "match": {
+                'must': {
+                    'match': {
                         ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author']: author_name
                     }
                 }
@@ -202,7 +235,7 @@ class ElasticSearchVisitor(Visitor):
         The policy followed here is quite conservative on what it accepts as valid input. Look into
         :meth:`inspire_query_parser.utils.visitor_utils._truncate_wildcard_from_date` for more information.
         """
-        if date_value.endswith(GenericValue.WILDCARD_TOKEN):
+        if date_value.endswith(ast.GenericValue.WILDCARD_TOKEN):
             try:
                 date_value = _truncate_wildcard_from_date(date_value)
             except ValueError:
@@ -273,7 +306,6 @@ class ElasticSearchVisitor(Visitor):
             Additionally, in the aforementioned case, if a malformed date has been given, then the the method will
             return an empty dictionary.
         """
-
         if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
             range_queries = []
             for fieldname in fieldnames:
