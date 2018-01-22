@@ -103,6 +103,8 @@ class ElasticSearchVisitor(Visitor):
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
     AUTHORS_BAI_FIELD = 'authors.ids.value'
     BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
+
+    TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
     # ################
 
     # #### Helpers ####
@@ -247,6 +249,56 @@ class ElasticSearchVisitor(Visitor):
         else:
             # Drop date query with wildcard not as suffix, e.g. 2000-1*-31
             return {}
+
+    @staticmethod
+    def _generate_queries_for_title_symbols(title_field, query_value):
+        """Generate queries for any symbols in the title against the whitespace tokenized field of titles.
+
+        Returns:
+            (dict): The query or queries for the whitespace tokenized field of titles. If none such tokens exist, then
+                    returns None.
+        Notes:
+            Splits the value stream into tokens according to whitespace.
+            Heuristically identifies the ones that contain symbol-indicating-characters (examples of those tokens are
+            "g-2", "SU(2)").
+        """
+        values_tokenized_by_whitespace = query_value.split()
+
+        symbol_queries = []
+        for value in values_tokenized_by_whitespace:
+            # Heuristic: If there's a symbol-indicating-character in the value, it signifies terms that should be
+            # queried against the whitespace-tokenized title.
+            if any(character in value for character in ElasticSearchVisitor.TITLE_SYMBOL_INDICATING_CHARACTER):
+                symbol_queries.append({
+                    "match": {
+                        '.'.join([title_field, FieldVariations.search]): value
+                    }
+                })
+
+        if symbol_queries:
+            if len(symbol_queries) == 1:
+                return symbol_queries[0]
+            return {'bool': {'must': symbol_queries}}
+
+    def _generate_title_queries(self, value):
+        title_field = ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['title']
+        q = {
+            "match": {
+                title_field: {
+                    "query": value,
+                    "operator": "and"
+                }
+            }
+        }
+
+        symbol_queries = ElasticSearchVisitor._generate_queries_for_title_symbols(title_field, value)
+        if symbol_queries:
+            q = {
+                'bool': {
+                    'must': [q, symbol_queries]
+                }
+            }
+        return q
 
     def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
         if not fieldnames:
@@ -484,6 +536,9 @@ class ElasticSearchVisitor(Visitor):
 
                 elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['irn'] == fieldnames:
                     return {'term': {fieldnames: ''.join(('SPIRES-', node.value))}}
+
+                elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['title'] == fieldnames:
+                            return self._generate_title_queries(node.value)
 
                 return {
                     'match': {
