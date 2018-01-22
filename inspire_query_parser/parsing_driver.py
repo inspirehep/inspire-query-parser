@@ -54,7 +54,9 @@ def parse_query(query_str):
         query_str argument.
     """
     def _generate_match_all_fields_query():
-        return {'multi_match': {'query': query_str, 'fields': ['_all'], 'zero_terms_query': 'all'}}
+        # Strip colon character (special character for ES)
+        stripped_query_str = ' '.join(query_str.replace(':', ' ').split())
+        return {'multi_match': {'query': stripped_query_str, 'fields': ['_all'], 'zero_terms_query': 'all'}}
 
     if not isinstance(query_str, six.text_type):
         query_str = six.text_type(query_str.decode('utf-8'))
@@ -102,6 +104,10 @@ def parse_query(query_str):
         logger.exception(
             ElasticSearchVisitor.__name__ + " crashed" + (": " + six.text_type(e) + ".") if six.text_type(e) else '.'
         )
+        return _generate_match_all_fields_query()
+
+    if not es_query:
+        # Case where an empty query was generated (i.e. date query with malformed date, e.g. "d < 200").
         return _generate_match_all_fields_query()
 
     return es_query
