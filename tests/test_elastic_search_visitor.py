@@ -1739,3 +1739,118 @@ def test_elastic_search_visitor_with_word_and_symbol_containing_unicode_characte
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_document_type():
+    query_str = "tc c"
+    expected_es_query = \
+        {
+            "match": {
+                "document_type": {
+                    "query": "conference paper",
+                    "operator": "and"
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_publication_type():
+    query_str = "tc i"
+    expected_es_query = \
+        {
+            "match": {
+                "publication_type": {
+                    "query": "introductory",
+                    "operator": "and"
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_core():
+    query_str = "tc core"
+    expected_es_query = \
+        {
+            "match": {
+                "core": True
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_refereed():
+    query_str = "tc p"
+    expected_es_query = \
+        {
+            "match": {
+                "refereed": True
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_with_unknown_value_searches_both_document_and_publication_type_fields():
+    query_str = "tc note"
+    expected_es_query = \
+        {
+            "bool": {
+                "minimum_should_match": 1,
+                "should": [
+                    {
+                        "match": {
+                            "document_type": {
+                                "query": "note",
+                                "operator": "and"
+                            }
+                        }
+                    },
+                    {
+                        "match": {
+                            "publication_type": {
+                                "query": "note",
+                                "operator": "and"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_with_known_exact_value_mapping_and_query_refereed():
+    query_str = 'tc "p"'
+    expected_es_query = \
+        {
+            "match": {
+                "refereed": True
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_with_known_partial_value_mapping_and_query_refereed():
+    query_str = "tc 'p'"
+    expected_es_query = \
+        {
+            "match": {
+                "refereed": True
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query

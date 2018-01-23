@@ -99,6 +99,21 @@ class ElasticSearchVisitor(Visitor):
         If a keyword should query multiple fields, then it's value in the mapping should be a list. This will generate
         a ``multi_match`` query. Otherwise a ``match`` query is generated.
     """
+    TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING = {
+        'b': ('document_type', 'book'),
+        'c': ('document_type', 'conference paper'),
+        'core': ('core', True),
+        'i': ('publication_type', 'introductory'),
+        'l': ('publication_type', 'lectures'),
+        'p': ('refereed', True),
+        'r': ('publication_type', 'review'),
+        't': ('document_type', 'thesis'),
+    }
+    """Mapping from type-code query values to field and value pairs.
+
+    Note:
+        These are going to be used for querying (instead of the given value).
+    """
 
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
     AUTHORS_BAI_FIELD = 'authors.ids.value'
@@ -300,6 +315,44 @@ class ElasticSearchVisitor(Visitor):
             }
         return q
 
+    def _generate_type_code_query(self, value):
+        """Generate type-code queries.
+
+        Notes:
+            If the value of the type-code query exists in `TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING, then we
+            query the specified field, along with the given value according to the mapping.
+            See: https://github.com/inspirehep/inspire-query-parser/issues/79
+            Otherwise, we query both ``document_type`` and ``publication_info``.
+        """
+        mapping_for_value = self.TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING.get(value, None)
+
+        if mapping_for_value:
+            return self._generate_match_query(*mapping_for_value)
+        else:
+            return {
+                'bool': {
+                    'minimum_should_match': 1,
+                    'should': [
+                        {
+                            'match': {
+                                'document_type': {
+                                    'query': value,
+                                    'operator': 'and'
+                                }
+                            }
+                        },
+                        {
+                            'match': {
+                                'publication_type': {
+                                    'query': value,
+                                    'operator': 'and'
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+
     def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
         if not fieldnames:
             field_specifier, field_specifier_value = 'default_field', '_all'
@@ -318,7 +371,19 @@ class ElasticSearchVisitor(Visitor):
 
         return query
 
-    # TODO: move helper method to a utils module.
+    def _generate_match_query(self, fieldname, value):
+        if isinstance(value, bool):
+            return {'match': {fieldname: value}}
+
+        return {
+            'match': {
+                fieldname: {
+                    'query': value,
+                    'operator': 'and'
+                }
+            }
+        }
+
     def _generate_term_query(self, fieldname, value):
         return {
             'term': {
@@ -538,7 +603,10 @@ class ElasticSearchVisitor(Visitor):
                     return {'term': {fieldnames: ''.join(('SPIRES-', node.value))}}
 
                 elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['title'] == fieldnames:
-                            return self._generate_title_queries(node.value)
+                    return self._generate_title_queries(node.value)
+
+                elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
+                    return self._generate_type_code_query(node.value)
 
                 return {
                     'match': {
@@ -558,6 +626,9 @@ class ElasticSearchVisitor(Visitor):
 
         if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames[0]:
             return self._generate_exact_author_query(node.value)
+
+        elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames[0]:
+            return self._generate_type_code_query(node.value)
 
         bai_fieldnames = self._generate_fieldnames_if_bai_query(
             node.value,
@@ -589,6 +660,9 @@ class ElasticSearchVisitor(Visitor):
 
         if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
             return self._generate_exact_author_query(node.value)
+
+        elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
+            return self._generate_type_code_query(node.value)
 
         # Add wildcard token as prefix and suffix.
         value = \
