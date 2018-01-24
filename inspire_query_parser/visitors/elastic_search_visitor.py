@@ -85,7 +85,7 @@ class ElasticSearchVisitor(Visitor):
         'doi': 'dois.value.raw',
         'eprint': 'arxiv_eprints.value.raw',
         'irn': 'external_system_identifiers.value.raw',
-        'exact-author': 'authors.full_name_normalized',
+        'exact-author': 'authors.full_name_unicode_normalized',
         'refersto': 'references.recid',
         'reportnumber': 'report_numbers.value.fuzzy',
         'subject': 'facet_inspire_categories',
