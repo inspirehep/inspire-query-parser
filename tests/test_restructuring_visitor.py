@@ -415,14 +415,14 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'date this month author ellis',
             AndOp(
-                KeywordOp(Keyword('date'), Value(str(date.today().replace(day=1)))),
+                KeywordOp(Keyword('date'), Value(str(date.today()))),
                 KeywordOp(Keyword('author'), Value('ellis'))
             )
          ),
         (
             'date this month - 3 author ellis',
             AndOp(
-                KeywordOp(Keyword('date'), Value(str(date.today().replace(day=1) - relativedelta(months=3)))),
+                KeywordOp(Keyword('date'), Value(str(date.today() - relativedelta(months=3)))),
                 KeywordOp(Keyword('author'), Value('ellis'))
             )
          ),
@@ -437,7 +437,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         (
             'date last month - 2 + ac < 50',
             AndOp(
-                KeywordOp(Keyword('date'), Value(str((date.today().replace(day=1) - relativedelta(months=3))))),
+                KeywordOp(Keyword('date'), Value(str((date.today() - relativedelta(months=3))))),
                 KeywordOp(Keyword('author-count'), LessThanOp(Value('50')))
             )
          ),
