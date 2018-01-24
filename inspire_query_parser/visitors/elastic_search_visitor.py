@@ -483,7 +483,7 @@ class ElasticSearchVisitor(Visitor):
         }
 
     # ################
-    def _generate_match_queries(self, fieldnames, values_list):
+    def _generate_match_queries_for_journal_nested_query(self, fieldnames, values_list):
         """Generates ElasticSearch match queries.
 
         Args:
@@ -542,34 +542,37 @@ class ElasticSearchVisitor(Visitor):
 
         old_publication_info = [
             {
-                publication_info_keys[index]:
-                    values_list[index] for index in range(0, len(values_list)) if values_list[index]
+                key:
+                    value for key, value in zip(publication_info_keys, values_list) if value
             }
         ]
 
+        # We are always assuming that the returned list will not be empty. In the situation of a journal query with no
+        # value, a malformed query will be generated instead.
         new_publication_info = convert_old_publication_info_to_new(old_publication_info)[0]
 
-        new_values_list = []
-        new_values_list.append(new_publication_info.get('journal_title', ""))
-        new_values_list.append(new_publication_info.get('journal_volume', ""))
-        new_values_list.append(new_publication_info.get('artid', ""))
-        new_values_list = [el for el in new_values_list if el]
+        new_values_list = [
+            new_publication_info.get(field, "")
+            for field
+            in publication_info_keys
+            if new_publication_info.get(field, "")
+        ]
 
         if new_publication_info.get('artid'):
-            query_fields_with_artid = fieldnames[:3]
+            journal_fields_title_and_volume_and_artid = fieldnames[:3]
             nested_queries.append({
                 'nested': {
                     'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': self._generate_match_queries(query_fields_with_artid, new_values_list)
+                    'query': self._generate_match_queries_for_journal_nested_query(journal_fields_title_and_volume_and_artid, new_values_list)
                 }
             })
 
-            query_fields_with_page_start = fieldnames[:2]
-            query_fields_with_page_start.extend(fieldnames[3:])
+            journal_fields_title_and_volume_and_page_start = fieldnames[:2]
+            journal_fields_title_and_volume_and_page_start.extend(fieldnames[3:])
             nested_queries.append({
                 'nested': {
                     'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': self._generate_match_queries(query_fields_with_page_start, new_values_list)
+                    'query': self._generate_match_queries_for_journal_nested_query(journal_fields_title_and_volume_and_page_start, new_values_list)
                 }
             })
 
@@ -580,18 +583,20 @@ class ElasticSearchVisitor(Visitor):
             }
 
         elif new_publication_info.get('journal_volume'):
+            journal_fields_title_and_volume = fieldnames[:2]
             nested_queries.append({
                 'nested': {
                     'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': self._generate_match_queries(fieldnames[:2], new_values_list)
+                    'query': self._generate_match_queries_for_journal_nested_query(journal_fields_title_and_volume, new_values_list)
                 }
             })
 
         elif new_publication_info.get('journal_title'):
+            journal_fields_only_title = fieldnames[:1]
             nested_queries.append({
                 'nested': {
                     'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': self._generate_match_queries(fieldnames[:1], new_values_list)
+                    'query': self._generate_match_queries_for_journal_nested_query(journal_fields_only_title, new_values_list)
                 }
             })
 
