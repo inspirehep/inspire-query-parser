@@ -596,7 +596,6 @@ class ElasticSearchVisitor(Visitor):
             })
 
         return nested_queries[0]
->>>>>>> es-visitor: implement journal nested queries
 
     def visit_empty_query(self, node):
         return {'match_all': {}}

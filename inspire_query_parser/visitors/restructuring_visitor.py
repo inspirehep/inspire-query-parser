@@ -45,6 +45,48 @@ from inspire_query_parser.visitors.visitor_impl import Visitor
 logger = logging.getLogger(__name__)
 
 
+def _restructure_if_volume_follows_journal(left, right):
+    """Remove volume node if it follows a journal logically in the tree hierarchy.
+
+    Args:
+        left (ast.ASTElement): The journal KeywordOp node.
+        right (ast.ASTElement): The rest of the tree to be restructured.
+
+    Return:
+        (ast.ASTElement): The restructured tree, with the volume node removed.
+
+    Notes:
+        This happens to support queries like "journal Phys.Rev. and vol d85". Appends the value of KeywordOp with
+        Keyword 'volume' and discards 'volume' KeywordOp node from the tree.
+    """
+    def _get_volume_keyword_op_and_remaining_subtree(right_subtree):
+        if isinstance(right_subtree, NotOp) and isinstance(right_subtree.op, KeywordOp) \
+                and right_subtree.op.left == Keyword('volume'):
+            return None, None
+
+        elif isinstance(right_subtree, AndOp) and isinstance(right_subtree.left, NotOp) \
+                and isinstance(right_subtree.left.op, KeywordOp) and right_subtree.left.op.left == Keyword('volume'):
+            return None, right_subtree.right
+
+        elif isinstance(right_subtree, KeywordOp) and right_subtree.left == Keyword('volume'):
+            return right_subtree, None
+
+        elif isinstance(right_subtree, AndOp) and right_subtree.left.left == Keyword('volume'):
+            return right_subtree.left, right_subtree.right
+
+    journal_value = left.right.value
+
+    volume_and_remaining_subtree = _get_volume_keyword_op_and_remaining_subtree(right)
+    if not volume_and_remaining_subtree:
+        return
+
+    volume_node, remaining_subtree = volume_and_remaining_subtree
+    if volume_node:
+        left.right.value = ','.join([journal_value, volume_node.right.value])
+
+    return AndOp(left, remaining_subtree) if remaining_subtree else left
+
+
 def _convert_simple_value_boolean_query_to_and_boolean_queries(tree, keyword):
     """Chain SimpleValueBooleanQuery values into chained AndOp queries with the given current Keyword."""
 
@@ -119,6 +161,15 @@ class RestructuringVisitor(Visitor):
         """Convert BooleanRule into AndOp or OrOp nodes."""
         left = node.left.accept(self)
         right = node.right.accept(self)
+
+        is_journal_keyword_op = isinstance(left, KeywordOp) and left.left == Keyword('journal')
+
+        if is_journal_keyword_op:
+            journal_and_volume_conjunction = _restructure_if_volume_follows_journal(left, right)
+
+            if journal_and_volume_conjunction:
+                return journal_and_volume_conjunction
+
         return AndOp(left, right) if isinstance(node.bool_op, And) else OrOp(left, right)
 
     def visit_simple_value_boolean_query(self, node):
