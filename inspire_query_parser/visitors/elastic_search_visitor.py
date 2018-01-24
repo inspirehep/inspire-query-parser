@@ -34,6 +34,7 @@ import re
 import six
 from unicodedata import normalize
 
+from inspire_schemas.utils import convert_old_publication_info_to_new
 from inspire_utils.helpers import force_list
 from inspire_utils.name import normalize_name
 
@@ -84,8 +85,14 @@ class ElasticSearchVisitor(Visitor):
         ],
         'doi': 'dois.value.raw',
         'eprint': 'arxiv_eprints.value.raw',
-        'irn': 'external_system_identifiers.value.raw',
         'exact-author': 'authors.full_name_unicode_normalized',
+        'irn': 'external_system_identifiers.value.raw',
+        'journal': [
+            'publication_info.journal_title',
+            'publication_info.journal_volume',
+            'publication_info.page_start',
+            'publication_info.artid',
+        ],
         'refersto': 'references.recid',
         'reportnumber': 'report_numbers.value.fuzzy',
         'subject': 'facet_inspire_categories',
@@ -117,6 +124,7 @@ class ElasticSearchVisitor(Visitor):
 
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
     AUTHORS_BAI_FIELD = 'authors.ids.value'
+    JOURNAL_NESTED_QUERY_PATH = 'publication_info'
     BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
 
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
@@ -475,6 +483,120 @@ class ElasticSearchVisitor(Visitor):
         }
 
     # ################
+    def _generate_match_queries(self, fieldnames, values_list):
+        """Generates ElasticSearch match queries.
+
+        Args:
+            fieldnames (list): The fieldnames on which the search in each match query is targeted on,
+            values_list (list): Contains values to be searched on corresponding to each field.
+                                The values should be of type string.
+
+        Notes:
+            If either of the lists (fieldnames or values_list) is empty, an empty query will be returned..
+        """
+        match_queries = []
+        for value, fieldname in zip(values_list, fieldnames):
+            match_queries.append({
+                'match': {fieldname: value}
+            })
+
+        if len(match_queries) == 0:
+            return {}
+
+        if len(match_queries) == 1:
+            return {
+                'bool': {
+                    'must': match_queries[0]
+                }
+            }
+
+        return {
+            'bool': {
+                'must': match_queries
+            }
+        }
+
+    def _generate_journal_nested_queries(self, fieldnames, value):
+        """Generates ElasticSearch nested query(s).
+
+        Args:
+            fieldnames (list): The fieldnames on which the search in the nested query is targeted on,
+            value (string): Contains the journal_title, journal_volume and artid or start_page separated by a comma.
+                            This value should be of type string.
+
+        Notes:
+            The value contains at least one of the 3 mentioned items, in this order and at most 3. The 3rd is either the
+            artid or the pasge_start and it will query the corresponding ES field for this item. The values are then
+            split on comma and stripped of spaces before being saved in a values list in order to to be assigned to
+            corresponding fields.
+        """
+        nested_queries = []
+        values_list = value.split(',')
+        values_list = [el.strip() for el in values_list if el]
+
+        publication_info_keys = [
+            'journal_title',
+            'journal_volume',
+            'artid',  # could also be `page_start`
+        ]
+
+        old_publication_info = [
+            {
+                publication_info_keys[index]:
+                    values_list[index] for index in range(0, len(values_list)) if values_list[index]
+            }
+        ]
+
+        new_publication_info = convert_old_publication_info_to_new(old_publication_info)[0]
+
+        new_values_list = []
+        new_values_list.append(new_publication_info.get('journal_title', ""))
+        new_values_list.append(new_publication_info.get('journal_volume', ""))
+        new_values_list.append(new_publication_info.get('artid', ""))
+        new_values_list = [el for el in new_values_list if el]
+
+        if new_publication_info.get('artid'):
+            query_fields_with_artid = fieldnames[:3]
+            nested_queries.append({
+                'nested': {
+                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
+                    'query': self._generate_match_queries(query_fields_with_artid, new_values_list)
+                }
+            })
+
+            query_fields_with_page_start = fieldnames[:2]
+            query_fields_with_page_start.extend(fieldnames[3:])
+            nested_queries.append({
+                'nested': {
+                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
+                    'query': self._generate_match_queries(query_fields_with_page_start, new_values_list)
+                }
+            })
+
+            return {
+                'bool': {
+                    'should': nested_queries
+                }
+            }
+
+        elif new_publication_info.get('journal_volume'):
+            nested_queries.append({
+                'nested': {
+                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
+                    'query': self._generate_match_queries(fieldnames[:2], new_values_list)
+                }
+            })
+
+        elif new_publication_info.get('journal_title'):
+            nested_queries.append({
+                'nested': {
+                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
+                    'query': self._generate_match_queries(fieldnames[:1], new_values_list)
+                }
+            })
+
+        return nested_queries[0]
+>>>>>>> es-visitor: implement journal nested queries
 
     def visit_empty_query(self, node):
         return {'match_all': {}}
@@ -572,6 +694,9 @@ class ElasticSearchVisitor(Visitor):
                     # Date queries with simple values are transformed into range queries, among the given and the exact
                     # next date, according to the granularity of the given date.
                     return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
+
+                if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
+                    return self._generate_journal_nested_queries(force_list(fieldnames), node.value)
 
                 return {
                     'multi_match': {

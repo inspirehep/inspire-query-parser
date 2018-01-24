@@ -210,7 +210,25 @@ def test_elastic_search_visitor_find_exact_author_with_bai_partial_value_ellis()
 
 
 def test_elastic_search_visitor_find_journal_title_simple_value():
-    query_str = 'j foo'
+    query_str = 'j Phys.Lett.B'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "must": {"match": {"publication_info.journal_title": "Phys.Lett.B"}}
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_journal_title_and_new_style_vol_simple_value():
+    query_str = 'j Phys.Lett.B,351'
     expected_es_query = \
         {
             "nested": {
@@ -218,7 +236,8 @@ def test_elastic_search_visitor_find_journal_title_simple_value():
                 "query": {
                     "bool": {
                         "must": [
-                            {"match": {"publication_info.journal_title": "foo"}}
+                            {"match": {"publication_info.journal_title": "Phys.Lett.B"}},
+                            {"match": {"publication_info.journal_volume": "351"}}
                         ]
                     }
                 }
@@ -229,8 +248,8 @@ def test_elastic_search_visitor_find_journal_title_simple_value():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_find_journal_title_and_vol_simple_value():
-    query_str = 'j foo,bar'
+def test_elastic_search_visitor_find_journal_title_and_old_style_vol_simple_value():
+    query_str = 'j Phys.Lett.,B351'
     expected_es_query = \
         {
             "nested": {
@@ -238,8 +257,8 @@ def test_elastic_search_visitor_find_journal_title_and_vol_simple_value():
                 "query": {
                     "bool": {
                         "must": [
-                            {"match": {"publication_info.journal_title": "foo"}},
-                            {"match": {"publication_info.journal_volume": "bar"}}
+                            {"match": {"publication_info.journal_title": "Phys.Lett.B"}},
+                            {"match": {"publication_info.journal_volume": "351"}}
                         ]
                     }
                 }
@@ -251,7 +270,7 @@ def test_elastic_search_visitor_find_journal_title_and_vol_simple_value():
 
 
 def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_page_simple_value():
-    query_str = 'j foo,bar,baz'
+    query_str = 'j Phys.Lett.B,351,123'
     expected_es_query = \
         {
             "bool": {
@@ -264,17 +283,17 @@ def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_pa
                                     "must": [
                                         {
                                             "match": {
-                                                "publication_info.journal_title": "foo"
+                                                "publication_info.journal_title": "Phys.Lett.B"
                                             }
                                         },
                                         {
                                             "match": {
-                                                "publication_info.journal_volume": "bar"
+                                                "publication_info.journal_volume": "351"
                                             }
                                         },
                                         {
                                             "match": {
-                                                "publication_info.page_start": "baz"
+                                                "publication_info.page_start": "123"
                                             }
                                         }
                                     ]
@@ -290,17 +309,17 @@ def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_pa
                                     "must": [
                                         {
                                             "match": {
-                                                "publication_info.journal_title": "foo"
+                                                "publication_info.journal_title": "Phys.Lett.B"
                                             }
                                         },
                                         {
                                             "match": {
-                                                "publication_info.journal_volume": "bar"
+                                                "publication_info.journal_volume": "351"
                                             }
                                         },
                                         {
                                             "match": {
-                                                "publication_info.artid": "baz"
+                                                "publication_info.artid": "123"
                                             }
                                         }
                                     ]
