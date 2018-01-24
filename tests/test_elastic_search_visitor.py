@@ -97,7 +97,7 @@ def test_elastic_search_visitor_find_exact_author_simple_value():
     expected_es_query = \
         {
             "term": {
-                "authors.full_name_normalized": "vures, john i."
+                "authors.full_name_unicode_normalized": "vures, john i."
             }
         }
 
@@ -110,7 +110,7 @@ def test_elastic_search_visitor_find_exact_author_simple_value_diacritics():
     expected_es_query = \
         {
             "term": {
-                "authors.full_name_normalized": "vur\xebs, john i."
+                "authors.full_name_unicode_normalized": "vur\xebs, john i."
             }
         }
 
@@ -123,7 +123,7 @@ def test_elastic_search_visitor_find_exact_author_partial_value():
     expected_es_query = \
         {
             "term": {
-                "authors.full_name_normalized": "vures, john i."
+                "authors.full_name_unicode_normalized": "vures, john i."
             }
         }
 
@@ -136,7 +136,7 @@ def test_elastic_search_visitor_find_exact_author_partial_value_diacritics():
     expected_es_query = \
         {
             "term": {
-                "authors.full_name_normalized": "vur\xebs, john i."
+                "authors.full_name_unicode_normalized": "vur\xebs, john i."
             }
         }
 
@@ -149,7 +149,7 @@ def test_elastic_search_visitor_find_exact_author_exact_value():
     expected_es_query = \
         {
             "term": {
-                "authors.full_name_normalized": "vures, john i."
+                "authors.full_name_unicode_normalized": "vures, john i."
             }
         }
 
@@ -162,7 +162,7 @@ def test_elastic_search_visitor_find_exact_author_exact_value_diacritics():
     expected_es_query = \
         {
             "term": {
-                "authors.full_name_normalized": "vur\xebs, john i."
+                "authors.full_name_unicode_normalized": "vur\xebs, john i."
             }
         }
 
