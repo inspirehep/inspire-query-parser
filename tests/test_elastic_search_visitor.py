@@ -215,11 +215,7 @@ def test_elastic_search_visitor_find_journal_title_simple_value():
         {
             "nested": {
                 "path": "publication_info",
-                "query": {
-                    "bool": {
-                        "must": {"match": {"publication_info.journal_title": "Phys.Lett.B"}}
-                    }
-                }
+                "query": {"match": {"publication_info.journal_title": "Phys.Lett.B"}}
             }
         }
 
