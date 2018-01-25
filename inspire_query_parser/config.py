@@ -55,10 +55,6 @@ INSPIRE_PARSER_KEYWORDS = {
     'authorcount': 'author-count',
     'ac': 'author-count',
 
-    # Bulletin
-    'bb': 'reportnumber',
-    'bull': 'reportnumber',
-
     # Cataloguer
     'cat': 'cataloguer',
 
@@ -121,6 +117,8 @@ INSPIRE_PARSER_KEYWORDS = {
     'doi': 'doi',
 
     # ePrint
+    'bb': 'eprint',
+    'bull': 'eprint',
     'eprint': 'eprint',
 
     # Exact-Author
