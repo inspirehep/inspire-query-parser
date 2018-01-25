@@ -359,3 +359,75 @@ def update_date_value_in_operator_value_pairs_for_fieldname(field, operator_valu
                 modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(modified_date)
 
     return updated_operator_value_pairs
+
+
+# #### Generic ElasticSearch DSL generation helpers ####
+def generate_match_query(field, value, with_operator_and):
+    """Helper for generating a match query.
+
+    Args:
+        field (six.text_type): The ES field to be queried.
+        value (six.text_type/bool): The value of the query (bool for the case of type-code query ["core: true"]).
+        with_operator_and (bool): Flag that signifies whether to generate the explicit notation of the query, along
+            with '"operator": "and"', so that all tokens of the query value are required to match.
+
+    Notes:
+        If value is of instance bool, then the shortened version of the match query is generated, at all times.
+    """
+    if isinstance(value, bool):
+        return {'match': {field: value}}
+
+    if with_operator_and:
+        return {
+            'match': {
+                field: {
+                    'query': value,
+                    'operator': 'and'
+                }
+            }
+        }
+
+    return {'match': {field: value}}
+
+
+def generate_match_queries(fields, values, with_operator_and=False):
+    """Generates a list of match queries for each of the fieldnames-values pairs.
+
+    Notes:
+        The `with_operator_and` flag signifies whether these queries should be generated along with
+        ``"operator": "and"``, and thus, all of their value tokens must match.
+    """
+    match_queries = []
+    for f, v in zip(fields, values):
+        match_queries.append(generate_match_query(f, v, with_operator_and))
+
+    return match_queries
+
+
+def wrap_queries_in_bool_clauses_if_more_than_one(queries,
+                                                  use_must_clause,
+                                                  preserve_bool_semantics_if_one_clause=False):
+    """Helper for wrapping a list of queries into a bool.{must, should} clause.
+
+    Args:
+        queries (list): List of queries to be wrapped in a bool.{must, should} clause.
+        use_must_clause (bool): Flag that signifies whether to use 'must' or 'should' clause.
+        preserve_bool_semantics_if_one_clause (bool): Flag that signifies whether to generate a bool query even if
+            there's only one clause. This happens to generate boolean query semantics. Usually not the case, but
+            useful for boolean queries support.
+
+    Returns:
+        (dict): If len(queries) > 1, the bool clause, otherwise if len(queries) == 1, will return the query itself,
+                while finally, if len(queries) == 0, then an empty dictionary is returned.
+    """
+    if not queries:
+        return {}
+
+    if len(queries) == 1 and not preserve_bool_semantics_if_one_clause:
+        return queries[0]
+
+    return {
+        'bool': {
+            ('must' if use_must_clause else 'should'): queries
+        }
+    }
