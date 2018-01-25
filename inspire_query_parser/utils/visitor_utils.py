@@ -192,7 +192,7 @@ def convert_yesterday_date_specifier(relative_date_specifier_suffix):
 
 @register_date_conversion_handler(DATE_THIS_MONTH_REGEX_PATTERN)
 def convert_this_month_date(relative_date_specifier_suffix):
-    start_date = date.today().replace(day=1)
+    start_date = date.today()
     relative_delta = (
         relativedelta(months=_extract_number_from_text(relative_date_specifier_suffix))
         if relative_date_specifier_suffix else None
@@ -203,7 +203,7 @@ def convert_this_month_date(relative_date_specifier_suffix):
 
 @register_date_conversion_handler(DATE_LAST_MONTH_REGEX_PATTERN)
 def convert_last_month_date(relative_date_specifier_suffix):
-    start_date = date.today().replace(day=1) - relativedelta(months=1)
+    start_date = date.today() - relativedelta(months=1)
     relative_delta = (
         relativedelta(months=_extract_number_from_text(relative_date_specifier_suffix))
         if relative_date_specifier_suffix else None
