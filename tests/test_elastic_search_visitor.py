@@ -215,7 +215,9 @@ def test_elastic_search_visitor_find_journal_title_simple_value():
         {
             "nested": {
                 "path": "publication_info",
-                "query": {"match": {"publication_info.journal_title": "Phys.Lett.B"}}
+                "query": {
+                    "match": {"publication_info.journal_title": "Phys.Lett.B"}
+                }
             }
         }
 
@@ -269,48 +271,27 @@ def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_pa
     query_str = 'j Phys.Lett.B,351,123'
     expected_es_query = \
         {
-            "bool": {
-                "should": [
-                    {
-                        "nested": {
-                            "path": "publication_info",
-                            "query": {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "match": {
+                                    "publication_info.journal_title": "Phys.Lett.B"
+                                }
+                            },
+                            {
+                                "match": {
+                                    "publication_info.journal_volume": "351"
+                                }
+                            },
+                            {
                                 "bool": {
-                                    "must": [
-                                        {
-                                            "match": {
-                                                "publication_info.journal_title": "Phys.Lett.B"
-                                            }
-                                        },
-                                        {
-                                            "match": {
-                                                "publication_info.journal_volume": "351"
-                                            }
-                                        },
+                                    "should": [
                                         {
                                             "match": {
                                                 "publication_info.page_start": "123"
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    {
-                        "nested": {
-                            "path": "publication_info",
-                            "query": {
-                                "bool": {
-                                    "must": [
-                                        {
-                                            "match": {
-                                                "publication_info.journal_title": "Phys.Lett.B"
-                                            }
-                                        },
-                                        {
-                                            "match": {
-                                                "publication_info.journal_volume": "351"
                                             }
                                         },
                                         {
@@ -321,9 +302,9 @@ def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_pa
                                     ]
                                 }
                             }
-                        }
+                        ]
                     }
-                ]
+                }
             }
         }
 
@@ -412,7 +393,7 @@ def test_elastic_search_visitor_dotted_keyword_simple_value():
     expected_es_query = {
         "match": {
             "dotted.keyword": {
-                "query":  "bar",
+                "query": "bar",
                 "operator": "and",
             }
         }

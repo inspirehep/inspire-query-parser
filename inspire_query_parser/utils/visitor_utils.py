@@ -404,9 +404,20 @@ def generate_match_queries(fields, values, with_operator_and=False):
     return match_queries
 
 
+def generate_nested_query(path, queries):
+    # TODO: docstring.
+    return {
+        'nested': {
+            'path': path,
+            'query': queries
+        }
+    }
+
+
 def wrap_queries_in_bool_clauses_if_more_than_one(queries,
                                                   use_must_clause,
-                                                  preserve_bool_semantics_if_one_clause=False):
+                                                  preserve_bool_semantics_if_one_clause=False,
+                                                  minimum_should_match=False):
     """Helper for wrapping a list of queries into a bool.{must, should} clause.
 
     Args:

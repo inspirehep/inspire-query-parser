@@ -50,7 +50,7 @@ from inspire_query_parser.utils.visitor_utils import (
     author_name_contains_fullnames,
     generate_minimal_name_variations,
     update_date_value_in_operator_value_pairs_for_fieldname,
-    wrap_queries_in_bool_clauses_if_more_than_one, generate_match_query, generate_match_queries)
+    wrap_queries_in_bool_clauses_if_more_than_one, generate_match_query, generate_nested_query, generate_match_queries)
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
 logger = logging.getLogger(__name__)
@@ -434,6 +434,35 @@ class ElasticSearchVisitor(Visitor):
             }
         }
 
+    def _preprocess_journal_query_value(value):
+        nested_queries = []
+        values_list = value.split(',')
+        values_list = [el.strip() for el in values_list if el]
+
+        publication_info_keys = [
+            'journal_title',
+            'journal_volume',
+            'artid',  # could also be `page_start`
+        ]
+
+        old_publication_info = [
+            {
+                key:
+                    value for key, value in zip(publication_info_keys, values_list) if value
+            }
+        ]
+
+        # We are always assuming that the returned list will not be empty. In the situation of a journal query with no
+        # value, a malformed query will be generated instead.
+        new_publication_info = convert_old_publication_info_to_new(old_publication_info)[0]
+
+        return [
+            new_publication_info.get(field, "")
+            for field
+            in publication_info_keys
+            if new_publication_info.get(field, "")
+        ]
+
     def _generate_journal_nested_queries(self, fieldnames, value):
         """Generates ElasticSearch nested query(s).
 
@@ -448,14 +477,13 @@ class ElasticSearchVisitor(Visitor):
             The values are then split on comma and stripped of spaces before being saved in a values list in order to
             be assigned to corresponding fields.
         """
-        nested_queries = []
-        values_list = value.split(',')
-        values_list = [el.strip() for el in values_list if el]
+        nested_query = []
+        values_list = [val.strip() for val in value.split(',') if val]
 
         publication_info_keys = [
             'journal_title',
             'journal_volume',
-            'artid',  # could also be `page_start`
+            'artid'
         ]
 
         old_publication_info = [
@@ -478,70 +506,69 @@ class ElasticSearchVisitor(Visitor):
 
         # TODO Value processing part ends here. We can extract a method.
 
+        # TODO Extract method that generates general nested queries.
+
         if new_publication_info.get('artid'):
-            journal_fields_title_and_volume_and_artid = fieldnames[:3]
+            # Double the last value so that it is searched against both 'artid' and 'page_start' fields.
+            new_values_list.append(new_values_list[2])
+            journal_fields_title_and_volume = fieldnames[:2]
+            query = wrap_queries_in_bool_clauses_if_more_than_one(
+                    generate_match_queries(
+                        journal_fields_title_and_volume,
+                        new_values_list[:2],
+                        with_operator_and=False),
+                    use_must_clause=True
+                )
 
-            nested_queries.append({
-                'nested': {
-                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': wrap_queries_in_bool_clauses_if_more_than_one(
-                        generate_match_queries(journal_fields_title_and_volume_and_artid,
-                                               new_values_list,
-                                               with_operator_and=False),
-                        use_must_clause=True
-                    )
-                }
-            })
+            journal_fields_artid_and_page_start = fieldnames[2:]
+            artid_and_page_start_should_match = generate_match_queries(
+                        journal_fields_artid_and_page_start,
+                        new_values_list[2:],
+                        with_operator_and=False)
 
-            journal_fields_title_and_volume_and_page_start = fieldnames[:2]
-            journal_fields_title_and_volume_and_page_start.extend(fieldnames[3:])
-            nested_queries.append({
-                'nested': {
-                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': wrap_queries_in_bool_clauses_if_more_than_one(
-                        generate_match_queries(journal_fields_title_and_volume_and_page_start,
-                                               new_values_list,
-                                               with_operator_and=False),
-                        use_must_clause=True
-                    )
-                }
-            })
+            query["bool"]["must"].append(
+                wrap_queries_in_bool_clauses_if_more_than_one(
+                    artid_and_page_start_should_match,
+                    use_must_clause=False
+                ))
 
-            return {
-                'bool': {
-                    'should': nested_queries
-                }
-            }
+            nested_query = generate_nested_query(
+                ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
+                query
+            )
+
+            return nested_query
 
         elif new_publication_info.get('journal_volume'):
             journal_fields_title_and_volume = fieldnames[:2]
-            nested_queries.append({
-                'nested': {
-                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': wrap_queries_in_bool_clauses_if_more_than_one(
-                        generate_match_queries(journal_fields_title_and_volume,
-                                               new_values_list,
-                                               with_operator_and=False),
-                        use_must_clause=True
-                    )
-                }
-            })
+            query = wrap_queries_in_bool_clauses_if_more_than_one(
+                    generate_match_queries(
+                        journal_fields_title_and_volume,
+                        new_values_list,
+                        with_operator_and=False),
+                    use_must_clause=True
+                )
+
+            nested_query = generate_nested_query(
+                ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
+                query
+            )
 
         elif new_publication_info.get('journal_title'):
             journal_fields_only_title = fieldnames[:1]
-            nested_queries.append({
-                'nested': {
-                    'path': ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
-                    'query': wrap_queries_in_bool_clauses_if_more_than_one(
-                        generate_match_queries(journal_fields_only_title,
-                                               new_values_list,
-                                               with_operator_and=False),
-                        use_must_clause=True
-                    )
-                }
-            })
+            query = wrap_queries_in_bool_clauses_if_more_than_one(
+                    generate_match_queries(journal_fields_only_title,
+                                           new_values_list,
+                                           with_operator_and=False),
+                    use_must_clause=True
+                )
 
-        return nested_queries[0]
+            nested_query = generate_nested_query(
+                ElasticSearchVisitor.JOURNAL_NESTED_QUERY_PATH,
+                query
+            )
+
+        return nested_query
     # ################
 
     def visit_empty_query(self, node):
