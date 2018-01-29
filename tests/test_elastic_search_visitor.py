@@ -312,6 +312,26 @@ def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_pa
     assert ordered(generated_es_query) == ordered(expected_es_query)
 
 
+def test_elastic_search_visitor_exact_journal_query_is_the_same_as_simple_value():
+    simple_value_query_str = 'j Phys.Lett.B,351,123'
+    exact_value_query_str = 'j "Phys.Lett.B,351,123"'
+
+    generated_simple_value_es_query = _parse_query(simple_value_query_str)
+    generated_exact_value_es_query = _parse_query(exact_value_query_str)
+
+    assert ordered(generated_simple_value_es_query) == ordered(generated_exact_value_es_query)
+
+
+def test_elastic_search_visitor_partial_journal_query_is_the_same_as_simple_value():
+    simple_value_query_str = 'j Phys.Lett.B,351,123'
+    partial_value_query_str = "j 'Phys.Lett.B,351,123'"
+
+    generated_simple_value_es_query = _parse_query(simple_value_query_str)
+    generated_partial_value_es_query = _parse_query(partial_value_query_str)
+
+    assert ordered(generated_simple_value_es_query) == ordered(generated_partial_value_es_query)
+
+
 def test_elastic_search_visitor_and_op_query():
     query_str = 'subject: astrophysics and title:boson'
 

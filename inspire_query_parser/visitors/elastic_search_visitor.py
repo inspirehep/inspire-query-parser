@@ -688,6 +688,9 @@ class ElasticSearchVisitor(Visitor):
         elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames[0]:
             return self._generate_type_code_query(node.value)
 
+        elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
+            return self._generate_journal_nested_queries(node.value)
+
         bai_fieldnames = self._generate_fieldnames_if_bai_query(
             node.value,
             bai_field_variation=FieldVariations.raw,
@@ -718,6 +721,9 @@ class ElasticSearchVisitor(Visitor):
 
         elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
             return self._generate_type_code_query(node.value)
+
+        elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
+            return self._generate_journal_nested_queries(node.value)
 
         # Add wildcard token as prefix and suffix.
         value = \
