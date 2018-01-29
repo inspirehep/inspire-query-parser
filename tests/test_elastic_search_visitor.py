@@ -309,7 +309,7 @@ def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_pa
         }
 
     generated_es_query = _parse_query(query_str)
-    assert generated_es_query == expected_es_query
+    assert ordered(generated_es_query) == ordered(expected_es_query)
 
 
 def test_elastic_search_visitor_and_op_query():

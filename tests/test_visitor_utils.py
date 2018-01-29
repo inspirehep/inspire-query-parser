@@ -27,8 +27,11 @@ from pytest import raises
 from inspire_query_parser.utils.visitor_utils import (
     _truncate_wildcard_from_date,
     author_name_contains_fullnames,
+    generate_match_query,
     generate_minimal_name_variations,
-    generate_match_query, generate_match_queries, wrap_queries_in_bool_clauses_if_more_than_one)
+    generate_nested_query,
+    wrap_queries_in_bool_clauses_if_more_than_one,
+)
 
 from test_utils import parametrize
 
@@ -210,29 +213,6 @@ def test_generate_match_query_with_operator_and_false():
     assert generated_match_query == expected_match_query
 
 
-def test_generate_match_queries():
-    fields = [
-        'publication_info.journal_title',
-        'publication_info.journal_volume',
-        'publication_info.page_start'
-    ]
-    values = [
-        'Phys.Rev.B',
-        '85',
-        '1051'
-    ]
-
-    generated_match_queries = generate_match_queries(fields, values, with_operator_and=False)
-
-    expected_match_queries = [
-        {'match': {'publication_info.journal_title': 'Phys.Rev.B'}},
-        {'match': {'publication_info.journal_volume': '85'}},
-        {'match': {'publication_info.page_start': '1051'}},
-    ]
-
-    assert generated_match_queries == expected_match_queries
-
-
 def test_wrap_queries_in_bool_clauses_if_more_than_one_with_two_queries():
     queries = [
         {'match': {'title': 'collider'}},
@@ -316,3 +296,44 @@ def test_wrap_queries_in_bool_clauses_if_more_than_one_with_one_query_generates_
     }
 
     assert generated_bool_clause == expected_bool_clause
+
+
+def test_generate_nested_query():
+    query = {
+        'bool': {
+            'must': [
+                {'match': {'journal.title': 'Phys.Rev'}},
+                {'match': {'journal.volume': 'D42'}},
+            ]
+        }
+    }
+    path = 'journal'
+
+    generated_query = generate_nested_query(path, query)
+
+    expected_query = {
+        'nested': {
+            'path': 'journal',
+            'query': {
+                'bool': {
+                    'must': [
+                        {'match': {'journal.title': 'Phys.Rev'}},
+                        {'match': {'journal.volume': 'D42'}},
+                    ]
+                }
+            }
+        }
+    }
+
+    assert generated_query == expected_query
+
+
+def test_generate_nested_query_returns_empty_dict_on_falsy_query():
+    query = {}
+    path = 'journal'
+
+    generated_query = generate_nested_query(path, query)
+
+    expected_query = {}
+
+    assert generated_query == expected_query

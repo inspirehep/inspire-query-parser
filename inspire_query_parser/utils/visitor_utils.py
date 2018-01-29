@@ -390,22 +390,15 @@ def generate_match_query(field, value, with_operator_and):
     return {'match': {field: value}}
 
 
-def generate_match_queries(fields, values, with_operator_and=False):
-    """Generates a list of match queries for each of the fieldnames-values pairs.
-
-    Notes:
-        The `with_operator_and` flag signifies whether these queries should be generated along with
-        ``"operator": "and"``, and thus, all of their value tokens must match.
-    """
-    match_queries = []
-    for f, v in zip(fields, values):
-        match_queries.append(generate_match_query(f, v, with_operator_and))
-
-    return match_queries
-
-
 def generate_nested_query(path, queries):
-    # TODO: docstring.
+    """Generates nested query.
+
+    Returns:
+        (dict): The nested query if queries is not falsy, otherwise an empty dict.
+    """
+    if not queries:
+        return {}
+
     return {
         'nested': {
             'path': path,
@@ -416,8 +409,7 @@ def generate_nested_query(path, queries):
 
 def wrap_queries_in_bool_clauses_if_more_than_one(queries,
                                                   use_must_clause,
-                                                  preserve_bool_semantics_if_one_clause=False,
-                                                  minimum_should_match=False):
+                                                  preserve_bool_semantics_if_one_clause=False):
     """Helper for wrapping a list of queries into a bool.{must, should} clause.
 
     Args:
