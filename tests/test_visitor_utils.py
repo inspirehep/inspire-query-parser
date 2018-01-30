@@ -27,7 +27,10 @@ from pytest import raises
 from inspire_query_parser.utils.visitor_utils import (
     _truncate_wildcard_from_date,
     author_name_contains_fullnames,
+    generate_match_query,
     generate_minimal_name_variations,
+    generate_nested_query,
+    wrap_queries_in_bool_clauses_if_more_than_one,
 )
 
 from test_utils import parametrize
@@ -169,3 +172,168 @@ def test_truncate_wildcard_from_date_throws_with_unsupported_separator():
     date = '2018_1*'
     with raises(ValueError):
         _truncate_wildcard_from_date(date)
+
+
+def test_generate_match_query_with_bool_value():
+    generated_match_query = generate_match_query('core', True, with_operator_and=True)
+
+    expected_match_query = {
+        'match': {
+            'core': True
+        }
+    }
+
+    assert generated_match_query == expected_match_query
+
+
+def test_generate_match_query_with_operator_and():
+    generated_match_query = generate_match_query('author', 'Ellis, John', with_operator_and=True)
+
+    expected_match_query = {
+        'match': {
+            'author': {
+                'query': 'Ellis, John',
+                'operator': 'and',
+            }
+        }
+    }
+
+    assert generated_match_query == expected_match_query
+
+
+def test_generate_match_query_with_operator_and_false():
+    generated_match_query = generate_match_query('document_type', 'book', with_operator_and=False)
+
+    expected_match_query = {
+        'match': {
+            'document_type': 'book'
+        }
+    }
+
+    assert generated_match_query == expected_match_query
+
+
+def test_wrap_queries_in_bool_clauses_if_more_than_one_with_two_queries():
+    queries = [
+        {'match': {'title': 'collider'}},
+        {'match': {'subject': 'hep'}},
+    ]
+
+    generated_bool_clause = wrap_queries_in_bool_clauses_if_more_than_one(queries,
+                                                                          use_must_clause=True)
+
+    expected_bool_clause = {
+        'bool': {
+            'must': [
+                {'match': {'title': 'collider'}},
+                {'match': {'subject': 'hep'}},
+            ]
+        }
+    }
+
+    assert generated_bool_clause == expected_bool_clause
+
+
+def test_wrap_queries_in_bool_clauses_if_more_than_one_with_one_query_drops_bool_clause_with_flag_disabled():
+    queries = [
+        {'match': {'title': 'collider'}},
+    ]
+
+    generated_bool_clause = wrap_queries_in_bool_clauses_if_more_than_one(queries,
+                                                                          use_must_clause=True)
+
+    expected_bool_clause = {'match': {'title': 'collider'}}
+
+    assert generated_bool_clause == expected_bool_clause
+
+
+def test_wrap_queries_in_bool_clauses_if_more_than_one_with_one_query_preserves_bool_clause_with_flag_enabled():
+    queries = [
+        {'match': {'title': 'collider'}},
+    ]
+
+    generated_bool_clause = wrap_queries_in_bool_clauses_if_more_than_one(queries,
+                                                                          use_must_clause=True,
+                                                                          preserve_bool_semantics_if_one_clause=True)
+
+    expected_bool_clause = {
+        'bool': {
+            'must': [
+                {'match': {'title': 'collider'}}
+            ]
+        }
+    }
+
+    assert generated_bool_clause == expected_bool_clause
+
+
+def test_wrap_queries_in_bool_clauses_if_more_than_one_with_no_query_returns_empty_dict():
+    queries = []
+
+    generated_bool_clause = wrap_queries_in_bool_clauses_if_more_than_one(queries,
+                                                                          use_must_clause=True)
+
+    expected_bool_clause = {}
+
+    assert generated_bool_clause == expected_bool_clause
+
+
+def test_wrap_queries_in_bool_clauses_if_more_than_one_with_one_query_generates_should_clause():
+    queries = [
+        {'match': {'title': 'collider'}},
+    ]
+
+    generated_bool_clause = wrap_queries_in_bool_clauses_if_more_than_one(queries,
+                                                                          use_must_clause=False,
+                                                                          preserve_bool_semantics_if_one_clause=True)
+
+    expected_bool_clause = {
+        'bool': {
+            'should': [
+                {'match': {'title': 'collider'}},
+            ]
+        }
+    }
+
+    assert generated_bool_clause == expected_bool_clause
+
+
+def test_generate_nested_query():
+    query = {
+        'bool': {
+            'must': [
+                {'match': {'journal.title': 'Phys.Rev'}},
+                {'match': {'journal.volume': 'D42'}},
+            ]
+        }
+    }
+    path = 'journal'
+
+    generated_query = generate_nested_query(path, query)
+
+    expected_query = {
+        'nested': {
+            'path': 'journal',
+            'query': {
+                'bool': {
+                    'must': [
+                        {'match': {'journal.title': 'Phys.Rev'}},
+                        {'match': {'journal.volume': 'D42'}},
+                    ]
+                }
+            }
+        }
+    }
+
+    assert generated_query == expected_query
+
+
+def test_generate_nested_query_returns_empty_dict_on_falsy_query():
+    query = {}
+    path = 'journal'
+
+    generated_query = generate_nested_query(path, query)
+
+    expected_query = {}
+
+    assert generated_query == expected_query
