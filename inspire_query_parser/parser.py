@@ -206,7 +206,7 @@ class InspireKeyword(LeafRule):
         self.value = INSPIRE_PARSER_KEYWORDS[value.lower()]
 
     @classmethod
-    def parse(cls, parser,  text, pos):
+    def parse(cls, parser, text, pos):
         """Parse InspireKeyword.
 
         If the keyword is `texkey`, enable the parsing texkey expression flag, since its value contains ':' which

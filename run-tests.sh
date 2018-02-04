@@ -20,16 +20,7 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-#
-# Tests
-#
+set -e
 
-[coverage:run]
-include = inspire_query_parser/*.py
-
-[tool:pytest]
-addopts = --cov=inspire_query_parser --cov-report=term-missing:skip-covered
-norecursedirs = tests/helpers
-
-[flake8]
-ignore = E121 E126 E501
+flake8 inspire_query_parser tests
+py.test tests
