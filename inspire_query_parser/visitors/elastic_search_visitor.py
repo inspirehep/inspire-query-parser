@@ -139,7 +139,7 @@ class ElasticSearchVisitor(Visitor):
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
     AUTHORS_BAI_FIELD = 'authors.ids.value'
     BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
-    JOURNAL_NESTED_QUERY_PATH = 'publication_info'
+    AUTHORS_NESTED_QUERY_PATH = 'authors'
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
     # ################
 
@@ -223,7 +223,7 @@ class ElasticSearchVisitor(Visitor):
                 for name_variation in name_variations
             ]
 
-        return {
+        query = {
             'bool': {
                 'filter': {
                     'bool': {
@@ -237,6 +237,8 @@ class ElasticSearchVisitor(Visitor):
                 }
             }
         }
+
+        return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
 
     def _generate_exact_author_query(self, author_name_or_bai):
         """Generates a term query handling authors and BAIs.
