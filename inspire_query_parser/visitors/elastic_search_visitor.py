@@ -140,6 +140,7 @@ class ElasticSearchVisitor(Visitor):
     AUTHORS_BAI_FIELD = 'authors.ids.value'
     BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
     JOURNAL_NESTED_QUERY_PATH = 'publication_info'
+    AUTHORS_NESTED_QUERY_PATH = 'authors'
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
     # ################
 
@@ -250,16 +251,18 @@ class ElasticSearchVisitor(Visitor):
             'j. smith', 'J Smith', 'J. Smith'.
         """
         if ElasticSearchVisitor.BAI_REGEX.match(author_name_or_bai):
-            return self._generate_term_query(
+            query = self._generate_term_query(
                 '.'.join((ElasticSearchVisitor.AUTHORS_BAI_FIELD, FieldVariations.raw)),
                 author_name_or_bai
             )
         else:
             author_name = normalize('NFKC', normalize_name(author_name_or_bai)).lower()
-            return self._generate_term_query(
+            query = self._generate_term_query(
                 ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['exact-author'],
                 author_name
             )
+
+        return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
 
     def _generate_date_with_wildcard_query(self, date_value):
         """Helper for generating a date keyword query containing a wildcard.

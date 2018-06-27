@@ -96,8 +96,13 @@ def test_elastic_search_visitor_find_exact_author_simple_value():
     query_str = 'ea Vures, John I.'
     expected_es_query = \
         {
-            "term": {
-                "authors.full_name_unicode_normalized": "vures, john i."
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.full_name_unicode_normalized": "vures, john i."
+                    }
+                }
             }
         }
 
@@ -109,8 +114,13 @@ def test_elastic_search_visitor_find_exact_author_simple_value_diacritics():
     query_str = 'ea Vurës, John I'
     expected_es_query = \
         {
-            "term": {
-                "authors.full_name_unicode_normalized": "vur\xebs, john i."
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.full_name_unicode_normalized": "vur\xebs, john i."
+                    }
+                }
             }
         }
 
@@ -122,8 +132,13 @@ def test_elastic_search_visitor_find_exact_author_partial_value():
     query_str = "ea 'Vures, John I.'"
     expected_es_query = \
         {
-            "term": {
-                "authors.full_name_unicode_normalized": "vures, john i."
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.full_name_unicode_normalized": "vures, john i."
+                    }
+                }
             }
         }
 
@@ -135,8 +150,13 @@ def test_elastic_search_visitor_find_exact_author_partial_value_diacritics():
     query_str = "ea 'Vurës, John I'"
     expected_es_query = \
         {
-            "term": {
-                "authors.full_name_unicode_normalized": "vur\xebs, john i."
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.full_name_unicode_normalized": "vur\xebs, john i."
+                    }
+                }
             }
         }
 
@@ -148,8 +168,13 @@ def test_elastic_search_visitor_find_exact_author_exact_value():
     query_str = 'ea "Vures, John I."'
     expected_es_query = \
         {
-            "term": {
-                "authors.full_name_unicode_normalized": "vures, john i."
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.full_name_unicode_normalized": "vures, john i."
+                    }
+                }
             }
         }
 
@@ -161,8 +186,13 @@ def test_elastic_search_visitor_find_exact_author_exact_value_diacritics():
     query_str = 'ea "Vurës, John I"'
     expected_es_query = \
         {
-            "term": {
-                "authors.full_name_unicode_normalized": "vur\xebs, john i."
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.full_name_unicode_normalized": "vur\xebs, john i."
+                    }
+                }
             }
         }
 
@@ -174,8 +204,13 @@ def test_elastic_search_visitor_find_exact_author_with_bai_simple_value_ellis():
     query_str = 'ea J.Ellis.4'
     expected_es_query = \
         {
-            "term": {
-                "authors.ids.value.raw": "J.Ellis.4"
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.ids.value.raw": "J.Ellis.4"
+                    }
+                }
             }
         }
 
@@ -187,8 +222,13 @@ def test_elastic_search_visitor_find_exact_author_with_bai_exact_value_ellis():
     query_str = 'ea "J.Ellis.4"'
     expected_es_query = \
         {
-            "term": {
-                "authors.ids.value.raw": "J.Ellis.4"
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.ids.value.raw": "J.Ellis.4"
+                    }
+                }
             }
         }
 
@@ -200,8 +240,13 @@ def test_elastic_search_visitor_find_exact_author_with_bai_partial_value_ellis()
     query_str = "ea 'J.Ellis.4'"
     expected_es_query = \
         {
-            "term": {
-                "authors.ids.value.raw": "J.Ellis.4"
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.ids.value.raw": "J.Ellis.4"
+                    }
+                }
             }
         }
 
