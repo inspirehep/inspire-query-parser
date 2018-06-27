@@ -224,7 +224,7 @@ class ElasticSearchVisitor(Visitor):
                 for name_variation in name_variations
             ]
 
-        return {
+        query = {
             'bool': {
                 'filter': {
                     'bool': {
@@ -238,6 +238,8 @@ class ElasticSearchVisitor(Visitor):
                 }
             }
         }
+
+        return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
 
     def _generate_exact_author_query(self, author_name_or_bai):
         """Generates a term query handling authors and BAIs.
