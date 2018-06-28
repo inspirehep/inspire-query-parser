@@ -630,9 +630,11 @@ class ElasticSearchVisitor(Visitor):
                 query_bai_field_if_dots_in_name=True
             )
 
-            return self._generate_query_string_query(node.value,
-                                                     fieldnames=bai_fieldnames or fieldnames,
-                                                     analyze_wildcard=True)
+            query = self._generate_query_string_query(node.value,
+                                                      fieldnames=bai_fieldnames or fieldnames,
+                                                      analyze_wildcard=True)
+
+            return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
         else:
             if isinstance(fieldnames, list):
                 if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
@@ -658,7 +660,8 @@ class ElasticSearchVisitor(Visitor):
                     )
                     if bai_fieldnames:
                         if len(bai_fieldnames) == 1:
-                            return {"match": {bai_fieldnames[0]: node.value}}
+                            query = {"match": {bai_fieldnames[0]: node.value}}
+                            return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
                         else:
                             # Not an exact BAI pattern match, but node's value looks like BAI (no spaces and dots),
                             # e.g. `S.Mele`. In this case generate a partial match query.
@@ -706,6 +709,11 @@ class ElasticSearchVisitor(Visitor):
             term_queries = [{'term': {field: _truncate_date_value_according_on_date_field(field, node.value).dumps()}}
                             for field
                             in fieldnames]
+        elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames:
+            term_queries = [
+                generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, {'term': {field: node.value}})
+                for field in (bai_fieldnames or fieldnames)
+            ]
         else:
             term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
 
@@ -742,13 +750,23 @@ class ElasticSearchVisitor(Visitor):
             query_bai_field_if_dots_in_name=True
         )
 
-        return self._generate_query_string_query(value,
-                                                 fieldnames=bai_fieldnames or fieldnames,
-                                                 analyze_wildcard=True)
+        query = self._generate_query_string_query(value,
+                                                  fieldnames=bai_fieldnames or fieldnames,
+                                                  analyze_wildcard=True)
+        if (bai_fieldnames and ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] in bai_fieldnames) \
+                or (fieldnames and ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames):
+            return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
+
+        return query
 
     def visit_regex_value(self, node, fieldname):
-        return {
+        query = {
             'regexp': {
                 fieldname: node.value
             }
         }
+
+        if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] == fieldname:
+            return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
+
+        return query
