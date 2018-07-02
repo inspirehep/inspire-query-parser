@@ -630,11 +630,15 @@ class ElasticSearchVisitor(Visitor):
                 query_bai_field_if_dots_in_name=True
             )
 
-            query = self._generate_query_string_query(node.value,
-                                                      fieldnames=bai_fieldnames or fieldnames,
-                                                      analyze_wildcard=True)
+            query = self._generate_query_string_query(
+                node.value,
+                fieldnames=bai_fieldnames or fieldnames,
+                analyze_wildcard=True
+            )
 
-            return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
+            if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
+                return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
+            return query
         else:
             if isinstance(fieldnames, list):
                 if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
