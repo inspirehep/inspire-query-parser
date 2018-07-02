@@ -51,6 +51,22 @@ def _parse_query(query_str):
     return parse_tree.accept(elastic_search_visitor)
 
 
+def test_elastic_search_visitor_find_institution_partial_value_cer():
+    query_str = 'affautocomplete:cer*'
+    expected_es_query = {
+        "query_string": {
+            "query": "cer*",
+            "analyze_wildcard": True,
+            "fields": [
+                "affautocomplete"
+            ]
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_find_author_partial_value_ellis():
     query_str = 'FIN author:\'ellis\''
     expected_es_query = \
