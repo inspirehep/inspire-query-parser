@@ -70,7 +70,6 @@ class ElasticSearchVisitor(Visitor):
     Notes:
         The ElasticSearch query follows the 2.4 version DSL specification.
     """
-
     # ##### Configuration #####
     # ## Journal queries ##
     JOURNAL_FIELDS_PREFIX = 'publication_info'
@@ -139,9 +138,14 @@ class ElasticSearchVisitor(Visitor):
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
     AUTHORS_BAI_FIELD = 'authors.ids.value'
     BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
-    JOURNAL_NESTED_QUERY_PATH = 'publication_info'
     AUTHORS_NESTED_QUERY_PATH = 'authors'
+    DATE_NESTED_FIELDS = [
+        'publication_info.year',
+    ]
+    DATE_NESTED_QUERY_PATH = 'publication_info'
+    JOURNAL_NESTED_QUERY_PATH = 'publication_info'
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
+
     # ################
 
     # #### Helpers ####
@@ -416,11 +420,17 @@ class ElasticSearchVisitor(Visitor):
                 if not updated_operator_value_pairs:
                     break  # Malformed date
                 else:
-                    range_queries.append({
+                    range_query = {
                         'range': {
                             fieldname: updated_operator_value_pairs
                         }
-                    })
+                    }
+
+                    range_queries.append(
+                        generate_nested_query(ElasticSearchVisitor.DATE_NESTED_QUERY_PATH, range_query)
+                        if fieldname in ElasticSearchVisitor.DATE_NESTED_FIELDS
+                        else range_query
+                    )
         else:
             range_queries = [{
                     'range': {
@@ -710,9 +720,16 @@ class ElasticSearchVisitor(Visitor):
         )
 
         if ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
-            term_queries = [{'term': {field: _truncate_date_value_according_on_date_field(field, node.value).dumps()}}
-                            for field
-                            in fieldnames]
+            term_queries = []
+            for field in fieldnames:
+                term_query =  \
+                    {'term': {field: _truncate_date_value_according_on_date_field(field, node.value).dumps()}}
+
+                term_queries.append(
+                    generate_nested_query(ElasticSearchVisitor.DATE_NESTED_QUERY_PATH, term_query)
+                    if field in ElasticSearchVisitor.DATE_NESTED_FIELDS
+                    else term_query
+                )
         elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames:
             term_queries = [
                 generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, {'term': {field: node.value}})
