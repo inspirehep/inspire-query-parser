@@ -467,11 +467,25 @@ def test_elastic_search_visitor_or_op_query():
 def test_elastic_search_visitor_unknown_keyword_simple_value():
     query_str = 'unknown_keyword:bar'
     expected_es_query = {
-        "match": {
-            "unknown_keyword": {
-                "query": "bar",
-                "operator": "and",
-            }
+        "dis_max": {
+            "queries": [
+                {
+                    "match": {
+                        "unknown_keyword": {
+                            "query": "bar",
+                            "operator": "and",
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "_all": {
+                            "query": "unknown_keyword:bar",
+                            "operator": "and",
+                        }
+                    }
+                }
+            ]
         }
     }
 
@@ -482,11 +496,25 @@ def test_elastic_search_visitor_unknown_keyword_simple_value():
 def test_elastic_search_visitor_dotted_keyword_simple_value():
     query_str = 'dotted.keyword:bar'
     expected_es_query = {
-        "match": {
-            "dotted.keyword": {
-                "query": "bar",
-                "operator": "and",
-            }
+        "dis_max": {
+            "queries": [
+                {
+                    "match": {
+                        "dotted.keyword": {
+                            "query": "bar",
+                            "operator": "and",
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "_all": {
+                            "query": "dotted.keyword:bar",
+                            "operator": "and",
+                        }
+                    }
+                }
+            ]
         }
     }
 
