@@ -53,6 +53,7 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_nested_query,
     update_date_value_in_operator_value_pairs_for_fieldname,
     wrap_queries_in_bool_clauses_if_more_than_one,
+    wrap_queries_in_dis_max_clause_if_more_than_one,
 )
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
@@ -694,6 +695,12 @@ class ElasticSearchVisitor(Visitor):
 
                 elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
                     return self._generate_type_code_query(node.value)
+
+                elif fieldnames not in ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME.values():
+                    colon_value = ':'.join([fieldnames, node.value])
+                    given_field_query = generate_match_query(fieldnames, node.value, with_operator_and=True)
+                    _all_field_query = generate_match_query('_all', colon_value, with_operator_and=True)
+                    return wrap_queries_in_dis_max_clause_if_more_than_one([given_field_query, _all_field_query])
 
                 return generate_match_query(fieldnames, node.value, with_operator_and=True)
 
