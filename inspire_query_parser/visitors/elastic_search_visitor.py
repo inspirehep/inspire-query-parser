@@ -53,7 +53,6 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_nested_query,
     update_date_value_in_operator_value_pairs_for_fieldname,
     wrap_queries_in_bool_clauses_if_more_than_one,
-    wrap_queries_in_dis_max_clause_if_more_than_one,
 )
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
@@ -375,11 +374,21 @@ class ElasticSearchVisitor(Visitor):
 
         return query
 
-    # TODO Move it to visitor utils
-    def _generate_term_query(self, fieldname, value):
+    # TODO Move it to visitor utils and write tests for it.
+    def _generate_term_query(self, fieldname, value, boost=None):
+        if not boost:
+            return {
+                'term': {
+                    fieldname: value
+                }
+            }
+
         return {
             'term': {
-                fieldname: value
+                fieldname: {
+                    'value': value,
+                    'boost': boost
+                }
             }
         }
 
@@ -699,8 +708,10 @@ class ElasticSearchVisitor(Visitor):
                 elif fieldnames not in ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME.values():
                     colon_value = ':'.join([fieldnames, node.value])
                     given_field_query = generate_match_query(fieldnames, node.value, with_operator_and=True)
+                    texkey_query = self._generate_term_query('texkeys.raw', colon_value, boost=2.0)
                     _all_field_query = generate_match_query('_all', colon_value, with_operator_and=True)
-                    return wrap_queries_in_dis_max_clause_if_more_than_one([given_field_query, _all_field_query])
+                    return wrap_queries_in_bool_clauses_if_more_than_one([given_field_query, texkey_query, _all_field_query],
+                                                                         use_must_clause=False)
 
                 return generate_match_query(fieldnames, node.value, with_operator_and=True)
 

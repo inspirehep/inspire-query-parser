@@ -31,7 +31,6 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_minimal_name_variations,
     generate_nested_query,
     wrap_queries_in_bool_clauses_if_more_than_one,
-    wrap_queries_in_dis_max_clause_if_more_than_one,
 )
 
 from test_utils import parametrize
@@ -297,48 +296,6 @@ def test_wrap_queries_in_bool_clauses_if_more_than_one_with_one_query_generates_
     }
 
     assert generated_bool_clause == expected_bool_clause
-
-
-def test_wrap_queries_in_dis_max_clause_if_more_than_one_with_two_queries():
-    queries = [
-        {'match': {'title': 'collider'}},
-        {'match': {'subject': 'hep'}},
-    ]
-
-    generated_dis_max_clause = wrap_queries_in_dis_max_clause_if_more_than_one(queries)
-
-    expected_dis_max_clause = {
-        'dis_max': {
-            'queries': [
-                {'match': {'title': 'collider'}},
-                {'match': {'subject': 'hep'}},
-            ]
-        }
-    }
-
-    assert generated_dis_max_clause == expected_dis_max_clause
-
-
-def test_wrap_queries_in_dis_max_clause_if_more_than_one_with_one_query_returns_the_query_itself():
-    queries = [
-        {'match': {'title': 'collider'}},
-    ]
-
-    generated_dis_max_clause = wrap_queries_in_dis_max_clause_if_more_than_one(queries)
-
-    expected_dis_max_clause = {'match': {'title': 'collider'}}
-
-    assert generated_dis_max_clause == expected_dis_max_clause
-
-
-def test_wrap_queries_in_dis_max_clause_if_more_than_one_with_no_query_returns_empty_dict():
-    queries = []
-
-    generated_dis_max_clause = wrap_queries_in_dis_max_clause_if_more_than_one(queries)
-
-    expected_dis_max_clause = {}
-
-    assert generated_dis_max_clause == expected_dis_max_clause
 
 
 def test_generate_nested_query():
