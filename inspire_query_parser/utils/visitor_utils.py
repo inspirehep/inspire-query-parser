@@ -434,26 +434,3 @@ def wrap_queries_in_bool_clauses_if_more_than_one(queries,
             ('must' if use_must_clause else 'should'): queries
         }
     }
-
-
-def wrap_queries_in_dis_max_clause_if_more_than_one(queries):
-    """Helper for wrapping a list of queries into a dis_max clause.
-
-    Args:
-        queries (list): List of queries to be wrapped in a dis_max clause.
-
-    Returns:
-        (dict): If len(queries) > 1, the dis_max clause, otherwise if len(queries) == 1, will return the query itself,
-                while finally, if len(queries) == 0, then an empty dictionary is returned.
-    """
-    if not queries:
-        return {}
-
-    if len(queries) == 1:
-        return queries[0]
-
-    return {
-        'dis_max': {
-            'queries': queries,
-        }
-    }
