@@ -257,9 +257,10 @@ class ElasticSearchVisitor(Visitor):
             'j. smith', 'J Smith', 'J. Smith'.
         """
         if ElasticSearchVisitor.BAI_REGEX.match(author_name_or_bai):
+            bai = author_name_or_bai.lower()
             query = self._generate_term_query(
-                '.'.join((ElasticSearchVisitor.AUTHORS_BAI_FIELD, FieldVariations.raw)),
-                author_name_or_bai
+                '.'.join((ElasticSearchVisitor.AUTHORS_BAI_FIELD, FieldVariations.search)),
+                bai
             )
         else:
             author_name = normalize('NFKC', normalize_name(author_name_or_bai)).lower()

@@ -234,7 +234,25 @@ def test_elastic_search_visitor_find_exact_author_with_bai_simple_value_ellis():
                 "path": "authors",
                 "query": {
                     "term": {
-                        "authors.ids.value.raw": "J.Ellis.4"
+                        "authors.ids.value.search": "j.ellis.4"
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_exact_author_with_bai_simple_lowercase():
+    query_str = 'ea j.ellis.4'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "term": {
+                        "authors.ids.value.search": "j.ellis.4"
                     }
                 }
             }
@@ -252,7 +270,7 @@ def test_elastic_search_visitor_find_exact_author_with_bai_exact_value_ellis():
                 "path": "authors",
                 "query": {
                     "term": {
-                        "authors.ids.value.raw": "J.Ellis.4"
+                        "authors.ids.value.search": "j.ellis.4"
                     }
                 }
             }
@@ -270,7 +288,7 @@ def test_elastic_search_visitor_find_exact_author_with_bai_partial_value_ellis()
                 "path": "authors",
                 "query": {
                     "term": {
-                        "authors.ids.value.raw": "J.Ellis.4"
+                        "authors.ids.value.search": "j.ellis.4"
                     }
                 }
             }
