@@ -434,3 +434,21 @@ def wrap_queries_in_bool_clauses_if_more_than_one(queries,
             ('must' if use_must_clause else 'should'): queries
         }
     }
+
+
+def wrap_query_in_nested_if_field_is_nested(query, field, nested_fields):
+    """Helper for wrapping a query into a nested if the fields within the query are nested
+
+    Args:
+        query : The query to be wrapped.
+        field : The field that is being queried.
+        nested_fields : List of fields which are nested.
+    Returns:
+        (dict): The nested query
+    """
+    for element in nested_fields:
+        match_pattern = r'^{}.'.format(element)
+        if re.match(match_pattern, field):
+            return generate_nested_query(element, query)
+
+    return query

@@ -2215,3 +2215,89 @@ def test_elastic_search_visitor_type_code_with_known_partial_value_mapping_and_q
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_nested_author_fields_query():
+    query_str = 'authors.affiliations.value:CERN'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "bool": {
+                        "should": [
+                            {
+                                "match": {
+                                    "authors.affiliations.value": {
+                                        "operator": "and",
+                                        "query": "CERN"
+                                    }
+                                }
+                            },
+                            {
+                                "term": {
+                                    "texkeys.raw": {
+                                        "boost": 2.0,
+                                        "value": "authors.affiliations.value:CERN"
+                                    }
+                                }
+                            },
+                            {
+                                "match": {
+                                    "_all": {
+                                        "operator": "and",
+                                        "query": "authors.affiliations.value:CERN"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_nested_publication_info_fields_query():
+    query_str = 'publication_info.journal_title:JHEP'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "publication_info",
+                "query": {
+                    "bool": {
+                        "should": [
+                            {
+                                "match": {
+                                    "publication_info.journal_title": {
+                                        "operator": "and",
+                                        "query": "JHEP"
+                                    }
+                                }
+                            },
+                            {
+                                "term": {
+                                    "texkeys.raw": {
+                                        "boost": 2.0,
+                                        "value": "publication_info.journal_title:JHEP"
+                                    }
+                                }
+                            },
+                            {
+                                "match": {
+                                    "_all": {
+                                        "operator": "and",
+                                        "query": "publication_info.journal_title:JHEP"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query

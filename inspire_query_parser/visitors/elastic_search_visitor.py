@@ -53,6 +53,7 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_nested_query,
     update_date_value_in_operator_value_pairs_for_fieldname,
     wrap_queries_in_bool_clauses_if_more_than_one,
+    wrap_query_in_nested_if_field_is_nested,
 )
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
@@ -145,6 +146,7 @@ class ElasticSearchVisitor(Visitor):
     DATE_NESTED_QUERY_PATH = 'publication_info'
     JOURNAL_NESTED_QUERY_PATH = 'publication_info'
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
+    NESTED_FIELDS = ['authors', 'publication_info']
 
     # ################
 
@@ -711,8 +713,8 @@ class ElasticSearchVisitor(Visitor):
                     given_field_query = generate_match_query(fieldnames, node.value, with_operator_and=True)
                     texkey_query = self._generate_term_query('texkeys.raw', colon_value, boost=2.0)
                     _all_field_query = generate_match_query('_all', colon_value, with_operator_and=True)
-                    return wrap_queries_in_bool_clauses_if_more_than_one([given_field_query, texkey_query, _all_field_query],
-                                                                         use_must_clause=False)
+                    query = wrap_queries_in_bool_clauses_if_more_than_one([given_field_query, texkey_query, _all_field_query], use_must_clause=False)
+                    return wrap_query_in_nested_if_field_is_nested(query, fieldnames, ElasticSearchVisitor.NESTED_FIELDS)
 
                 return generate_match_query(fieldnames, node.value, with_operator_and=True)
 
