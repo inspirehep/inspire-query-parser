@@ -31,6 +31,7 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_minimal_name_variations,
     generate_nested_query,
     wrap_queries_in_bool_clauses_if_more_than_one,
+    wrap_query_in_nested_if_field_is_nested,
 )
 
 from test_utils import parametrize
@@ -337,3 +338,21 @@ def test_generate_nested_query_returns_empty_dict_on_falsy_query():
     expected_query = {}
 
     assert generated_query == expected_query
+
+
+def test_wrap_query_in_nested_if_field_is_nested():
+    query = {'match': {'title.name': 'collider'}}
+
+    generated_query = wrap_query_in_nested_if_field_is_nested(query, 'title.name', ['title'])
+    expected_query = {
+        'nested': {
+            'path': 'title',
+            'query': {'match': {'title.name': 'collider'}}
+        }
+    }
+
+    assert generated_query == expected_query
+
+    generated_query_2 = wrap_query_in_nested_if_field_is_nested(query, 'title.name', ['authors'])
+
+    assert generated_query_2 == query
