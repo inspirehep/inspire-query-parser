@@ -101,3 +101,6 @@ queries_not_supported_yet.txt
 # Build artifacts
 AUTHORS
 CHANGELOG
+
+# PyCharm
+.idea
