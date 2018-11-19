@@ -23,6 +23,8 @@
 from __future__ import absolute_import, unicode_literals
 
 from datetime import date
+
+import json
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import re
@@ -374,8 +376,18 @@ def generate_match_query(field, value, with_operator_and):
     Notes:
         If value is of instance bool, then the shortened version of the match query is generated, at all times.
     """
+    parsed_value = None
+    try:
+        parsed_value = json.loads(value.lower())
+    except (ValueError, TypeError, AttributeError):
+        # Catch all possible exceptions
+        # we are not interested if they will appear
+        pass
+
     if isinstance(value, bool):
         return {'match': {field: value}}
+    elif isinstance(parsed_value, bool):
+        return {'match': {field: value.lower()}}
 
     if with_operator_and:
         return {

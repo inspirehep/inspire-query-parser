@@ -356,3 +356,27 @@ def test_wrap_query_in_nested_if_field_is_nested():
     generated_query_2 = wrap_query_in_nested_if_field_is_nested(query, 'title.name', ['authors'])
 
     assert generated_query_2 == query
+
+
+def test_boolean_string_argument_in_query_case_insensitive():
+    expected = {"match": {"citeable": 'true'}}
+
+    query = generate_match_query('citeable', "true", with_operator_and=True)
+    assert expected == query
+
+    query = generate_match_query('citeable', "True", with_operator_and=True)
+    assert expected == query
+
+    query = generate_match_query('citeable', "TRUE", with_operator_and=True)
+    assert expected == query
+
+    expected = {"match": {"citeable": 'false'}}
+
+    query = generate_match_query('citeable', "false", with_operator_and=True)
+    assert expected == query
+
+    query = generate_match_query('citeable', "False", with_operator_and=True)
+    assert expected == query
+
+    query = generate_match_query('citeable', "FALSE", with_operator_and=True)
+    assert expected == query
