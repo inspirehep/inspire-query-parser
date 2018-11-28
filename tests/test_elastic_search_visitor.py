@@ -1597,27 +1597,18 @@ def test_elastic_search_visitor_author_lastname():
             "path": "authors",
             "query": {
                 "bool": {
-                    "filter": {
-                        "bool": {
-                            "should": [
-                                {
-                                    "term": {
-                                        "authors.name_variations": "ellis"
-                                    }
-                                }
-                            ]
-                        }
-                    },
                     "must": {
                         "match": {
-                            "authors.full_name": "ellis"
+                            "authors.full_name": {
+                                "query": "ellis",
+                                "fuzziness": "AUTO",
+                            }
                         }
                     }
                 }
             }
         }
     }
-
     generated_es_query = _parse_query(query_str)
     assert ordered(generated_es_query) == ordered(expected_query)
 
@@ -1629,25 +1620,12 @@ def test_elastic_search_visitor_author_lastname_initial():
             "path": "authors",
             "query": {
                 "bool": {
-                    "filter": {
-                        "bool": {
-                            "should": [
-                                {
-                                    "term": {
-                                        "authors.name_variations": "j ellis"
-                                    }
-                                },
-                                {
-                                    "term": {
-                                        "authors.name_variations": "ellis j"
-                                    }
-                                }
-                            ]
-                        }
-                    },
                     "must": {
                         "match": {
-                            "authors.full_name": "ellis, j"
+                            "authors.full_name": {
+                                "query": "ellis, j",
+                                "fuzziness": "AUTO",
+                            }
                         }
                     }
                 }

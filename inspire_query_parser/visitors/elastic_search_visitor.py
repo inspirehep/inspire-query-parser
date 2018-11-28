@@ -223,28 +223,33 @@ class ElasticSearchVisitor(Visitor):
                 in product(name_variations, name_variations)
             ]
 
-        else:
-            # In the case of initials or even single lastname search, filter with only the name variations.
-            specialized_author_filter = [
-                {'term': {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: name_variation}}
-                for name_variation in name_variations
-            ]
-
-        query = {
-            'bool': {
-                'filter': {
-                    'bool': {
-                        'should': specialized_author_filter
-                    }
-                },
-                'must': {
-                    'match': {
-                        ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author']: author_name
+            query = {
+                'bool': {
+                    'filter': {
+                        'bool': {
+                            'should': specialized_author_filter
+                        }
+                    },
+                    'must': {
+                        'match': {
+                            ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author']: author_name
+                        }
                     }
                 }
             }
-        }
-
+        else:
+            query = {
+                'bool': {
+                    'must': {
+                        'match': {
+                            ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author']: {
+                                "query": author_name,
+                                "fuzziness": "AUTO",
+                            }
+                        }
+                    }
+                }
+            }
         return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
 
     def _generate_exact_author_query(self, author_name_or_bai):
