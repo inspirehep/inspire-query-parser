@@ -94,7 +94,7 @@ def generate_minimal_name_variations(author_name):
         lastnames = parsed_name.last.replace('-', ' ')
 
         non_lastnames = ' '.join(
-            parsed_name.first_list + parsed_name.middle_list + parsed_name.suffix_list
+            parsed_name.first_list + parsed_name.suffix_list
         )
         # Strip extra whitespace added if any of middle_list and suffix_list are empty.
         non_lastnames = non_lastnames.strip().replace('-', ' ')
