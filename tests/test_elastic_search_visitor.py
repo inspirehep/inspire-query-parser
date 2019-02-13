@@ -25,6 +25,8 @@ from __future__ import print_function, unicode_literals
 
 import mock
 
+from pytest import raises
+
 from inspire_query_parser import parser, parse_query
 from inspire_query_parser.config import ES_MUST_QUERY, ES_SHOULD_QUERY
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
@@ -2301,3 +2303,37 @@ def test_nested_publication_info_fields_query():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_nested_refersto_recid_nested_keyword_query():
+    query_str = 'refersto:recid:123456'
+    expected_es_query = \
+        {
+            'match': {
+                'references.recid': '123456'
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_refersto_without_recid_not_implemented_nested_keyword_query():
+    query_str = 'refersto:123456'
+
+    with raises(NotImplementedError):
+        _parse_query(query_str)
+
+
+def test_refersto_empty_recid_not_implemented_nested_keyword_query():
+    query_str = 'refersto:recid'
+
+    with raises(NotImplementedError):
+        _parse_query(query_str)
+
+
+def test_any_not_implemented_nested_keyword_query():
+    query_str = 'citedby:recid:12345'
+
+    with raises(NotImplementedError):
+        _parse_query(query_str)

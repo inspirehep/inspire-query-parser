@@ -104,3 +104,6 @@ CHANGELOG
 
 # PyCharm
 .idea
+
+# vscode
+.vscode
