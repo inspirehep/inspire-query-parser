@@ -494,14 +494,16 @@ class SimpleValueBooleanQuery(BooleanRule):
             result = text, e
 
             if left_operand and operator:
-                    # Attempt to parse a right operand
-                    try:
-                        remaining_text, right_operand = parser.parse(text_after_bool_op, cls.grammar[2])
-                        result = remaining_text, SimpleValueBooleanQuery(left_operand,
-                                                                         bool_op=operator,
-                                                                         right=right_operand)
-                    except SyntaxError as e:  # Actual failure of parsing boolean query at terminals level
-                        return text, e
+                # Attempt to parse a right operand
+                try:
+                    remaining_text, right_operand = parser.parse(text_after_bool_op, cls.grammar[2])
+                    result = remaining_text, SimpleValueBooleanQuery(
+                        left_operand,
+                        bool_op=operator,
+                        right=right_operand
+                    )
+                except SyntaxError as e:  # Actual failure of parsing boolean query at terminals level
+                    return text, e
 
         return result
 

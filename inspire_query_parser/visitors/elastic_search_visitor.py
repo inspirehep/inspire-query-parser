@@ -633,7 +633,18 @@ class ElasticSearchVisitor(Visitor):
         return self._generate_range_queries(force_list(fieldnames), {'lte': node.op.value})
 
     def visit_nested_keyword_op(self, node):  # TODO Cannot be completed as of yet.
-        raise NotImplementedError('Nested keyword queries aren\'t implemented yet.')
+        # FIXME: quick and dirty implementation of refersto:recid:<recid>
+        if node.left.value == 'refersto':
+            right = node.right
+            if hasattr(right, 'left') and hasattr(right, 'right') and right.left.value == 'control_number':
+                recid = right.right.value
+                return generate_match_query(
+                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['refersto'],
+                    recid,
+                    with_operator_and=False
+                )
+
+        raise NotImplementedError('Nested keyword queries aren\'t implemented yet, except refersto:recid:<recid>')
 
     def visit_keyword(self, node):
         # If no keyword is found, return the original node value (case of an unknown keyword).
