@@ -113,6 +113,7 @@ class ElasticSearchVisitor(Visitor):
         'title': 'titles.full_title',
         'type-code': 'document_type',
         'topcite': 'citation_count',
+        'affiliation': 'authors.affiliations.value',
     }
     """Mapping from keywords to ElasticSearch fields.
 
@@ -718,6 +719,14 @@ class ElasticSearchVisitor(Visitor):
 
                 elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
                     return self._generate_type_code_query(node.value)
+
+                elif ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['affiliation'] == fieldnames:
+                    query = generate_match_query(
+                        ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['affiliation'],
+                        node.value,
+                        with_operator_and=True
+                    )
+                    return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
 
                 elif fieldnames not in ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME.values():
                     colon_value = ':'.join([fieldnames, node.value])

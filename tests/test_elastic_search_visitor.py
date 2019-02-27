@@ -2226,33 +2226,11 @@ def test_nested_author_fields_query():
             "nested": {
                 "path": "authors",
                 "query": {
-                    "bool": {
-                        "should": [
-                            {
-                                "match": {
-                                    "authors.affiliations.value": {
-                                        "operator": "and",
-                                        "query": "CERN"
-                                    }
-                                }
-                            },
-                            {
-                                "term": {
-                                    "texkeys.raw": {
-                                        "boost": 2.0,
-                                        "value": "authors.affiliations.value:CERN"
-                                    }
-                                }
-                            },
-                            {
-                                "match": {
-                                    "_all": {
-                                        "operator": "and",
-                                        "query": "authors.affiliations.value:CERN"
-                                    }
-                                }
-                            }
-                        ]
+                    "match": {
+                        "authors.affiliations.value": {
+                            "operator": "and",
+                            "query": "CERN"
+                        }
                     }
                 }
             }
@@ -2337,3 +2315,25 @@ def test_any_not_implemented_nested_keyword_query():
 
     with raises(NotImplementedError):
         _parse_query(query_str)
+
+
+def test_affiliation_query():
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "authors",
+                "query": {
+                    "match": {
+                        "authors.affiliations.value": {
+                            "operator": "and",
+                            "query": "CERN"
+                        }
+                    }
+                }
+            }
+        }
+
+    queries = ['af:CERN', 'aff:CERN', 'affil:CERN', 'affiliation:CERN']
+    for query in queries:
+        generated_es_query = _parse_query(query)
+        assert generated_es_query == expected_es_query
