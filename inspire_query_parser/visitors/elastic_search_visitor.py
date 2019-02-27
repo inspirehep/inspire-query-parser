@@ -147,6 +147,7 @@ class ElasticSearchVisitor(Visitor):
     JOURNAL_NESTED_QUERY_PATH = 'publication_info'
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
     NESTED_FIELDS = ['authors', 'publication_info']
+    RECORD_RELATION_FIELD = 'related_records.relation'
 
     # ################
 
@@ -638,11 +639,22 @@ class ElasticSearchVisitor(Visitor):
             right = node.right
             if hasattr(right, 'left') and hasattr(right, 'right') and right.left.value == 'control_number':
                 recid = right.right.value
-                return generate_match_query(
+                citing_records_query = generate_match_query(
                     ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['refersto'],
                     recid,
                     with_operator_and=False
                 )
+                superseded_records_query = generate_match_query(
+                    ElasticSearchVisitor.RECORD_RELATION_FIELD,
+                    'successor',
+                    with_operator_and=False
+                )
+                return {
+                    'bool': {
+                        'must': [citing_records_query],
+                        'must_not': [superseded_records_query]
+                    }
+                }
 
         raise NotImplementedError('Nested keyword queries aren\'t implemented yet, except refersto:recid:<recid>')
 

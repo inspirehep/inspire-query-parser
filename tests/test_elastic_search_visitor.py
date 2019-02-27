@@ -2309,8 +2309,17 @@ def test_nested_refersto_recid_nested_keyword_query():
     query_str = 'refersto:recid:123456'
     expected_es_query = \
         {
-            'match': {
-                'references.recid': '123456'
+            'bool': {
+                'must': [{
+                    'match': {
+                        'references.recid': '123456'
+                    }
+                }],
+                'must_not': [{
+                    'match': {
+                        'related_records.relation': 'successor'
+                    }
+                }]
             }
         }
 
