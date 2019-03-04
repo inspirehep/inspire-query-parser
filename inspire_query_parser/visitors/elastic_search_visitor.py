@@ -472,8 +472,8 @@ class ElasticSearchVisitor(Visitor):
             query_str = ' '.join([word.strip(':') for word in data.children])
 
         return {
-            'query_string': {
-                'default_field': '_all',
+            'simple_query_string': {
+                'fields': ['_all'],
                 'query': query_str
             }
         }

@@ -824,8 +824,8 @@ def test_elastic_search_visitor_with_malformed_query():
     query_str = 't: and t: electroweak'
     expected_es_query = \
         {
-            "query_string": {
-                "default_field": "_all",
+            "simple_query_string": {
+                "fields": ["_all"],
                 "query": "t and t electroweak"
             }
         }
@@ -852,8 +852,8 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
                         }
                     },
                     {
-                        "query_string": {
-                            "default_field": "_all",
+                        "simple_query_string": {
+                            "fields": ["_all"],
                             "query": "and author"
                         }
                     }
@@ -885,8 +885,8 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
                 ],
                 "should": [
                     {
-                        "query_string": {
-                            "default_field": "_all",
+                        "simple_query_string": {
+                            "fields": ["_all"],
                             "query": "and author"
                         }
                     }
