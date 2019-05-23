@@ -2290,7 +2290,7 @@ def test_nested_refersto_recid_nested_keyword_query():
             'bool': {
                 'must': [{
                     'match': {
-                        'references.recid': '123456'
+                        'references.record.$ref': '123456'
                     }
                 }],
                 'must_not': [{

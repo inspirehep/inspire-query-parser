@@ -107,7 +107,7 @@ class ElasticSearchVisitor(Visitor):
         'journal': [
             JOURNAL_FIELDS_MAPPING.values()
         ],
-        'refersto': 'references.recid',
+        'refersto': 'references.record.$ref',
         'reportnumber': 'report_numbers.value.fuzzy',
         'subject': 'facet_inspire_categories',
         'title': 'titles.full_title',
