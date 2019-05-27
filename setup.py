@@ -36,7 +36,7 @@ setup_requires = [
 ]
 
 install_requires = [
-    'inspire-schemas~=59.0,>=59.0.0',
+    'inspire-schemas~=60.0,>=60.0.1',
     'inspire-utils~=3.0,>=3.0.0',
     'pypeg2~=2.0,>=2.15.2',
     'python-dateutil~=2.0,>=2.6.1',
