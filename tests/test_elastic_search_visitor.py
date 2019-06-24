@@ -2288,16 +2288,25 @@ def test_nested_refersto_recid_nested_keyword_query():
     expected_es_query = \
         {
             'bool': {
-                'must': [{
-                    'match': {
-                        'references.record.$ref': '123456'
+                'must': [
+                    {
+                        'match': {
+                            'references.record.$ref': '123456'
+                        }
+                    },
+                    {
+                        'match': {
+                            '_collections': 'Literature'
+                        }
                     }
-                }],
-                'must_not': [{
-                    'match': {
-                        'related_records.relation': 'successor'
+                ],
+                'must_not': [
+                    {
+                        'match': {
+                            'related_records.relation': 'successor'
+                        }
                     }
-                }]
+                ]
             }
         }
 
