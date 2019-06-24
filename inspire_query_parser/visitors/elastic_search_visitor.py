@@ -645,6 +645,11 @@ class ElasticSearchVisitor(Visitor):
                     recid,
                     with_operator_and=False
                 )
+                records_with_collection_literature_query = generate_match_query(
+                    '_collections',
+                    'Literature',
+                    with_operator_and=False
+                )
                 superseded_records_query = generate_match_query(
                     ElasticSearchVisitor.RECORD_RELATION_FIELD,
                     'successor',
@@ -652,7 +657,7 @@ class ElasticSearchVisitor(Visitor):
                 )
                 return {
                     'bool': {
-                        'must': [citing_records_query],
+                        'must': [citing_records_query, records_with_collection_literature_query],
                         'must_not': [superseded_records_query]
                     }
                 }
