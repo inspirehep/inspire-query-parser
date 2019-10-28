@@ -2355,3 +2355,149 @@ def test_affiliation_query():
     for query in queries:
         generated_es_query = _parse_query(query)
         assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_case_insensitive():
+    query_str = "collection ConferencePaper"
+    expected_es_query = \
+        {
+            'match': {
+                'document_type': {
+                    'query': 'conference paper', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_book():
+    query_str = "collection book"
+    expected_es_query = \
+        {
+            'match': {
+                'document_type': {
+                    'query': 'book', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_conference_paper():
+    query_str = "collection conferencepaper"
+    expected_es_query = \
+        {
+            'match': {
+                'document_type': {
+                    'query': 'conference paper', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_citeable():
+    query_str = "collection citeable"
+    expected_es_query = \
+        {
+            'match': {
+                'citeable': True
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_introductory():
+    query_str = "collection introductory"
+    expected_es_query = \
+        {
+            'match': {
+                'publication_type': {
+                    'query': 'introductory', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_lectures():
+    query_str = "collection lectures"
+    expected_es_query = \
+        {
+            'match': {
+                'publication_type': {
+                    'query': 'lectures', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_published():
+    query_str = "collection published"
+    expected_es_query = \
+        {
+            'match': {
+                'refereed': True
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_review():
+    query_str = "collection review"
+    expected_es_query = \
+        {
+            'match': {
+                'publication_type': {
+                    'query': 'review', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_thesis():
+    query_str = "collection thesis"
+    expected_es_query = \
+        {
+            'match': {
+                'document_type': {
+                    'query': 'thesis', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_type_code_legacy_comaptible_proceedings():
+    query_str = "collection proceedings"
+    expected_es_query = \
+        {
+            'match': {
+                'document_type': {
+                    'query': 'proceedings', 'operator': 'and'
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
