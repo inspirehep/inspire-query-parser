@@ -123,13 +123,22 @@ class ElasticSearchVisitor(Visitor):
     """
     TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING = {
         'b': ('document_type', 'book'),
+        'book': ('document_type', 'book'),
         'c': ('document_type', 'conference paper'),
+        'conferencepaper': ('document_type', 'conference paper'),
+        'citeable': ('citeable', True),
         'core': ('core', True),
         'i': ('publication_type', 'introductory'),
+        'introductory': ('publication_type', 'introductory'),
         'l': ('publication_type', 'lectures'),
+        'lectures': ('publication_type', 'lectures'),
         'p': ('refereed', True),
+        'published': ('refereed', True),
         'r': ('publication_type', 'review'),
+        'review': ('publication_type', 'review'),
         't': ('document_type', 'thesis'),
+        'thesis': ('document_type', 'thesis'),
+        'proceedings': ('document_type', 'proceedings'),
     }
     """Mapping from type-code query values to field and value pairs.
 
@@ -345,7 +354,7 @@ class ElasticSearchVisitor(Visitor):
             See: https://github.com/inspirehep/inspire-query-parser/issues/79
             Otherwise, we query both ``document_type`` and ``publication_info``.
         """
-        mapping_for_value = self.TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING.get(value, None)
+        mapping_for_value = self.TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING.get(value.lower(), None)
 
         if mapping_for_value:
             return generate_match_query(*mapping_for_value, with_operator_and=True)
