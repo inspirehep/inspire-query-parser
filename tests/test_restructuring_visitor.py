@@ -438,7 +438,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
                     KeywordOp(Keyword('date'), Value(str((date.today() - relativedelta(months=3))))),
                     KeywordOp(Keyword('author-count'), LessThanOp(Value('50')))
                 ),
-                marks=pytest.mark.xfail
+                marks=pytest.mark.xfail(reason="doesn't work on 31st of the month, see INSPIR-2882")
             )
          ),
         (
