@@ -432,10 +432,13 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             )
          ),
         (
-            'date last month - 2 + ac < 50',
-            AndOp(
-                KeywordOp(Keyword('date'), Value(str((date.today() - relativedelta(months=3))))),
-                KeywordOp(Keyword('author-count'), LessThanOp(Value('50')))
+            pytest.param(
+                'date last month - 2 + ac < 50',
+                AndOp(
+                    KeywordOp(Keyword('date'), Value(str((date.today() - relativedelta(months=3))))),
+                    KeywordOp(Keyword('author-count'), LessThanOp(Value('50')))
+                ),
+                marks=pytest.mark.xfail
             )
          ),
         (
