@@ -2305,6 +2305,11 @@ def test_nested_refersto_recid_nested_keyword_query():
                         'match': {
                             'related_records.relation': 'successor'
                         }
+                    },
+                    {
+                        'match': {
+                            'control_number': '123456'
+                        }
                     }
                 ]
             }
