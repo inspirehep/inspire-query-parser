@@ -664,10 +664,15 @@ class ElasticSearchVisitor(Visitor):
                     'successor',
                     with_operator_and=False
                 )
+                self_citation = generate_match_query(
+                    "control_number",
+                    recid,
+                    with_operator_and=False
+                )
                 return {
                     'bool': {
                         'must': [citing_records_query, records_with_collection_literature_query],
-                        'must_not': [superseded_records_query]
+                        'must_not': [superseded_records_query, self_citation]
                     }
                 }
 
