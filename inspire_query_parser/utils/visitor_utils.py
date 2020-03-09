@@ -42,6 +42,32 @@ from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
                                          DATE_YESTERDAY_REGEX_PATTERN)
 
 
+NAME_INITIAL_FOLLOWED_BY_FIRSTNAME_WITHOUT_SPACE = re.compile(r"(\.[a-z])", re.IGNORECASE)
+
+
+def author_names_strip_empty_and_maybe_split_if_initial_followed_by_first_name_without_space(names):
+    """Handle corner cases where the intial and firstname has no space.
+
+    Example:
+        For queries ``J.David`` we be split into ``J`` and ``David``.
+    """
+    names_filtered = []
+    for name in names:
+        if not name:
+            continue
+
+        match = NAME_INITIAL_FOLLOWED_BY_FIRSTNAME_WITHOUT_SPACE.search(name)
+        if match:
+            names_filtered.extend(name.split('.'))
+        else:
+            names_filtered.append(name)
+    return names_filtered
+
+
+def is_initial_of_a_name(name_part):
+    return len(name_part) == 1 or u'.' in name_part
+
+
 def author_name_contains_fullnames(author_name):
     """Recognizes whether the name contains full name parts and not initials or only lastname.
 
@@ -49,14 +75,11 @@ def author_name_contains_fullnames(author_name):
           bool: True if name has only full name parts, e.g. 'Ellis John', False otherwise. So for example, False is
             returned for 'Ellis, J.' or 'Ellis'.
     """
-    def _is_initial(name_part):
-        return len(name_part) == 1 or u'.' in name_part
-
     parsed_name = ParsedName(author_name)
 
     if len(parsed_name) == 1:
         return False
-    elif any([_is_initial(name_part) for name_part in parsed_name]):
+    elif any([is_initial_of_a_name(name_part) for name_part in parsed_name]):
         return False
 
     return True
