@@ -675,8 +675,7 @@ class ElasticSearchVisitor(Visitor):
                         'must_not': [superseded_records_query, self_citation]
                     }
                 }
-
-        raise NotImplementedError('Nested keyword queries aren\'t implemented yet, except refersto:recid:<recid>')
+        logger.warning('Nested keyword queries aren\'t implemented yet, except refersto:recid:<recid>')
 
     def visit_keyword(self, node):
         # If no keyword is found, return the original node value (case of an unknown keyword).
