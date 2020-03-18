@@ -27,7 +27,6 @@ visitor and converts it to an ElasticSearch query.
 
 from __future__ import absolute_import, unicode_literals
 
-from itertools import product
 import logging
 from pypeg2 import whitespace
 import re
@@ -36,7 +35,7 @@ from unicodedata import normalize
 
 from inspire_schemas.utils import convert_old_publication_info_to_new
 from inspire_utils.helpers import force_list
-from inspire_utils.name import normalize_name
+from inspire_utils.name import normalize_name, ParsedName
 
 from inspire_query_parser import ast
 from inspire_query_parser.config import (
@@ -47,13 +46,13 @@ from inspire_query_parser.utils.visitor_utils import (
     ES_RANGE_EQ_OPERATOR,
     _truncate_date_value_according_on_date_field,
     _truncate_wildcard_from_date,
-    author_name_contains_fullnames,
     generate_match_query,
-    generate_minimal_name_variations,
     generate_nested_query,
     update_date_value_in_operator_value_pairs_for_fieldname,
     wrap_queries_in_bool_clauses_if_more_than_one,
     wrap_query_in_nested_if_field_is_nested,
+    is_initial_of_a_name,
+    retokenize_first_names
 )
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
@@ -90,6 +89,9 @@ class ElasticSearchVisitor(Visitor):
     # TODO Inspire mappings aren't in their own repository. Currently using the `records-hep` mapping.
     KEYWORD_TO_ES_FIELDNAME = {
         'author': 'authors.full_name',
+        'author_first_name': 'authors.first_name',
+        'author_last_name': 'authors.last_name',
+        'author_first_name_initials': 'authors.first_name.initials',
         'author-count': 'author_count',
         'citedby': 'citedby',
         'collaboration': 'collaborations.value',
@@ -201,61 +203,91 @@ class ElasticSearchVisitor(Visitor):
         """Generates a query handling specifically authors.
 
         Notes:
-            The match query is generic enough to return many results. Then, using the filter clause we truncate these
-            so that we imitate legacy's behaviour on returning more "exact" results. E.g. Searching for `Smith, John`
-            shouldn't return papers of 'Smith, Bob'.
+            There are three main cases:
 
-            Additionally, doing a ``match`` with ``"operator": "and"`` in order to be even more exact in our search, by
-            requiring that ``full_name`` field contains both
+            1) ``a Smith``
+            This will just generate a ``match`` query on ``last_name``
+
+            2) ``a John Smith``
+             This will just generate a ``match`` query on ``last_name`` and  a ``prefix`` query on ``first_name``
+             and a ``match`` query on the initial ``J``. This will return results from ``Smith, John`` and ``Smith, J``
+             but not from ``Smith, Jane``.
+
+            3) ``a J Smith``
+            This will just generate a ``match`` query on ``last_name`` and a match query on ``first_name.initials``.
+
+            Please note, cases such as ``J.D.`` have been properly handled by the tokenizer.
         """
-        name_variations = [name_variation.lower()
-                           for name_variation
-                           in generate_minimal_name_variations(author_name)]
+        parsed_name = ParsedName(author_name)
 
-        # When the query contains sufficient data, i.e. full names, e.g. ``Mele, Salvatore`` (and not ``Mele, S`` or
-        # ``Mele``) we can improve our filtering in order to filter out results containing records with authors that
-        # have the same non lastnames prefix, e.g. 'Mele, Samuele'.
-        if author_name_contains_fullnames(author_name):
-            specialized_author_filter = [
-                {
-                    'bool': {
-                        'must': [
-                            {
-                                'term': {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: names_variation[0]}
-                            },
-                            generate_match_query(
-                                ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author'],
-                                names_variation[1],
-                                with_operator_and=True
-                            )
-                        ]
-                    }
-                } for names_variation
-                in product(name_variations, name_variations)
-            ]
-
-        else:
-            # In the case of initials or even single lastname search, filter with only the name variations.
-            specialized_author_filter = [
-                {'term': {ElasticSearchVisitor.AUTHORS_NAME_VARIATIONS_FIELD: name_variation}}
-                for name_variation in name_variations
-            ]
-
-        query = {
-            'bool': {
-                'filter': {
-                    'bool': {
-                        'should': specialized_author_filter
-                    }
-                },
-                'must': {
-                    'match': {
-                        ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['author']: author_name
+        def _match_query_with_analyzer(field, value):
+            return {
+                "match": {
+                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME[field]: {
+                        "query": value,
+                        "analyzer": "names_initials_analyzer"
                     }
                 }
             }
-        }
 
+        def _match_query_with_and_operator(field, value):
+            return {
+                'match': {
+                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME[field]: {
+                        'query': value,
+                        'operator': 'AND'
+                    }
+                }
+            }
+
+        def _match_phrase_prefix_query(field, value):
+            return {
+                "match_phrase_prefix": {
+                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME[field]: {
+                        "query": value,
+                        "analyzer": "names_analyzer"
+                    }
+                }
+            }
+
+        if len(parsed_name) == 1 and '.' not in parsed_name.first:
+            # ParsedName returns first name if there is only one name i.e. `Smith`
+            # in our case we consider it as a lastname
+            last_name = parsed_name.first
+            query = _match_query_with_and_operator("author_last_name", last_name)
+            return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
+
+        bool_query_build = []
+        bool_query_build.append(
+            _match_query_with_and_operator("author_last_name", parsed_name.last)
+        )
+
+        should_query = []
+        first_names = retokenize_first_names(parsed_name.first_list)
+        for name in first_names:
+            name_query = []
+            if is_initial_of_a_name(name):
+                name_query.append(
+                    _match_query_with_analyzer("author_first_name", name)
+                )
+            else:
+                name_query.extend([
+                    _match_phrase_prefix_query("author_first_name", name),
+                    _match_query_with_analyzer("author_first_name", name)
+                ])
+            should_query.append(
+                wrap_queries_in_bool_clauses_if_more_than_one(
+                    name_query, use_must_clause=False)
+            )
+
+        bool_query_build.append(
+            wrap_queries_in_bool_clauses_if_more_than_one(
+                should_query, use_must_clause=False)
+        )
+
+        query = wrap_queries_in_bool_clauses_if_more_than_one(
+            bool_query_build, use_must_clause=True
+        )
         return generate_nested_query(ElasticSearchVisitor.AUTHORS_NESTED_QUERY_PATH, query)
 
     def _generate_exact_author_query(self, author_name_or_bai):
