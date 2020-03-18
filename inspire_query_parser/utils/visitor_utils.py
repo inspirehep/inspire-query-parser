@@ -45,7 +45,7 @@ from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
 NAME_INITIAL_FOLLOWED_BY_FIRSTNAME_WITHOUT_SPACE = re.compile(r"(\.[a-z])", re.IGNORECASE)
 
 
-def author_names_strip_empty_and_maybe_split_if_initial_followed_by_first_name_without_space(names):
+def retokenize_first_names(names):
     """Handle corner cases where the intial and firstname has no space.
 
     Example:

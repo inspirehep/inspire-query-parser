@@ -1603,8 +1603,8 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                         {
                             "match": {
                                 "authors.last_name": {
-                                    "query": "Smith",
                                     "operator": "AND",
+                                    "query": "Smith",
                                 }
                             }
                         },
@@ -1613,9 +1613,9 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                                 "should": [
                                     {
                                         "match": {
-                                            "authors.first_name.initials": {
+                                            "authors.first_name": {
+                                                "analyzer": "names_initials_analyzer",
                                                 "query": "D",
-                                                "operator": "AND",
                                             }
                                         }
                                     },
@@ -1623,15 +1623,18 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "prefix": {
-                                                        "authors.first_name": "john"
+                                                    "match_phrase_prefix": {
+                                                        "authors.first_name": {
+                                                            "analyzer": "names_analyzer",
+                                                            "query": "John",
+                                                        }
                                                     }
                                                 },
                                                 {
                                                     "match": {
                                                         "authors.first_name": {
-                                                            "query": "John",
                                                             "analyzer": "names_initials_analyzer",
+                                                            "query": "John",
                                                         }
                                                     }
                                                 },
@@ -1651,21 +1654,6 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
     assert ordered(generated_es_query) == ordered(expected_query)
 
 
-def test_elastic_search_visitor_author_lastname():
-    query_str = "a ellis"
-    expected_query = {
-        "nested": {
-            "path": "authors",
-            "query": {
-                "match": {"authors.last_name": {"operator": "AND", "query": "Ellis"}}
-            },
-        }
-    }
-
-    generated_es_query = _parse_query(query_str)
-    assert ordered(generated_es_query) == ordered(expected_query)
-
-
 def test_elastic_search_visitor_author_lastname_initial():
     query_str = "a ellis, j"
     expected_query = {
@@ -1677,16 +1665,16 @@ def test_elastic_search_visitor_author_lastname_initial():
                         {
                             "match": {
                                 "authors.last_name": {
-                                    "query": "Ellis",
                                     "operator": "AND",
+                                    "query": "Ellis",
                                 }
                             }
                         },
                         {
                             "match": {
-                                "authors.first_name.initials": {
+                                "authors.first_name": {
+                                    "analyzer": "names_initials_analyzer",
                                     "query": "J",
-                                    "operator": "AND",
                                 }
                             }
                         },
@@ -1720,7 +1708,14 @@ def test_elastic_search_visitor_author_lastname_firstname():
                         {
                             "bool": {
                                 "should": [
-                                    {"prefix": {"authors.first_name": "john"}},
+                                    {
+                                        "match_phrase_prefix": {
+                                            "authors.first_name": {
+                                                "analyzer": "names_analyzer",
+                                                "query": "John",
+                                            }
+                                        }
+                                    },
                                     {
                                         "match": {
                                             "authors.first_name": {
@@ -1761,7 +1756,14 @@ def test_elastic_search_visitor_author_lastname_firstname_without_comma():
                         {
                             "bool": {
                                 "should": [
-                                    {"prefix": {"authors.first_name": "john"}},
+                                    {
+                                        "match_phrase_prefix": {
+                                            "authors.first_name": {
+                                                "analyzer": "names_analyzer",
+                                                "query": "John",
+                                            }
+                                        }
+                                    },
                                     {
                                         "match": {
                                             "authors.first_name": {
@@ -1806,8 +1808,11 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "prefix": {
-                                                        "authors.first_name": "john"
+                                                    "match_phrase_prefix": {
+                                                        "authors.first_name": {
+                                                            "analyzer": "names_analyzer",
+                                                            "query": "John",
+                                                        }
                                                     }
                                                 },
                                                 {
@@ -1823,8 +1828,8 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
                                     },
                                     {
                                         "match": {
-                                            "authors.first_name.initials": {
-                                                "operator": "AND",
+                                            "authors.first_name": {
+                                                "analyzer": "names_initials_analyzer",
                                                 "query": "K.",
                                             }
                                         }
@@ -1866,8 +1871,11 @@ def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initia
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "prefix": {
-                                                        "authors.first_name": "john"
+                                                    "match_phrase_prefix": {
+                                                        "authors.first_name": {
+                                                            "analyzer": "names_analyzer",
+                                                            "query": "John",
+                                                        }
                                                     }
                                                 },
                                                 {
@@ -1883,8 +1891,8 @@ def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initia
                                     },
                                     {
                                         "match": {
-                                            "authors.first_name.initials": {
-                                                "operator": "AND",
+                                            "authors.first_name": {
+                                                "analyzer": "names_initials_analyzer",
                                                 "query": "K.",
                                             }
                                         }

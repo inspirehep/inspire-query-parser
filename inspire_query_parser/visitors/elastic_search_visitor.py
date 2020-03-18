@@ -52,7 +52,7 @@ from inspire_query_parser.utils.visitor_utils import (
     wrap_queries_in_bool_clauses_if_more_than_one,
     wrap_query_in_nested_if_field_is_nested,
     is_initial_of_a_name,
-    author_names_strip_empty_and_maybe_split_if_initial_followed_by_first_name_without_space
+    retokenize_first_names
 )
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
@@ -220,12 +220,12 @@ class ElasticSearchVisitor(Visitor):
         """
         parsed_name = ParsedName(author_name)
 
-        def _match_query_with_analyzer(field, value, analyzer):
+        def _match_query_with_analyzer(field, value):
             return {
                 "match": {
                     ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME[field]: {
                         "query": value,
-                        "analyzer": analyzer
+                        "analyzer": "names_initials_analyzer"
                     }
                 }
             }
@@ -240,10 +240,13 @@ class ElasticSearchVisitor(Visitor):
                 }
             }
 
-        def _prefix_query(field, value):
+        def _match_phrase_prefix_query(field, value):
             return {
-                "prefix": {
-                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME[field]: value
+                "match_phrase_prefix": {
+                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME[field]: {
+                        "query": value,
+                        "analyzer": "names_analyzer"
+                    }
                 }
             }
 
@@ -260,17 +263,17 @@ class ElasticSearchVisitor(Visitor):
         )
 
         should_query = []
-        first_names = author_names_strip_empty_and_maybe_split_if_initial_followed_by_first_name_without_space(parsed_name.first_list)
+        first_names = retokenize_first_names(parsed_name.first_list)
         for name in first_names:
             name_query = []
             if is_initial_of_a_name(name):
                 name_query.append(
-                    _match_query_with_and_operator("author_first_name_initials", name)
+                    _match_query_with_analyzer("author_first_name", name)
                 )
             else:
                 name_query.extend([
-                    _prefix_query("author_first_name", name.lower()),
-                    _match_query_with_analyzer("author_first_name", name, "names_initials_analyzer")
+                    _match_phrase_prefix_query("author_first_name", name),
+                    _match_query_with_analyzer("author_first_name", name)
                 ])
             should_query.append(
                 wrap_queries_in_bool_clauses_if_more_than_one(
