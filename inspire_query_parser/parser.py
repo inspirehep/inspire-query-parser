@@ -208,17 +208,11 @@ class InspireKeyword(LeafRule):
     @classmethod
     def parse(cls, parser, text, pos):
         """Parse InspireKeyword.
-
-        If the keyword is `texkey`, enable the parsing texkey expression flag, since its value contains ':' which
-        normally isn't allowed.
         """
         try:
             remaining_text, keyword = parser.parse(text, cls.grammar)
-            if keyword.lower() == 'texkey':
-                parser._parsing_texkey_expression = True
             return remaining_text, InspireKeyword(keyword)
         except SyntaxError as e:
-            parser._parsing_texkey_expression = False
             return text, e
 
 
@@ -230,7 +224,6 @@ class SimpleValueUnit(LeafRule):
 
     """
     token_regex = re.compile(r"[^\s:)(]+", re.UNICODE)
-    texkey_token_regex = re.compile(r"[^\s)(]+:[^\s)(]+", re.UNICODE)
 
     arxiv_token_regex = re.compile(r"(arxiv:)(" + token_regex.pattern + ")", re.IGNORECASE)
     """Arxiv identifiers are special cases of tokens where the ":" symbol is allowed."""
@@ -266,9 +259,6 @@ class SimpleValueUnit(LeafRule):
             Also, helps in supporting more implicit-and queries cases (last two checks).
         """
         token_regex = cls.token_regex
-        if parser._parsing_texkey_expression:
-            token_regex = cls.texkey_token_regex
-            parser._parsing_texkey_expression = False
 
         match = token_regex.match(text)
         if match:
@@ -330,7 +320,7 @@ class SimpleValueUnit(LeafRule):
                 remaining_text, token, found = text[len(match.group()):], match.group(2), True
             else:
                 # Attempt to parse a terminal token
-                remaining_text, token = SimpleValueUnit.parse_terminal_token(parser, text)
+                remaining_text, token = cls.parse_terminal_token(parser, text)
                 if type(token) != SyntaxError:
                     found = True
                 else:
@@ -351,11 +341,15 @@ class SimpleValueUnit(LeafRule):
                         parser._parsing_parenthesized_terminal = False
 
         if found:
-            result = remaining_text, SimpleValueUnit(token)
+            result = remaining_text, cls(token)
         else:
             result = text, SyntaxError("expecting match on " + cls.__name__)
 
         return result
+
+
+class SimpleValueWithColonUnit(SimpleValueUnit):
+    token_regex = re.compile(r"[^\s)(]+[^\s:)(]", re.UNICODE)
 
 
 class SimpleValue(LeafRule):
@@ -366,7 +360,7 @@ class SimpleValue(LeafRule):
     class Whitespace(LeafRule):
         grammar = attr('value', whitespace)
 
-    grammar = contiguous(SimpleValueUnit, maybe_some((optional(Whitespace), some(SimpleValueUnit))))
+    grammar = contiguous([SimpleValueUnit, SimpleValueWithColonUnit], maybe_some((optional(Whitespace), some(SimpleValueUnit))))
 
     def __init__(self, values):
         super(SimpleValue, self).__init__()
