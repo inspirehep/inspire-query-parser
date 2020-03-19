@@ -461,6 +461,8 @@ def wrap_queries_in_bool_clauses_if_more_than_one(queries,
     if not queries:
         return {}
 
+    queries = [q for q in queries if q]
+
     if len(queries) == 1 and not preserve_bool_semantics_if_one_clause:
         return queries[0]
 

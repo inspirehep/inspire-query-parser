@@ -496,14 +496,6 @@ def test_elastic_search_visitor_unknown_keyword_simple_value():
                     }
                 },
                 {
-                    "term": {
-                        "texkeys.raw": {
-                            "value": "unknown_keyword:bar",
-                            "boost": 2.0
-                        }
-                    }
-                },
-                {
                     "match": {
                         "_all": {
                             "query": "unknown_keyword:bar",
@@ -529,14 +521,6 @@ def test_elastic_search_visitor_dotted_keyword_simple_value():
                         "dotted.keyword": {
                             "query": "bar",
                             "operator": "and",
-                        }
-                    }
-                },
-                {
-                    "term": {
-                        "texkeys.raw": {
-                            "value": "dotted.keyword:bar",
-                            "boost": 2.0
                         }
                     }
                 },
@@ -2168,14 +2152,6 @@ def test_nested_publication_info_fields_query():
                                 }
                             },
                             {
-                                "term": {
-                                    "texkeys.raw": {
-                                        "boost": 2.0,
-                                        "value": "publication_info.journal_title:JHEP"
-                                    }
-                                }
-                            },
-                            {
                                 "match": {
                                     "_all": {
                                         "operator": "and",
@@ -2251,7 +2227,7 @@ def test_affiliation_query():
         assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_case_insensitive():
+def test_elastic_search_visitor_type_code_legacy_compatible_case_insensitive():
     query_str = "collection ConferencePaper"
     expected_es_query = \
         {
@@ -2266,7 +2242,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_case_insensitive():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_book():
+def test_elastic_search_visitor_type_code_legacy_compatible_book():
     query_str = "collection book"
     expected_es_query = \
         {
@@ -2281,7 +2257,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_book():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_conference_paper():
+def test_elastic_search_visitor_type_code_legacy_compatible_conference_paper():
     query_str = "collection conferencepaper"
     expected_es_query = \
         {
@@ -2296,7 +2272,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_conference_paper():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_citeable():
+def test_elastic_search_visitor_type_code_legacy_compatible_citeable():
     query_str = "collection citeable"
     expected_es_query = \
         {
@@ -2309,7 +2285,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_citeable():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_introductory():
+def test_elastic_search_visitor_type_code_legacy_compatible_introductory():
     query_str = "collection introductory"
     expected_es_query = \
         {
@@ -2324,7 +2300,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_introductory():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_lectures():
+def test_elastic_search_visitor_type_code_legacy_compatible_lectures():
     query_str = "collection lectures"
     expected_es_query = \
         {
@@ -2339,7 +2315,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_lectures():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_published():
+def test_elastic_search_visitor_type_code_legacy_compatible_published():
     query_str = "collection published"
     expected_es_query = \
         {
@@ -2352,7 +2328,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_published():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_review():
+def test_elastic_search_visitor_type_code_legacy_compatible_review():
     query_str = "collection review"
     expected_es_query = \
         {
@@ -2367,7 +2343,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_review():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_thesis():
+def test_elastic_search_visitor_type_code_legacy_compatible_thesis():
     query_str = "collection thesis"
     expected_es_query = \
         {
@@ -2382,7 +2358,7 @@ def test_elastic_search_visitor_type_code_legacy_comaptible_thesis():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_legacy_comaptible_proceedings():
+def test_elastic_search_visitor_type_code_legacy_compatible_proceedings():
     query_str = "collection proceedings"
     expected_es_query = \
         {
