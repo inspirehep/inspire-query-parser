@@ -230,6 +230,15 @@ class ElasticSearchVisitor(Visitor):
                 }
             }
 
+        def _match_query_without_analyzer(field, value):
+            return {
+                "match": {
+                    ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME[field]: {
+                        "query": value
+                    }
+                }
+            }
+
         def _match_query_with_and_operator(field, value):
             return {
                 'match': {
@@ -268,7 +277,7 @@ class ElasticSearchVisitor(Visitor):
             name_query = []
             if is_initial_of_a_name(name):
                 name_query.append(
-                    _match_query_with_analyzer("author_first_name", name)
+                    _match_query_without_analyzer("author_first_name_initials", name)
                 )
             else:
                 name_query.extend([

@@ -1611,8 +1611,7 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                                 "should": [
                                     {
                                         "match": {
-                                            "authors.first_name": {
-                                                "analyzer": "names_initials_analyzer",
+                                            "authors.first_name.initials": {
                                                 "query": "D",
                                             }
                                         }
@@ -1670,8 +1669,7 @@ def test_elastic_search_visitor_author_lastname_initial():
                         },
                         {
                             "match": {
-                                "authors.first_name": {
-                                    "analyzer": "names_initials_analyzer",
+                                "authors.first_name.initials": {
                                     "query": "J",
                                 }
                             }
@@ -1826,8 +1824,7 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
                                     },
                                     {
                                         "match": {
-                                            "authors.first_name": {
-                                                "analyzer": "names_initials_analyzer",
+                                            "authors.first_name.initials": {
                                                 "query": "K.",
                                             }
                                         }
@@ -1889,9 +1886,8 @@ def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initia
                                     },
                                     {
                                         "match": {
-                                            "authors.first_name": {
-                                                "analyzer": "names_initials_analyzer",
-                                                "query": "K.",
+                                            "authors.first_name.initials": {
+                                                "query": "K."
                                             }
                                         }
                                     },
