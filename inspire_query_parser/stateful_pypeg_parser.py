@@ -45,4 +45,3 @@ class StatefulParser(Parser):
         super(StatefulParser, self).__init__()
         self._parsing_parenthesized_terminal = False
         self._parsing_parenthesized_simple_values_expression = False
-        self._parsing_texkey_expression = False

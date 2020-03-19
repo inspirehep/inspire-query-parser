@@ -146,12 +146,6 @@ INSPIRE_PARSER_KEYWORDS = {
     # SPIRES identifiers
     'irn': 'irn',
 
-    # Job related
-    'position': 'title',
-    'region': 'region',
-    'continent': 'region',
-    'rank': 'rank',
-
     # Journal related
     'coden': 'journal',
     'journal': 'journal',

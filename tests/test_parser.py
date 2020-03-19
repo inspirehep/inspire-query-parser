@@ -153,7 +153,12 @@ def test_simple_value_unit_accepted_tokens(query_str, unrecognized_text, result)
             'query_str': '(and)',
             'unrecognized_text': '',
             'result': SimpleValue('(and)')
-        }
+        },
+        'Plaintext with colons in the first word': {
+            'query_str': 'foo:bar baz:quux',
+            'unrecognized_text': 'baz:quux',
+            'result': SimpleValue('foo:bar')
+        },
     }
 )
 def test_simple_value_accepted_tokens(query_str, unrecognized_text, result):
