@@ -102,6 +102,9 @@ class ElasticSearchVisitor(Visitor):
             'publication_info.year',
             'thesis_info.date',
         ],
+        'date-added': '_created',
+        'date-earliest': 'earliest_date',
+        'date-updated': '_updated',
         'doi': 'dois.value.raw',
         'eprint': 'arxiv_eprints.value.raw',
         'exact-author': 'authors.full_name_unicode_normalized',
@@ -109,6 +112,7 @@ class ElasticSearchVisitor(Visitor):
         'journal': [
             JOURNAL_FIELDS_MAPPING.values()
         ],
+        'keyword': 'keywords.value',
         'refersto': 'references.record.$ref',
         'reportnumber': 'report_numbers.value.fuzzy',
         'subject': 'facet_inspire_categories',
