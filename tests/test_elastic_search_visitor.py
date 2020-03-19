@@ -1608,7 +1608,7 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                         },
                         {
                             "bool": {
-                                "should": [
+                                "must": [
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
@@ -1799,7 +1799,7 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
                         },
                         {
                             "bool": {
-                                "should": [
+                                "must": [
                                     {
                                         "bool": {
                                             "should": [
@@ -1861,7 +1861,7 @@ def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initia
                         },
                         {
                             "bool": {
-                                "should": [
+                                "must": [
                                     {
                                         "bool": {
                                             "should": [
