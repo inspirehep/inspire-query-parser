@@ -511,6 +511,43 @@ def test_elastic_search_visitor_unknown_keyword_simple_value():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_unknown_keyword_simple_value_maybe_texkey():
+    query_str = 'smith:2009xj'
+    expected_es_query = {
+        "bool": {
+            "should": [
+                {
+                    "match": {
+                        "smith": {
+                            "query": "2009xj",
+                            "operator": "and",
+                        }
+                    }
+                },
+                {
+                    "term": {
+                        "texkeys.raw": {
+                            "value": "smith:2009xj",
+                            "boost": 2.0,
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "_all": {
+                            "query": "smith:2009xj",
+                            "operator": "and",
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_dotted_keyword_simple_value():
     query_str = 'dotted.keyword:bar'
     expected_es_query = {
@@ -626,7 +663,7 @@ def test_elastic_search_visitor_keyword_query_and_exact_value_query():
                         }
                     },
                     {
-                        "term": {
+                        "match_phrase": {
                             "_all": "skands",
                         }
                     }
@@ -2368,6 +2405,19 @@ def test_elastic_search_visitor_type_code_legacy_compatible_proceedings():
                 }
             }
         }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_PDG_keyword():
+    query_str = 'keyword "S044:DESIG=1"'
+    expected_es_query = {
+        "match_phrase": {
+            "keywords.value": "S044:DESIG=1",
+
+        }
+    }
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query

@@ -837,25 +837,25 @@ class ElasticSearchVisitor(Visitor):
         )
 
         if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
-            term_queries = []
+            exact_match_queries = []
             for field in fieldnames:
                 term_query =  \
                     {'term': {field: _truncate_date_value_according_on_date_field(field, node.value).dumps()}}
 
-                term_queries.append(
+                exact_match_queries.append(
                     generate_nested_query(self.DATE_NESTED_QUERY_PATH, term_query)
                     if field in self.DATE_NESTED_FIELDS
                     else term_query
                 )
         elif self.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames:
-            term_queries = [
+            exact_match_queries = [
                 generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, {'term': {field: node.value}})
                 for field in (bai_fieldnames or fieldnames)
             ]
         else:
-            term_queries = [{'term': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+            exact_match_queries = [{'match_phrase': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
 
-        return wrap_queries_in_bool_clauses_if_more_than_one(term_queries, use_must_clause=False)
+        return wrap_queries_in_bool_clauses_if_more_than_one(exact_match_queries, use_must_clause=False)
 
     def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in the given fieldname."""
