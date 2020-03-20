@@ -1633,7 +1633,7 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
-                                                "query": "D",
+                                                "query": "D"
                                             }
                                         }
                                     },
@@ -1652,6 +1652,7 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                                                     "match": {
                                                         "authors.first_name": {
                                                             "analyzer": "names_initials_analyzer",
+                                                            "operator": "AND",
                                                             "query": "John",
                                                         }
                                                     }
@@ -1734,13 +1735,7 @@ def test_elastic_search_visitor_author_lastname_initial():
                                 }
                             }
                         },
-                        {
-                            "match": {
-                                "authors.first_name.initials": {
-                                    "query": "J",
-                                }
-                            }
-                        },
+                        {"match": {"authors.first_name.initials": {"query": "J"}}},
                     ]
                 }
             },
@@ -1783,6 +1778,7 @@ def test_elastic_search_visitor_author_lastname_firstname():
                                         "match": {
                                             "authors.first_name": {
                                                 "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
                                                 "query": "John",
                                             }
                                         }
@@ -1831,6 +1827,7 @@ def test_elastic_search_visitor_author_lastname_firstname_without_comma():
                                         "match": {
                                             "authors.first_name": {
                                                 "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
                                                 "query": "John",
                                             }
                                         }
@@ -1882,6 +1879,7 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
                                                     "match": {
                                                         "authors.first_name": {
                                                             "analyzer": "names_initials_analyzer",
+                                                            "operator": "AND",
                                                             "query": "John",
                                                         }
                                                     }
@@ -1892,7 +1890,7 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
-                                                "query": "K.",
+                                                "query": "K."
                                             }
                                         }
                                     },
@@ -1944,6 +1942,7 @@ def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initia
                                                     "match": {
                                                         "authors.first_name": {
                                                             "analyzer": "names_initials_analyzer",
+                                                            "operator": "AND",
                                                             "query": "John",
                                                         }
                                                     }

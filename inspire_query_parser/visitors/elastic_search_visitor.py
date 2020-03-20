@@ -225,11 +225,12 @@ class ElasticSearchVisitor(Visitor):
         """
         parsed_name = ParsedName(author_name)
 
-        def _match_query_with_analyzer(field, value):
+        def _match_query_with_analyzer_with_and_operator(field, value):
             return {
                 "match": {
                     self.KEYWORD_TO_ES_FIELDNAME[field]: {
                         "query": value,
+                        'operator': 'AND',
                         "analyzer": "names_initials_analyzer"
                     }
                 }
@@ -287,7 +288,7 @@ class ElasticSearchVisitor(Visitor):
             else:
                 name_query.extend([
                     _match_phrase_prefix_query("author_first_name", name),
-                    _match_query_with_analyzer("author_first_name", name)
+                    _match_query_with_analyzer_with_and_operator("author_first_name", name)
                 ])
             should_query.append(
                 wrap_queries_in_bool_clauses_if_more_than_one(
