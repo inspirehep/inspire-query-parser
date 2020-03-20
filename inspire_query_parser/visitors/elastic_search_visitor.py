@@ -296,7 +296,7 @@ class ElasticSearchVisitor(Visitor):
 
         bool_query_build.append(
             wrap_queries_in_bool_clauses_if_more_than_one(
-                should_query, use_must_clause=False)
+                should_query, use_must_clause=True)
         )
 
         query = wrap_queries_in_bool_clauses_if_more_than_one(
