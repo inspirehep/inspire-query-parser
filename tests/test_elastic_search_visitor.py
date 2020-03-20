@@ -1672,6 +1672,52 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
     assert ordered(generated_es_query) == ordered(expected_query)
 
 
+def test_hack_to_split_two_initials_without_a_space():
+    query_str = "a D.K. Smith"
+    expected_query = {
+        "nested": {
+            "path": "authors",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "authors.last_name": {
+                                    "operator": "AND",
+                                    "query": "Smith",
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "match": {
+                                            "authors.first_name.initials": {
+                                                "query": "D",
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "authors.first_name.initials": {
+                                                "query": "K",
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
 def test_elastic_search_visitor_author_lastname_initial():
     query_str = "a ellis, j"
     expected_query = {

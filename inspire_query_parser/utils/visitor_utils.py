@@ -61,7 +61,7 @@ def retokenize_first_names(names):
             names_filtered.extend(name.split('.'))
         else:
             names_filtered.append(name)
-    return names_filtered
+    return filter(None, names_filtered)
 
 
 def is_initial_of_a_name(name_part):
