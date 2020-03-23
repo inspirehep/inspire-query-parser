@@ -225,22 +225,13 @@ class ElasticSearchVisitor(Visitor):
         """
         parsed_name = ParsedName(author_name)
 
-        def _match_query_with_analyzer_with_and_operator(field, value):
+        def _match_query_with_names_initials_analyzer_with_and_operator(field, value):
             return {
                 "match": {
                     self.KEYWORD_TO_ES_FIELDNAME[field]: {
                         "query": value,
                         'operator': 'AND',
                         "analyzer": "names_initials_analyzer"
-                    }
-                }
-            }
-
-        def _match_query_without_analyzer(field, value):
-            return {
-                "match": {
-                    self.KEYWORD_TO_ES_FIELDNAME[field]: {
-                        "query": value
                     }
                 }
             }
@@ -283,12 +274,12 @@ class ElasticSearchVisitor(Visitor):
             name_query = []
             if is_initial_of_a_name(name):
                 name_query.append(
-                    _match_query_without_analyzer("author_first_name_initials", name)
+                    _match_query_with_names_initials_analyzer_with_and_operator("author_first_name_initials", name)
                 )
             else:
                 name_query.extend([
                     _match_phrase_prefix_query("author_first_name", name),
-                    _match_query_with_analyzer_with_and_operator("author_first_name", name)
+                    _match_query_with_names_initials_analyzer_with_and_operator("author_first_name", name)
                 ])
             should_query.append(
                 wrap_queries_in_bool_clauses_if_more_than_one(
