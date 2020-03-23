@@ -1633,7 +1633,9 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
-                                                "query": "D"
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "D",
                                             }
                                         }
                                     },
@@ -1695,6 +1697,8 @@ def test_hack_to_split_two_initials_without_a_space():
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
                                                 "query": "D",
                                             }
                                         }
@@ -1702,10 +1706,12 @@ def test_hack_to_split_two_initials_without_a_space():
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
                                                 "query": "K",
                                             }
                                         }
-                                    }
+                                    },
                                 ]
                             }
                         },
@@ -1735,7 +1741,15 @@ def test_elastic_search_visitor_author_lastname_initial():
                                 }
                             }
                         },
-                        {"match": {"authors.first_name.initials": {"query": "J"}}},
+                        {
+                            "match": {
+                                "authors.first_name.initials": {
+                                    "analyzer": "names_initials_analyzer",
+                                    "operator": "AND",
+                                    "query": "J",
+                                }
+                            }
+                        },
                     ]
                 }
             },
@@ -1890,7 +1904,9 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
-                                                "query": "K."
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "K.",
                                             }
                                         }
                                     },
@@ -1953,7 +1969,9 @@ def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initia
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
-                                                "query": "K."
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "K.",
                                             }
                                         }
                                     },
