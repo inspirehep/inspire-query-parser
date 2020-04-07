@@ -483,6 +483,9 @@ def wrap_query_in_nested_if_field_is_nested(query, field, nested_fields):
     Returns:
         (dict): The nested query
     """
+    if not field:
+        return query
+
     for element in nested_fields:
         match_pattern = r'^{}.'.format(element)
         if re.match(match_pattern, field):

@@ -2245,10 +2245,10 @@ def test_nested_publication_info_fields_query():
                         "should": [
                             {
                                 "match": {
-                                    "publication_info.journal_title": {
-                                        "operator": "and",
-                                        "query": "JHEP"
-                                    }
+                                        "publication_info.journal_title": {
+                                            "operator": "and",
+                                            "query": "JHEP"
+                                        }
                                 }
                             },
                             {
@@ -2483,4 +2483,120 @@ def test_elastic_search_visitor_PDG_keyword():
     }
 
     generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_nested_query_author_exact_match_affiliation():
+    query_string = 'aff "Warsaw U. of Tech."'
+    expected_es_query = {
+        "nested": {
+            "path": "authors",
+            "query": {
+                "match_phrase": {"authors.affiliations.value": "Warsaw U. of Tech."}
+            },
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_nested_query_regex_match_affiliation():
+    query_string = "aff /^Warsaw U\.$/"
+    expected_es_query = {
+        "nested": {
+            "path": "authors",
+            "query": {"regexp": {"authors.affiliations.value": "^Warsaw U\.$"}},
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_nested_query_partial_match_affiliation():
+    query_string = "aff 'Warsaw U'"
+    expected_es_query = {
+        "nested": {
+            "path": "authors",
+            "query": {
+                "query_string": {
+                    "analyze_wildcard": True,
+                    "fields": ["authors.affiliations.value"],
+                    "query": "*Warsaw U*",
+                }
+            },
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_partial_author_match_and_exact_affiliation_match():
+    query_string = "author:'Jan' and aff \"Warsaw U. of Tech.\""
+
+    expected_es_query = {
+        "bool": {
+            "must": [
+                {
+                    "nested": {
+                        "path": "authors",
+                        "query": {
+                            "query_string": {
+                                "analyze_wildcard": True,
+                                "fields": ["authors.full_name"],
+                                "query": "*Jan*",
+                            }
+                        },
+                    }
+                },
+                {
+                    "nested": {
+                        "path": "authors",
+                        "query": {
+                            "match_phrase": {
+                                "authors.affiliations.value": "Warsaw U. of Tech."
+                            }
+                        },
+                    }
+                },
+            ]
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_nested_query_partial_raw_affiliation():
+    query_string = 'authors.raw_affiliations:"University of Warsaw"'
+    expected_es_query = {
+        'nested': {
+            'path': 'authors',
+            'query': {
+                'match_phrase': {
+                    'authors.raw_affiliations': 'University of Warsaw'
+                }
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_nested_query_exact_last_name():
+    query_string = 'authors.last_name:"Kowal"'
+    expected_es_query = {
+        'nested': {
+            'path': 'authors', 'query': {
+                'match_phrase': {
+                    'authors.last_name': 'Kowal'
+                }
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query

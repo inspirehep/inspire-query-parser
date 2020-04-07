@@ -66,7 +66,6 @@ class FieldVariations(object):
 
 class ElasticSearchVisitor(Visitor):
     """Converts a parse tree to an ElasticSearch query.
-
     Notes:
         The ElasticSearch query follows the 2.4 version DSL specification.
     """
@@ -122,7 +121,6 @@ class ElasticSearchVisitor(Visitor):
         'affiliation': 'authors.affiliations.value',
     }
     """Mapping from keywords to ElasticSearch fields.
-
     Note:
         If a keyword should query multiple fields, then it's value in the mapping should be a list. This will generate
         a ``multi_match`` query. Otherwise a ``match`` query is generated.
@@ -147,7 +145,6 @@ class ElasticSearchVisitor(Visitor):
         'proceedings': ('document_type', 'proceedings'),
     }
     """Mapping from type-code query values to field and value pairs.
-
     Note:
         These are going to be used for querying (instead of the given value).
     """
@@ -171,16 +168,13 @@ class ElasticSearchVisitor(Visitor):
     # #### Helpers ####
     def _generate_fieldnames_if_bai_query(self, node_value, bai_field_variation, query_bai_field_if_dots_in_name):
         """Generates new fieldnames in case of BAI query.
-
         Args:
             node_value (six.text_type): The node's value (i.e. author name).
             bai_field_variation (six.text_type): Which field variation to query ('search' or 'raw').
             query_bai_field_if_dots_in_name (bool): Whether to query BAI field (in addition to author's name field)
                 if dots exist in the name and name contains no whitespace.
-
         Returns:
             list: Fieldnames to query on, in case of BAI query or None, otherwise.
-
         Raises:
             ValueError, if ``field_variation`` is not one of ('search', 'raw').
         """
@@ -206,21 +200,16 @@ class ElasticSearchVisitor(Visitor):
 
     def _generate_author_query(self, author_name):
         """Generates a query handling specifically authors.
-
         Notes:
             There are three main cases:
-
             1) ``a Smith``
             This will just generate a ``match`` query on ``last_name``
-
             2) ``a John Smith``
              This will just generate a ``match`` query on ``last_name`` and  a ``prefix`` query on ``first_name``
              and a ``match`` query on the initial ``J``. This will return results from ``Smith, John`` and ``Smith, J``
              but not from ``Smith, Jane``.
-
             3) ``a J Smith``
             This will just generate a ``match`` query on ``last_name`` and a match query on ``first_name.initials``.
-
             Please note, cases such as ``J.D.`` have been properly handled by the tokenizer.
         """
         parsed_name = ParsedName(author_name)
@@ -298,7 +287,6 @@ class ElasticSearchVisitor(Visitor):
 
     def _generate_exact_author_query(self, author_name_or_bai):
         """Generates a term query handling authors and BAIs.
-
         Notes:
             If given value is a BAI, search for the provided value in the raw field variation of
             `self.AUTHORS_BAI_FIELD`.
@@ -324,10 +312,8 @@ class ElasticSearchVisitor(Visitor):
 
     def _generate_date_with_wildcard_query(self, date_value):
         """Helper for generating a date keyword query containing a wildcard.
-
         Returns:
             (dict): The date query containing the wildcard or an empty dict in case the date value is malformed.
-
         The policy followed here is quite conservative on what it accepts as valid input. Look into
         :meth:`inspire_query_parser.utils.visitor_utils._truncate_wildcard_from_date` for more information.
         """
@@ -346,7 +332,6 @@ class ElasticSearchVisitor(Visitor):
 
     def _generate_queries_for_title_symbols(self, title_field, query_value):
         """Generate queries for any symbols in the title against the whitespace tokenized field of titles.
-
         Returns:
             (dict): The query or queries for the whitespace tokenized field of titles. If none such tokens exist, then
                     returns an empty dict.
@@ -384,7 +369,6 @@ class ElasticSearchVisitor(Visitor):
 
     def _generate_type_code_query(self, value):
         """Generate type-code queries.
-
         Notes:
             If the value of the type-code query exists in `TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING, then we
             query the specified field, along with the given value according to the mapping.
@@ -456,17 +440,14 @@ class ElasticSearchVisitor(Visitor):
 
     def _generate_range_queries(self, fieldnames, operator_value_pairs):
         """Generates ElasticSearch range queries.
-
         Args:
             fieldnames (list): The fieldnames on which the search is the range query is targeted on,
             operator_value_pairs (dict): Contains (range_operator, value) pairs.
                 The range_operator should be one of those supported by ElasticSearch (e.g. 'gt', 'lt', 'ge', 'le').
                 The value should be of type int or string.
-
         Notes:
             A bool should query with multiple range sub-queries is generated so that even if one of the multiple fields
             is missing from a document, ElasticSearch will be able to match some records.
-
             In the case of a 'date' keyword query, it updates date values after normalizing them by using
             :meth:`inspire_query_parser.utils.visitor_utils.update_date_value_in_operator_value_pairs_for_fieldname`.
             Additionally, in the aforementioned case, if a malformed date has been given, then the the method will
@@ -494,10 +475,10 @@ class ElasticSearchVisitor(Visitor):
                     )
         else:
             range_queries = [{
-                    'range': {
-                        fieldname: operator_value_pairs
-                    }
+                'range': {
+                    fieldname: operator_value_pairs
                 }
+            }
                 for fieldname in fieldnames
             ]
 
@@ -506,7 +487,6 @@ class ElasticSearchVisitor(Visitor):
     @staticmethod
     def _generate_malformed_query(data):
         """Generates a query on the ``_all`` field with all the query content.
-
         Args:
             data (six.text_type or list): The query in the format of ``six.text_type`` (when used from parsing driver)
                 or ``list`` when used from withing the ES visitor.
@@ -526,12 +506,10 @@ class ElasticSearchVisitor(Visitor):
 
     def _preprocess_journal_query_value(self, third_journal_field, old_publication_info_values):
         """Transforms the given journal query value (old publication info) to the new one.
-
         Args:
             third_journal_field (six.text_type): The final field to be used for populating the old publication info.
             old_publication_info_values (six.text_type): The old publication info. It must be one of {only title, title
                 & volume, title & volume & artid/page_start}.
-
         Returns:
             (dict) The new publication info.
         """
@@ -565,11 +543,9 @@ class ElasticSearchVisitor(Visitor):
 
     def _generate_journal_nested_queries(self, value):
         """Generates ElasticSearch nested query(s).
-
         Args:
             value (string): Contains the journal_title, journal_volume and artid or start_page separated by a comma.
                             This value should be of type string.
-
         Notes:
             The value contains at least one of the 3 mentioned items, in this order and at most 3.
             The 3rd is either the artid or the page_start and it will query the corresponding ES field for this item.
@@ -618,6 +594,7 @@ class ElasticSearchVisitor(Visitor):
             self.JOURNAL_FIELDS_PREFIX,
             wrap_queries_in_bool_clauses_if_more_than_one(queries_for_each_field, use_must_clause=True)
         )
+
     # ################
 
     def visit_empty_query(self, node):
@@ -631,12 +608,12 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_query_with_malformed_part(self, node):
         query = {
-                'bool': {
-                    'must': [
-                        node.left.accept(self),
-                    ],
-                }
+            'bool': {
+                'must': [
+                    node.left.accept(self),
+                ],
             }
+        }
 
         if DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES == ES_MUST_QUERY:
             query['bool']['must'].append(node.right.accept(self))
@@ -801,7 +778,8 @@ class ElasticSearchVisitor(Visitor):
                     if self.TEXKEY_REGEX.match(colon_value):
                         texkey_query = self._generate_term_query('texkeys.raw', colon_value, boost=2.0)
                     _all_field_query = generate_match_query('_all', colon_value, with_operator_and=True)
-                    query = wrap_queries_in_bool_clauses_if_more_than_one([given_field_query, texkey_query, _all_field_query], use_must_clause=False)
+                    query = wrap_queries_in_bool_clauses_if_more_than_one(
+                        [given_field_query, texkey_query, _all_field_query], use_must_clause=False)
                     return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
                 return generate_match_query(fieldnames, node.value, with_operator_and=True)
@@ -831,7 +809,7 @@ class ElasticSearchVisitor(Visitor):
         if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
             exact_match_queries = []
             for field in fieldnames:
-                term_query =  \
+                term_query = \
                     {'term': {field: _truncate_date_value_according_on_date_field(field, node.value).dumps()}}
 
                 exact_match_queries.append(
@@ -846,6 +824,8 @@ class ElasticSearchVisitor(Visitor):
             ]
         else:
             exact_match_queries = [{'match_phrase': {field: node.value}} for field in (bai_fieldnames or fieldnames)]
+            query = wrap_queries_in_bool_clauses_if_more_than_one(exact_match_queries, use_must_clause=False)
+            return wrap_query_in_nested_if_field_is_nested(query, fieldnames[0], self.NESTED_FIELDS)
 
         return wrap_queries_in_bool_clauses_if_more_than_one(exact_match_queries, use_must_clause=False)
 
@@ -887,7 +867,7 @@ class ElasticSearchVisitor(Visitor):
                 or (fieldnames and self.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames):
             return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
 
-        return query
+        return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
     def visit_regex_value(self, node, fieldname):
         query = {
@@ -899,4 +879,4 @@ class ElasticSearchVisitor(Visitor):
         if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldname:
             return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
 
-        return query
+        return wrap_query_in_nested_if_field_is_nested(query, fieldname, self.NESTED_FIELDS)
