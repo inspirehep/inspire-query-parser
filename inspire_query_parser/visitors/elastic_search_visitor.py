@@ -76,11 +76,13 @@ class ElasticSearchVisitor(Visitor):
     JOURNAL_VOLUME = 'journal_volume'
     JOURNAL_PAGE_START = 'page_start'
     JOURNAL_ART_ID = 'artid'
+    JOURNAL_YEAR = 'year'
     JOURNAL_FIELDS_MAPPING = {
         JOURNAL_TITLE: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_TITLE)),
         JOURNAL_VOLUME: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_VOLUME)),
         JOURNAL_PAGE_START: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_PAGE_START)),
         JOURNAL_ART_ID: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_ART_ID)),
+        JOURNAL_YEAR: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_YEAR)),
     }
     # ########################################
 
@@ -517,7 +519,7 @@ class ElasticSearchVisitor(Visitor):
         publication_info_keys = [
             self.JOURNAL_TITLE,
             self.JOURNAL_VOLUME,
-            third_journal_field,
+            third_journal_field
         ]
         values_list = [
             value.strip()
@@ -570,6 +572,15 @@ class ElasticSearchVisitor(Visitor):
                 generate_match_query(
                     self.JOURNAL_FIELDS_MAPPING[self.JOURNAL_VOLUME],
                     new_publication_info[self.JOURNAL_VOLUME],
+                    with_operator_and=False
+                )
+            )
+
+        if self.JOURNAL_YEAR in new_publication_info:
+            queries_for_each_field.append(
+                generate_match_query(
+                    self.JOURNAL_FIELDS_MAPPING[self.JOURNAL_YEAR],
+                    new_publication_info[self.JOURNAL_YEAR],
                     with_operator_and=False
                 )
             )
