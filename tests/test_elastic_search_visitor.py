@@ -2600,3 +2600,52 @@ def test_nested_query_exact_last_name():
 
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_journal_with_year():
+    query_str = "j jhep,0903,112"
+    expected_es_query = {
+        "nested": {
+            "path": "publication_info",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "publication_info.journal_title": "jhep"
+                            }
+                        },
+                        {
+                            "match": {
+                                "publication_info.journal_volume": "03"
+                            }
+                        },
+                        {
+                            "match": {
+                                "publication_info.year": 2009
+                            }
+                        },
+                        {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match": {
+                                            "publication_info.page_start": "112"
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "publication_info.artid": "112"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
