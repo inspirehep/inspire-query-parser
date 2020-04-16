@@ -1526,37 +1526,36 @@ def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_p
 
 def test_elastic_search_visitor_handles_wildcard_simple_and_partial_bai_like_queries():
     query_str = "a S.Mele* and 'S.Mel*'"
-    expected_es_query = \
-        {
-            "bool": {
-                "must": [
-                    {
-                        "nested": {
-                            "path": "authors",
-                            "query": {
-                                "query_string": {
-                                    "analyze_wildcard": True,
-                                    "fields": ["authors.ids.value.search", "authors.full_name"],
-                                    "query": "S.Mele*"
-                                }
+    expected_es_query = {
+        "bool": {
+            "must": [
+                {
+                    "nested": {
+                        "path": "authors",
+                        "query": {
+                            "query_string": {
+                                "query": "S.Mele*",
+                                "fields": ["authors.ids.value.search", "authors.full_name"],
+                                "analyze_wildcard": True,
                             }
-                        }
-                    },
-                    {
-                        "nested": {
-                            "path": "authors",
-                            "query": {
-                                "query_string": {
-                                    "analyze_wildcard": True,
-                                    "fields": ["authors.ids.value.search", "authors.full_name"],
-                                    "query": "*S.Mel*"
-                                }
+                        },
+                    }
+                },
+                {
+                    "nested": {
+                        "path": "authors",
+                        "query": {
+                            "query_string": {
+                                "query": "*S.Mel*",
+                                "fields": ["authors.ids.value.search", "authors.full_name"],
+                                "analyze_wildcard": True,
                             }
-                        }
-                    },
-                ]
-            }
+                        },
+                    }
+                },
+            ]
         }
+    }
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
@@ -2648,4 +2647,47 @@ def test_elastic_search_visitor_find_journal_with_year():
     }
 
     generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_wildcard_query_with_dot():
+    query_string = 'references.reference.dois:10.7483/OPENDATA.CMS*'
+    expected_es_query = {
+        'query_string': {
+            'query': '10.7483/OPENDATA.CMS*',
+            'fields': ['references.reference.dois'],
+            'analyze_wildcard': True
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_query_with_multiple_dots():
+    query_string = 'references.reference.dois:10.7483/OPENDATA.CMS.ATLAS'
+    expected_es_query = {
+        "bool": {
+            "should": [
+                {
+                    "match": {
+                        "references.reference.dois": {
+                            "query": "10.7483/OPENDATA.CMS.ATLAS",
+                            "operator": "and",
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "_all": {
+                            "query": "references.reference.dois:10.7483/OPENDATA.CMS.ATLAS",
+                            "operator": "and",
+                        }
+                    }
+                },
+            ]
+        }
+    }
+
+    generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
