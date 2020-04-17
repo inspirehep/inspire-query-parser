@@ -196,9 +196,7 @@ class ElasticSearchVisitor(Visitor):
             # Case of partial BAI, e.g. ``J.Smith``.
             return [self.AUTHORS_BAI_FIELD + '.' + bai_field_variation] + \
                    force_list(self.KEYWORD_TO_ES_FIELDNAME['author'])
-
-        else:
-            return None
+        return None
 
     def _generate_author_query(self, author_name):
         """Generates a query handling specifically authors.
@@ -705,95 +703,100 @@ class ElasticSearchVisitor(Visitor):
         # If no keyword is found, return the original node value (case of an unknown keyword).
         return self.KEYWORD_TO_ES_FIELDNAME.get(node.value, node.value)
 
-    def visit_value(self, node, fieldnames=None):
-        if not fieldnames:
-            fieldnames = '_all'
+    def handle_value_wildcard(self, node, fieldnames=None):
+        if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+            return self._generate_date_with_wildcard_query(node.value)
 
-        if node.contains_wildcard:
-            if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
-                return self._generate_date_with_wildcard_query(node.value)
-
+        bai_fieldnames = None
+        if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
             bai_fieldnames = self._generate_fieldnames_if_bai_query(
                 node.value,
                 bai_field_variation=FieldVariations.search,
                 query_bai_field_if_dots_in_name=True
             )
 
-            query = self._generate_query_string_query(
-                node.value,
-                fieldnames=bai_fieldnames or fieldnames,
-                analyze_wildcard=True
-            )
+        query = self._generate_query_string_query(
+            node.value,
+            fieldnames=bai_fieldnames or fieldnames,
+            analyze_wildcard=True
+        )
 
-            if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
-                return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
-            return query
-        else:
-            if isinstance(fieldnames, list):
-                if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
-                    # Date queries with simple values are transformed into range queries, among the given and the exact
-                    # next date, according to the granularity of the given date.
-                    return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
+        if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
+            return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
+        return query
 
-                if self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
-                    return self._generate_journal_nested_queries(node.value)
+    def visit_value(self, node, fieldnames=None):
+        if not fieldnames:
+            fieldnames = '_all'
 
-                return {
-                    'multi_match': {
-                        'fields': fieldnames,
-                        'query': node.value,
-                    }
+        if node.contains_wildcard:
+            return self.handle_value_wildcard(node, fieldnames=fieldnames)
+
+        if isinstance(fieldnames, list):
+            if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+                # Date queries with simple values are transformed into range queries, among the given and the exact
+                # next date, according to the granularity of the given date.
+                return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
+
+            if self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
+                return self._generate_journal_nested_queries(node.value)
+
+            return {
+                'multi_match': {
+                    'fields': fieldnames,
+                    'query': node.value,
                 }
-            else:
-                if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
-                    bai_fieldnames = self._generate_fieldnames_if_bai_query(
-                        node.value,
-                        bai_field_variation=FieldVariations.search,
-                        query_bai_field_if_dots_in_name=True
-                    )
-                    if bai_fieldnames:
-                        if len(bai_fieldnames) == 1:
-                            query = {"match": {bai_fieldnames[0]: node.value}}
-                            return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
-                        else:
-                            # Not an exact BAI pattern match, but node's value looks like BAI (no spaces and dots),
-                            # e.g. `S.Mele`. In this case generate a partial match query.
-                            return self.visit_partial_match_value(node, bai_fieldnames)
+            }
+        else:
+            if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
+                bai_fieldnames = self._generate_fieldnames_if_bai_query(
+                    node.value,
+                    bai_field_variation=FieldVariations.search,
+                    query_bai_field_if_dots_in_name=True
+                )
+                if bai_fieldnames:
+                    if len(bai_fieldnames) == 1:
+                        query = {"match": {bai_fieldnames[0]: node.value}}
+                        return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
+                    else:
+                        # Not an exact BAI pattern match, but node's value looks like BAI (no spaces and dots),
+                        # e.g. `S.Mele`. In this case generate a partial match query.
+                        return self.visit_partial_match_value(node, bai_fieldnames)
 
-                    return self._generate_author_query(node.value)
+                return self._generate_author_query(node.value)
 
-                elif self.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
-                    return self._generate_exact_author_query(node.value)
+            elif self.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
+                return self._generate_exact_author_query(node.value)
 
-                elif self.KEYWORD_TO_ES_FIELDNAME['irn'] == fieldnames:
-                    return {'term': {fieldnames: ''.join(('SPIRES-', node.value))}}
+            elif self.KEYWORD_TO_ES_FIELDNAME['irn'] == fieldnames:
+                return {'term': {fieldnames: ''.join(('SPIRES-', node.value))}}
 
-                elif self.KEYWORD_TO_ES_FIELDNAME['title'] == fieldnames:
-                    return self._generate_title_queries(node.value)
+            elif self.KEYWORD_TO_ES_FIELDNAME['title'] == fieldnames:
+                return self._generate_title_queries(node.value)
 
-                elif self.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
-                    return self._generate_type_code_query(node.value)
+            elif self.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
+                return self._generate_type_code_query(node.value)
 
-                elif self.KEYWORD_TO_ES_FIELDNAME['affiliation'] == fieldnames:
-                    query = generate_match_query(
-                        self.KEYWORD_TO_ES_FIELDNAME['affiliation'],
-                        node.value,
-                        with_operator_and=True
-                    )
-                    return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
+            elif self.KEYWORD_TO_ES_FIELDNAME['affiliation'] == fieldnames:
+                query = generate_match_query(
+                    self.KEYWORD_TO_ES_FIELDNAME['affiliation'],
+                    node.value,
+                    with_operator_and=True
+                )
+                return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
 
-                elif fieldnames not in self.KEYWORD_TO_ES_FIELDNAME.values():
-                    colon_value = ':'.join([fieldnames, node.value])
-                    given_field_query = generate_match_query(fieldnames, node.value, with_operator_and=True)
-                    texkey_query = ''
-                    if self.TEXKEY_REGEX.match(colon_value):
-                        texkey_query = self._generate_term_query('texkeys.raw', colon_value, boost=2.0)
-                    _all_field_query = generate_match_query('_all', colon_value, with_operator_and=True)
-                    query = wrap_queries_in_bool_clauses_if_more_than_one(
-                        [given_field_query, texkey_query, _all_field_query], use_must_clause=False)
-                    return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
+            elif fieldnames not in self.KEYWORD_TO_ES_FIELDNAME.values():
+                colon_value = ':'.join([fieldnames, node.value])
+                given_field_query = generate_match_query(fieldnames, node.value, with_operator_and=True)
+                texkey_query = ''
+                if self.TEXKEY_REGEX.match(colon_value):
+                    texkey_query = self._generate_term_query('texkeys.raw', colon_value, boost=2.0)
+                _all_field_query = generate_match_query('_all', colon_value, with_operator_and=True)
+                query = wrap_queries_in_bool_clauses_if_more_than_one(
+                    [given_field_query, texkey_query, _all_field_query], use_must_clause=False)
+                return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
-                return generate_match_query(fieldnames, node.value, with_operator_and=True)
+            return generate_match_query(fieldnames, node.value, with_operator_and=True)
 
     def visit_exact_match_value(self, node, fieldnames=None):
         """Generates a term query (exact search in ElasticSearch)."""
