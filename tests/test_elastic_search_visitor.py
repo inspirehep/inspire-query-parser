@@ -100,6 +100,23 @@ def test_elastic_search_visitor_find_author_exact_value_ellis():
                 }
             }
         }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_find_first_author_exact_value_ellis():
+    query_str = 'Find fa "ellis"'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "first_author",
+                "query": {
+                    "term": {
+                        "first_author.full_name": "ellis"
+                    }
+                }
+            }
+        }
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
@@ -831,6 +848,60 @@ def test_elastic_search_visitor_wildcard_support():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_first_author_wildcard_support():
+    query_str = 'fa *alge | fa \'alge*\' | fa "o*aigh"'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {
+                        "nested": {
+                            "path": "first_author",
+                            "query": {
+                                "query_string": {
+                                    "analyze_wildcard": True,
+                                    "fields": ["first_author.full_name"],
+                                    "query": "*alge",
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "bool": {
+                            "should": [
+                                {
+                                    "nested": {
+                                        "path": "first_author",
+                                        "query": {
+                                            "query_string": {
+                                                "analyze_wildcard": True,
+                                                "fields": ["first_author.full_name"],
+                                                "query": "*alge*",
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "nested": {
+                                        "path": "first_author",
+                                        "query": {
+                                            "term": {
+                                                "first_author.full_name": "o*aigh"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_empty_query():
     query_str = '   '
     expected_es_query = {"match_all": {}}
@@ -1468,6 +1539,24 @@ def test_elastic_search_visitor_handles_bai_simple_value():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_handles_first_author_bai_simple_value():
+    query_str = 'fa A.Einstein.1'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "first_author",
+                "query": {
+                    "match": {
+                        "first_author.ids.value.search": "A.Einstein.1"
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_handles_bai_exact_value():
     query_str = 'a "A.Einstein.1"'
     expected_es_query = \
@@ -1477,6 +1566,24 @@ def test_elastic_search_visitor_handles_bai_exact_value():
                 "query": {
                     "term": {
                         "authors.ids.value.raw": "A.Einstein.1"
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_handles_first_author_bai_exact_value():
+    query_str = 'fa "A.Einstein.1"'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "first_author",
+                "query": {
+                    "term": {
+                        "first_author.ids.value.raw": "A.Einstein.1"
                     }
                 }
             }
@@ -1581,11 +1688,38 @@ def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_author_n
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_first_author_name_contains_dot_and_no_spaces():
+    query_str = 'fa S.Mele'
+    expected_es_query = \
+        {
+            "nested": {
+                "path": "first_author",
+                "query": {
+                    "query_string": {
+                        "analyze_wildcard": True,
+                        "fields": ["first_author.ids.value.search", "first_author.full_name"],
+                        "query": "*S.Mele*"
+                    }
+                }
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_comma_and_dot():
     query_str = 'a gava,e.'
 
     generated_es_query = _parse_query(query_str)
     assert ElasticSearchVisitor.AUTHORS_BAI_FIELD not in str(generated_es_query)
+
+
+def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_comma_and_dot():
+    query_str = 'fa gava,e.'
+
+    generated_es_query = _parse_query(query_str)
+    assert ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['first_author_bai'] not in str(generated_es_query)
 
 
 def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_trailing_dot():
@@ -1595,6 +1729,13 @@ def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contain
     assert ElasticSearchVisitor.AUTHORS_BAI_FIELD not in str(generated_es_query)
 
 
+def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_trailing_dot():
+    query_str = 'fa mele.'
+
+    generated_es_query = _parse_query(query_str)
+    assert ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['first_author_bai'] not in str(generated_es_query)
+
+
 def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_prefix_dot():
     query_str = 'a .mele'
 
@@ -1602,9 +1743,24 @@ def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contain
     assert ElasticSearchVisitor.AUTHORS_BAI_FIELD not in str(generated_es_query)
 
 
+def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_prefix_dot():
+    query_str = 'fa .mele'
+
+    generated_es_query = _parse_query(query_str)
+    assert ElasticSearchVisitor.KEYWORD_TO_ES_FIELDNAME['first_author_bai'] not in str(generated_es_query)
+
+
 def test_elastic_search_visitor_does_not_query_bai_field_if_name_contains_dot_and_spaces():
     query_str = 'a S. Mele'
     bai_field = "authors.ids.value.search"
+
+    generated_es_query = _parse_query(query_str)
+    assert bai_field not in str(generated_es_query)
+
+
+def test_elastic_search_visitor_does_not_query_bai_field_if_fa_name_contains_dot_and_spaces():
+    query_str = 'fa S. Mele'
+    bai_field = "first_author.ids.value.search"
 
     generated_es_query = _parse_query(query_str)
     assert bai_field not in str(generated_es_query)
@@ -1652,6 +1808,70 @@ def test_hack_to_split_initial_and_firstname_without_a_space():
                                                 {
                                                     "match": {
                                                         "authors.first_name": {
+                                                            "analyzer": "names_initials_analyzer",
+                                                            "operator": "AND",
+                                                            "query": "John",
+                                                        }
+                                                    }
+                                                },
+                                            ]
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
+def test_split_fa_initial_and_firstname_without_a_space():
+    query_str = "fa D.John Smith"
+    expected_query = {
+        "nested": {
+            "path": "first_author",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "first_author.last_name": {
+                                    "operator": "AND",
+                                    "query": "Smith",
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "match": {
+                                            "first_author.first_name.initials": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "D",
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "bool": {
+                                            "should": [
+                                                {
+                                                    "match_phrase_prefix": {
+                                                        "first_author.first_name": {
+                                                            "analyzer": "names_analyzer",
+                                                            "query": "John",
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "first_author.first_name": {
                                                             "analyzer": "names_initials_analyzer",
                                                             "operator": "AND",
                                                             "query": "John",
@@ -1724,6 +1944,56 @@ def test_hack_to_split_two_initials_without_a_space():
     assert ordered(generated_es_query) == ordered(expected_query)
 
 
+def test_split_fa_two_initials_without_a_space():
+    query_str = "fa D.K. Smith"
+    expected_query = {
+        "nested": {
+            "path": "first_author",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "first_author.last_name": {
+                                    "operator": "AND",
+                                    "query": "Smith",
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "match": {
+                                            "first_author.first_name.initials": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "D",
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "first_author.first_name.initials": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "K",
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
 def test_elastic_search_visitor_author_lastname_initial():
     query_str = "a ellis, j"
     expected_query = {
@@ -1743,6 +2013,41 @@ def test_elastic_search_visitor_author_lastname_initial():
                         {
                             "match": {
                                 "authors.first_name.initials": {
+                                    "analyzer": "names_initials_analyzer",
+                                    "operator": "AND",
+                                    "query": "J",
+                                }
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
+def test_elastic_search_visitor_first_author_lastname_initial():
+    query_str = "fa ellis, j"
+    expected_query = {
+        "nested": {
+            "path": "first_author",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "first_author.last_name": {
+                                    "operator": "AND",
+                                    "query": "Ellis",
+                                }
+                            }
+                        },
+                        {
+                            "match": {
+                                "first_author.first_name.initials": {
                                     "analyzer": "names_initials_analyzer",
                                     "operator": "AND",
                                     "query": "J",
@@ -1808,6 +2113,55 @@ def test_elastic_search_visitor_author_lastname_firstname():
     assert ordered(generated_es_query) == ordered(expected_query)
 
 
+def test_elastic_search_visitor_first_author_lastname_firstname():
+    query_str = "fa ellis, john"
+
+    expected_query = {
+        "nested": {
+            "path": "first_author",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "first_author.last_name": {
+                                    "operator": "AND",
+                                    "query": "Ellis",
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match_phrase_prefix": {
+                                            "first_author.first_name": {
+                                                "analyzer": "names_analyzer",
+                                                "query": "John",
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "first_author.first_name": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "John",
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
 def test_elastic_search_visitor_author_lastname_firstname_without_comma():
     query_str = "a john ellis"
 
@@ -1839,6 +2193,55 @@ def test_elastic_search_visitor_author_lastname_firstname_without_comma():
                                     {
                                         "match": {
                                             "authors.first_name": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "John",
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
+def test_elastic_search_visitor_first_author_lastname_firstname_without_comma():
+    query_str = "fa john ellis"
+
+    expected_query = {
+        "nested": {
+            "path": "first_author",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "first_author.last_name": {
+                                    "operator": "AND",
+                                    "query": "Ellis",
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match_phrase_prefix": {
+                                            "first_author.first_name": {
+                                                "analyzer": "names_analyzer",
+                                                "query": "John",
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "first_author.first_name": {
                                                 "analyzer": "names_initials_analyzer",
                                                 "operator": "AND",
                                                 "query": "John",
@@ -1922,6 +2325,71 @@ def test_elastic_search_visitor_author_lastname_firstname_without_commas_and_ini
     assert ordered(generated_es_query) == ordered(expected_query)
 
 
+def test_elastic_search_visitor_first_author_lastname_firstname_without_commas_and_initials():
+    query_str = "fa john k. ellis"
+
+    expected_query = {
+        "nested": {
+            "path": "first_author",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "first_author.last_name": {
+                                    "operator": "AND",
+                                    "query": "Ellis",
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "bool": {
+                                            "should": [
+                                                {
+                                                    "match_phrase_prefix": {
+                                                        "first_author.first_name": {
+                                                            "analyzer": "names_analyzer",
+                                                            "query": "John",
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "first_author.first_name": {
+                                                            "analyzer": "names_initials_analyzer",
+                                                            "operator": "AND",
+                                                            "query": "John",
+                                                        }
+                                                    }
+                                                },
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "first_author.first_name.initials": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "K.",
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
 def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initials():
     query_str = "a ellis, john k."
 
@@ -1968,6 +2436,70 @@ def test_elastic_search_visitor_author_lastname_firstname_with_commas_and_initia
                                     {
                                         "match": {
                                             "authors.first_name.initials": {
+                                                "analyzer": "names_initials_analyzer",
+                                                "operator": "AND",
+                                                "query": "K.",
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_query)
+
+
+def test_elastic_search_visitor_first_author_lastname_firstname_with_commas_and_initials():
+    query_str = "fa ellis, john k."
+
+    expected_query = {
+        "nested": {
+            "path": "first_author",
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "first_author.last_name": {
+                                    "operator": "AND",
+                                    "query": "Ellis",
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "bool": {
+                                            "should": [
+                                                {
+                                                    "match_phrase_prefix": {
+                                                        "first_author.first_name": {
+                                                            "analyzer": "names_analyzer",
+                                                            "query": "John",
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "first_author.first_name": {
+                                                            "analyzer": "names_initials_analyzer",
+                                                            "operator": "AND",
+                                                            "query": "John",
+                                                        }
+                                                    }
+                                                },
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "first_author.first_name.initials": {
                                                 "analyzer": "names_initials_analyzer",
                                                 "operator": "AND",
                                                 "query": "K.",

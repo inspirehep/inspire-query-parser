@@ -135,9 +135,9 @@ INSPIRE_PARSER_KEYWORDS = {
     'field-code': 'field-code',
 
     # First-Author
-    'first-author': 'first-author',
-    'firstauthor': 'first-author',
-    'fa': 'first-author',
+    'first-author': 'first_author',
+    'firstauthor': 'first_author',
+    'fa': 'first_author',
 
     # Fulltext
     'fulltext': 'fulltext',
