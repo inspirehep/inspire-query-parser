@@ -90,9 +90,15 @@ class ElasticSearchVisitor(Visitor):
     # TODO Inspire mappings aren't in their own repository. Currently using the `records-hep` mapping.
     KEYWORD_TO_ES_FIELDNAME = {
         'author': 'authors.full_name',
+        'first_author': 'first_author.full_name',
         'author_first_name': 'authors.first_name',
         'author_last_name': 'authors.last_name',
+        'author_bai': 'authors.ids.value',
         'author_first_name_initials': 'authors.first_name.initials',
+        'first_author_first_name': 'first_author.first_name',
+        'first_author_last_name': 'first_author.last_name',
+        'first_author_first_name_initials': 'first_author.first_name.initials',
+        'first_author_bai': 'first_author.ids.value',
         'author-count': 'author_count',
         'citedby': 'citedby',
         'collaboration': 'collaborations.value',
@@ -156,21 +162,42 @@ class ElasticSearchVisitor(Visitor):
     BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
     TEXKEY_REGEX = re.compile(r'^\w+:\d{4}\w{2,3}', re.UNICODE)
     AUTHORS_NESTED_QUERY_PATH = 'authors'
+    FIRST_AUTHOR_NESTED_QUERY_PATH = 'first_author'
     DATE_NESTED_FIELDS = [
         'publication_info.year',
     ]
     DATE_NESTED_QUERY_PATH = 'publication_info'
     JOURNAL_NESTED_QUERY_PATH = 'publication_info'
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
-    NESTED_FIELDS = ['authors', 'publication_info']
+    NESTED_FIELDS = ['authors', 'publication_info', 'first_author']
     RECORD_RELATION_FIELD = 'related_records.relation'
 
     # ################
 
     # #### Helpers ####
-    def _generate_fieldnames_if_bai_query(self, node_value, bai_field_variation, query_bai_field_if_dots_in_name):
+    def _get_author_or_first_author_keyword_from_fieldnames(self, fieldnames=None):
+        """Returns author or first_author keywords if their fields are part of the fieldnames. Defaults to author"""
+        return 'first_author' if fieldnames and self.KEYWORD_TO_ES_FIELDNAME['first_author'] in fieldnames else 'author'
+
+    def _generate_nested_author_query(self, query, fieldnames=None):
+        """Generates nested query with path for authors or first_author"""
+        nested_path = self.FIRST_AUTHOR_NESTED_QUERY_PATH \
+            if fieldnames and self.KEYWORD_TO_ES_FIELDNAME['first_author'] in fieldnames \
+            else self.AUTHORS_NESTED_QUERY_PATH
+        return generate_nested_query(nested_path, query)
+
+    def _are_fieldnames_author_or_first_author(self, fieldnames):
+        if isinstance(fieldnames, list):
+            return self.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames or self.KEYWORD_TO_ES_FIELDNAME[
+                'first_author'] in fieldnames
+        return self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames or self.KEYWORD_TO_ES_FIELDNAME[
+            'first_author'] == fieldnames
+
+    def _generate_fieldnames_if_bai_query(self, fieldnames, node_value, bai_field_variation,
+                                          query_bai_field_if_dots_in_name):
         """Generates new fieldnames in case of BAI query.
         Args:
+            fieldnames : names of the fields of the node.
             node_value (six.text_type): The node's value (i.e. author name).
             bai_field_variation (six.text_type): Which field variation to query ('search' or 'raw').
             query_bai_field_if_dots_in_name (bool): Whether to query BAI field (in addition to author's name field)
@@ -182,23 +209,23 @@ class ElasticSearchVisitor(Visitor):
         """
         if bai_field_variation not in (FieldVariations.search, FieldVariations.raw):
             raise ValueError('Non supported field variation "{}".'.format(bai_field_variation))
-
+        keyword = self._get_author_or_first_author_keyword_from_fieldnames(fieldnames)
         normalized_author_name = normalize_name(node_value).strip('.')
-
-        if self.KEYWORD_TO_ES_FIELDNAME['author'] and \
+        bai_fieldname = self.KEYWORD_TO_ES_FIELDNAME['{}_bai'.format(keyword)]
+        if self.KEYWORD_TO_ES_FIELDNAME[keyword] and \
                 self.BAI_REGEX.match(node_value):
-            return [self.AUTHORS_BAI_FIELD + '.' + bai_field_variation]
+            return [bai_fieldname + '.' + bai_field_variation]
 
         elif not whitespace.search(normalized_author_name) and \
                 query_bai_field_if_dots_in_name and \
-                self.KEYWORD_TO_ES_FIELDNAME['author'] and \
+                self.KEYWORD_TO_ES_FIELDNAME[keyword] and \
                 '.' in normalized_author_name:
             # Case of partial BAI, e.g. ``J.Smith``.
-            return [self.AUTHORS_BAI_FIELD + '.' + bai_field_variation] + \
-                   force_list(self.KEYWORD_TO_ES_FIELDNAME['author'])
+            return [bai_fieldname + '.' + bai_field_variation] + \
+                   force_list(self.KEYWORD_TO_ES_FIELDNAME[keyword])
         return None
 
-    def _generate_author_query(self, author_name):
+    def _generate_author_query(self, fieldnames, author_name):
         """Generates a query handling specifically authors.
         Notes:
             There are three main cases:
@@ -213,6 +240,7 @@ class ElasticSearchVisitor(Visitor):
             Please note, cases such as ``J.D.`` have been properly handled by the tokenizer.
         """
         parsed_name = ParsedName(author_name)
+        keyword = self._get_author_or_first_author_keyword_from_fieldnames(fieldnames)
 
         def _match_query_with_names_initials_analyzer_with_and_operator(field, value):
             return {
@@ -249,12 +277,12 @@ class ElasticSearchVisitor(Visitor):
             # ParsedName returns first name if there is only one name i.e. `Smith`
             # in our case we consider it as a lastname
             last_name = parsed_name.first
-            query = _match_query_with_and_operator("author_last_name", last_name)
-            return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
+            query = _match_query_with_and_operator('{}_last_name'.format(keyword), last_name)
+            return self._generate_nested_author_query(query, fieldnames)
 
         bool_query_build = []
         bool_query_build.append(
-            _match_query_with_and_operator("author_last_name", parsed_name.last)
+            _match_query_with_and_operator('{}_last_name'.format(keyword), parsed_name.last)
         )
 
         should_query = []
@@ -263,12 +291,13 @@ class ElasticSearchVisitor(Visitor):
             name_query = []
             if is_initial_of_a_name(name):
                 name_query.append(
-                    _match_query_with_names_initials_analyzer_with_and_operator("author_first_name_initials", name)
+                    _match_query_with_names_initials_analyzer_with_and_operator(
+                        '{}_first_name_initials'.format(keyword), name)
                 )
             else:
                 name_query.extend([
-                    _match_phrase_prefix_query("author_first_name", name),
-                    _match_query_with_names_initials_analyzer_with_and_operator("author_first_name", name)
+                    _match_phrase_prefix_query('{}_first_name'.format(keyword), name),
+                    _match_query_with_names_initials_analyzer_with_and_operator('{}_first_name'.format(keyword), name)
                 ])
             should_query.append(
                 wrap_queries_in_bool_clauses_if_more_than_one(
@@ -283,7 +312,7 @@ class ElasticSearchVisitor(Visitor):
         query = wrap_queries_in_bool_clauses_if_more_than_one(
             bool_query_build, use_must_clause=True
         )
-        return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
+        return self._generate_nested_author_query(query, fieldnames)
 
     def _generate_exact_author_query(self, author_name_or_bai):
         """Generates a term query handling authors and BAIs.
@@ -706,24 +735,43 @@ class ElasticSearchVisitor(Visitor):
     def handle_value_wildcard(self, node, fieldnames=None):
         if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
             return self._generate_date_with_wildcard_query(node.value)
-
-        bai_fieldnames = None
-        if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
+        if self._are_fieldnames_author_or_first_author(fieldnames):
             bai_fieldnames = self._generate_fieldnames_if_bai_query(
+                fieldnames,
                 node.value,
                 bai_field_variation=FieldVariations.search,
                 query_bai_field_if_dots_in_name=True
             )
+            query = self._generate_query_string_query(
+                node.value,
+                fieldnames=bai_fieldnames or fieldnames,
+                analyze_wildcard=True
+            )
+            return self._generate_nested_author_query(query, fieldnames)
 
         query = self._generate_query_string_query(
             node.value,
-            fieldnames=bai_fieldnames or fieldnames,
+            fieldnames=fieldnames,
             analyze_wildcard=True
         )
-
-        if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
-            return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
         return query
+
+    def handle_author_query(self, node, fieldnames=None):
+        bai_fieldnames = self._generate_fieldnames_if_bai_query(
+            fieldnames,
+            node.value,
+            bai_field_variation=FieldVariations.search,
+            query_bai_field_if_dots_in_name=True
+        )
+        if bai_fieldnames:
+            if len(bai_fieldnames) == 1:
+                query = {"match": {bai_fieldnames[0]: node.value}}
+                return self._generate_nested_author_query(query, fieldnames)
+            # Not an exact BAI pattern match, but node's value looks like BAI (no spaces and dots),
+            # e.g. `S.Mele`. In this case generate a partial match query.
+            return self.visit_partial_match_value(node, bai_fieldnames)
+
+        return self._generate_author_query(fieldnames, node.value)
 
     def visit_value(self, node, fieldnames=None):
         if not fieldnames:
@@ -748,22 +796,8 @@ class ElasticSearchVisitor(Visitor):
                 }
             }
         else:
-            if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames:
-                bai_fieldnames = self._generate_fieldnames_if_bai_query(
-                    node.value,
-                    bai_field_variation=FieldVariations.search,
-                    query_bai_field_if_dots_in_name=True
-                )
-                if bai_fieldnames:
-                    if len(bai_fieldnames) == 1:
-                        query = {"match": {bai_fieldnames[0]: node.value}}
-                        return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
-                    else:
-                        # Not an exact BAI pattern match, but node's value looks like BAI (no spaces and dots),
-                        # e.g. `S.Mele`. In this case generate a partial match query.
-                        return self.visit_partial_match_value(node, bai_fieldnames)
-
-                return self._generate_author_query(node.value)
+            if self._are_fieldnames_author_or_first_author(fieldnames):
+                return self.handle_author_query(node, fieldnames=fieldnames)
 
             elif self.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
                 return self._generate_exact_author_query(node.value)
@@ -815,6 +849,7 @@ class ElasticSearchVisitor(Visitor):
             return self._generate_journal_nested_queries(node.value)
 
         bai_fieldnames = self._generate_fieldnames_if_bai_query(
+            fieldnames,
             node.value,
             bai_field_variation=FieldVariations.raw,
             query_bai_field_if_dots_in_name=False
@@ -831,9 +866,9 @@ class ElasticSearchVisitor(Visitor):
                     if field in self.DATE_NESTED_FIELDS
                     else term_query
                 )
-        elif self.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames:
+        elif self._are_fieldnames_author_or_first_author(fieldnames):
             exact_match_queries = [
-                generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, {'term': {field: node.value}})
+                self._generate_nested_author_query({'term': {field: node.value}}, fieldnames)
                 for field in (bai_fieldnames or fieldnames)
             ]
         else:
@@ -869,6 +904,7 @@ class ElasticSearchVisitor(Visitor):
             ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
 
         bai_fieldnames = self._generate_fieldnames_if_bai_query(
+            fieldnames,
             node.value,
             bai_field_variation=FieldVariations.search,
             query_bai_field_if_dots_in_name=True
@@ -877,9 +913,8 @@ class ElasticSearchVisitor(Visitor):
         query = self._generate_query_string_query(value,
                                                   fieldnames=bai_fieldnames or fieldnames,
                                                   analyze_wildcard=True)
-        if (bai_fieldnames and self.KEYWORD_TO_ES_FIELDNAME['author'] in bai_fieldnames) \
-                or (fieldnames and self.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames):
-            return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
+        if self._are_fieldnames_author_or_first_author(bai_fieldnames) or self._are_fieldnames_author_or_first_author(fieldnames):
+            return self._generate_nested_author_query(query, fieldnames)
 
         return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
