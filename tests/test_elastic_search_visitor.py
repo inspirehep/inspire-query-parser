@@ -3223,3 +3223,46 @@ def test_regression_query_with_multiple_dots():
 
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_affiliation_id():
+    query_str = 'affid 902666'
+    expected_es_query = \
+        {
+            "bool": {
+                "should": [
+                    {
+                        "nested": {
+                            "path": "authors",
+                            "query": {
+                                "match": {
+                                    "authors.affiliations.record.$ref": "902666"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "nested": {
+                            "path": "supervisors",
+                            "query": {
+                                "match": {
+                                    "supervisors.affiliations.record.$ref": "902666"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "match": {
+                            "thesis_info.institutions.record.$ref": "902666"
+                        }
+                    },
+                    {
+                        "match": {
+                            "record_affiliations.record.$ref": "902666"
+                        }
+                    }
+                ]
+            }
+        }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query

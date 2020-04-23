@@ -44,6 +44,10 @@ INSPIRE_PARSER_KEYWORDS = {
     'institution': 'affiliation',
     'inst': 'affiliation',
 
+    # Affiliation Id
+    'affid': 'affiliation-id',
+    'affiliation-id': 'affiliation-id',
+
     # Author
     'author': 'author',
     'au': 'author',
