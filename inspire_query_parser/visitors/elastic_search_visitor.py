@@ -127,6 +127,12 @@ class ElasticSearchVisitor(Visitor):
         'type-code': 'document_type',
         'topcite': 'citation_count',
         'affiliation': 'authors.affiliations.value',
+        'affiliation-id': [
+            'authors.affiliations.record.$ref',
+            'supervisors.affiliations.record.$ref',
+            'thesis_info.institutions.record.$ref',
+            'record_affiliations.record.$ref',
+        ],
     }
     """Mapping from keywords to ElasticSearch fields.
     Note:
@@ -169,7 +175,7 @@ class ElasticSearchVisitor(Visitor):
     DATE_NESTED_QUERY_PATH = 'publication_info'
     JOURNAL_NESTED_QUERY_PATH = 'publication_info'
     TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
-    NESTED_FIELDS = ['authors', 'publication_info', 'first_author']
+    NESTED_FIELDS = ['authors', 'publication_info', 'first_author', 'supervisors']
     RECORD_RELATION_FIELD = 'related_records.relation'
 
     # ################
@@ -788,6 +794,18 @@ class ElasticSearchVisitor(Visitor):
 
             if self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
                 return self._generate_journal_nested_queries(node.value)
+
+            if self.KEYWORD_TO_ES_FIELDNAME['affiliation-id'] == fieldnames:
+                match_queries = [
+                    wrap_query_in_nested_if_field_is_nested(
+                        generate_match_query(field, node.value, with_operator_and=False),
+                        field,
+                        self.NESTED_FIELDS,
+                    )
+                    for field in fieldnames
+                ]
+                return wrap_queries_in_bool_clauses_if_more_than_one(
+                                        match_queries, use_must_clause=False)
 
             return {
                 'multi_match': {
