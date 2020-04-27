@@ -840,12 +840,11 @@ class ElasticSearchVisitor(Visitor):
             elif fieldnames not in self.KEYWORD_TO_ES_FIELDNAME.values():
                 colon_value = ':'.join([fieldnames, node.value])
                 given_field_query = generate_match_query(fieldnames, node.value, with_operator_and=True)
-                texkey_query = ''
                 if self.TEXKEY_REGEX.match(colon_value):
-                    texkey_query = self._generate_term_query('texkeys.raw', colon_value, boost=2.0)
+                    return generate_match_query('texkeys.raw', colon_value, with_operator_and=False)
                 _all_field_query = generate_match_query('_all', colon_value, with_operator_and=True)
                 query = wrap_queries_in_bool_clauses_if_more_than_one(
-                    [given_field_query, texkey_query, _all_field_query], use_must_clause=False)
+                    [given_field_query, _all_field_query], use_must_clause=False)
                 return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
             return generate_match_query(fieldnames, node.value, with_operator_and=True)

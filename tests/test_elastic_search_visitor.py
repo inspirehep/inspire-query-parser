@@ -531,34 +531,9 @@ def test_elastic_search_visitor_unknown_keyword_simple_value():
 def test_elastic_search_visitor_unknown_keyword_simple_value_maybe_texkey():
     query_str = 'smith:2009xj'
     expected_es_query = {
-        "bool": {
-            "should": [
-                {
-                    "match": {
-                        "smith": {
-                            "query": "2009xj",
-                            "operator": "and",
-                        }
-                    }
-                },
-                {
-                    "term": {
-                        "texkeys.raw": {
-                            "value": "smith:2009xj",
-                            "boost": 2.0,
-                        }
-                    }
-                },
-                {
-                    "match": {
-                        "_all": {
-                            "query": "smith:2009xj",
-                            "operator": "and",
-                        }
-                    }
-                }
-            ]
-        }
+       "match":{
+          "texkeys.raw":"smith:2009xj"
+       }
     }
 
     generated_es_query = _parse_query(query_str)
