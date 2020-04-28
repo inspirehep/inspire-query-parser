@@ -2811,6 +2811,19 @@ def test_nested_refersto_recid_nested_keyword_query():
     assert generated_es_query == expected_es_query
 
 
+def test_nested_refersto_author_nested_keyword_query():
+    query_str = 'refersto a Jean.L.Picard.1'
+    expected_es_query = \
+        {
+            'match': {
+                'referenced_authors_bais': 'Jean.L.Picard.1'
+            }
+        }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_affiliation_query():
     expected_es_query = \
         {
