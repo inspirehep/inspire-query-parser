@@ -702,9 +702,9 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_nested_keyword_op(self, node):  # TODO Cannot be completed as of yet.
         # FIXME: quick and dirty implementation of refersto:recid:<recid>
-        if node.left.value == 'refersto':
-            right = node.right
-            if hasattr(right, 'left') and hasattr(right, 'right') and right.left.value == 'control_number':
+        right = node.right
+        if node.left.value == 'refersto' and hasattr(right, 'left') and hasattr(right, 'right'):
+            if right.left.value == 'control_number':
                 recid = right.right.value
                 citing_records_query = generate_match_query(
                     self.KEYWORD_TO_ES_FIELDNAME['refersto'],
@@ -732,7 +732,8 @@ class ElasticSearchVisitor(Visitor):
                         'must_not': [superseded_records_query, self_citation]
                     }
                 }
-        logger.warning('Nested keyword queries aren\'t implemented yet, except refersto:recid:<recid>')
+            if right.left.value == 'author':
+                return generate_match_query("referenced_authors_bais", right.right.value, with_operator_and=False)
 
     def visit_keyword(self, node):
         # If no keyword is found, return the original node value (case of an unknown keyword).
