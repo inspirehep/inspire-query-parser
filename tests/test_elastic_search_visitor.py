@@ -2142,44 +2142,52 @@ def test_elastic_search_visitor_author_lastname_firstname_without_comma():
 
     expected_query = {
         "nested": {
-            "path": "authors",
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "match": {
-                                "authors.last_name": {
-                                    "operator": "AND",
-                                    "query": "Ellis",
-                                }
+          "path": "authors",
+          "query": {
+             "bool": {
+                "must": [
+                   {
+                      "match": {
+                         "authors.last_name": {
+                            "query": "Ellis",
+                            "operator": "AND"
+                         }
+                      }
+                   },
+                   {
+                      "bool": {
+                         "should": [
+                            {
+                               "match_phrase_prefix": {
+                                  "authors.first_name": {
+                                     "query": "John",
+                                     "analyzer": "names_analyzer"
+                                  }
+                               }
+                            },
+                            {
+                               "match": {
+                                  "authors.first_name" : {
+                                     "query": "John",
+                                     "operator": "AND",
+                                     "analyzer": "names_initials_analyzer"
+                                  }
+                               }
+                            },
+                            {
+                               "match": {
+                                  "authors.full_name": {
+                                     "query": "john ellis",
+                                     "operator": "AND"
+                                  }
+                               }
                             }
-                        },
-                        {
-                            "bool": {
-                                "should": [
-                                    {
-                                        "match_phrase_prefix": {
-                                            "authors.first_name": {
-                                                "analyzer": "names_analyzer",
-                                                "query": "John",
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "match": {
-                                            "authors.first_name": {
-                                                "analyzer": "names_initials_analyzer",
-                                                "operator": "AND",
-                                                "query": "John",
-                                            }
-                                        }
-                                    },
-                                ]
-                            }
-                        },
-                    ]
-                }
-            },
+                         ]
+                      }
+                   }
+                ]
+             }
+          }
         }
     }
     generated_es_query = _parse_query(query_str)
@@ -2190,47 +2198,56 @@ def test_elastic_search_visitor_first_author_lastname_firstname_without_comma():
     query_str = "fa john ellis"
 
     expected_query = {
-        "nested": {
-            "path": "first_author",
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "match": {
-                                "first_author.last_name": {
-                                    "operator": "AND",
-                                    "query": "Ellis",
-                                }
+       "nested": {
+          "path": "first_author",
+          "query": {
+             "bool": {
+                "must": [
+                   {
+                      "match": {
+                         "first_author.last_name": {
+                            "query": "Ellis",
+                            "operator": "AND"
+                         }
+                      }
+                   },
+                   {
+                      "bool": {
+                         "should": [
+                            {
+                               "match_phrase_prefix": {
+                                  "first_author.first_name": {
+                                     "query": "John",
+                                     "analyzer": "names_analyzer"
+                                  }
+                               }
+                            },
+                            {
+                               "match": {
+                                  "first_author.first_name": {
+                                     "query": "John",
+                                     "operator": "AND",
+                                     "analyzer": "names_initials_analyzer"
+                                  }
+                               }
+                            },
+                            {
+                               "match": {
+                                  "authors.full_name": {
+                                     "query": "john ellis",
+                                     "operator": "AND"
+                                  }
+                               }
                             }
-                        },
-                        {
-                            "bool": {
-                                "should": [
-                                    {
-                                        "match_phrase_prefix": {
-                                            "first_author.first_name": {
-                                                "analyzer": "names_analyzer",
-                                                "query": "John",
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "match": {
-                                            "first_author.first_name": {
-                                                "analyzer": "names_initials_analyzer",
-                                                "operator": "AND",
-                                                "query": "John",
-                                            }
-                                        }
-                                    },
-                                ]
-                            }
-                        },
-                    ]
-                }
-            },
-        }
+                         ]
+                      }
+                   }
+                ]
+             }
+          }
+       }
     }
+
     generated_es_query = _parse_query(query_str)
     assert ordered(generated_es_query) == ordered(expected_query)
 
@@ -3252,5 +3269,62 @@ def test_elastic_search_visitor_affiliation_id():
                 ]
             }
         }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_query_author_with_composite_last_name():
+    query_str = "a de Rham"
+    expected_es_query = {
+       "nested": {
+          "path": "authors",
+          "query": {
+             "bool": {
+                "must": [
+                   {
+                      "match": {
+                         "authors.last_name": {
+                            "query": "Rham",
+                            "operator": "AND"
+                         }
+                      }
+                   },
+                   {
+                      "bool": {
+                         "should": [
+                            {
+                               "match_phrase_prefix": {
+                                  "authors.first_name": {
+                                     "query": "de",
+                                     "analyzer": "names_analyzer"
+                                  }
+                               }
+                            },
+                            {
+                               "match": {
+                                  "authors.first_name": {
+                                     "query": "de",
+                                     "operator": "AND",
+                                     "analyzer": "names_initials_analyzer"
+                                  }
+                               }
+                            },
+                            {
+                               "match": {
+                                  "authors.full_name": {
+                                     "query": "de Rham",
+                                     "operator": "AND"
+                                  }
+                               }
+                            }
+                         ]
+                      }
+                   }
+                ]
+             }
+          }
+       }
+    }
+
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query

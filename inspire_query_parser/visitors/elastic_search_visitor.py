@@ -305,6 +305,10 @@ class ElasticSearchVisitor(Visitor):
                     _match_phrase_prefix_query('{}_first_name'.format(keyword), name),
                     _match_query_with_names_initials_analyzer_with_and_operator('{}_first_name'.format(keyword), name)
                 ])
+            if '.' not in parsed_name.first and ',' not in author_name:
+                name_query.append(
+                    _match_query_with_and_operator('author', author_name)
+                )
             should_query.append(
                 wrap_queries_in_bool_clauses_if_more_than_one(
                     name_query, use_must_clause=False)
