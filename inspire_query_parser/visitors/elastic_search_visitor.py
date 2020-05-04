@@ -166,7 +166,7 @@ class ElasticSearchVisitor(Visitor):
     AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
     AUTHORS_BAI_FIELD = 'authors.ids.value'
     BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
-    TEXKEY_REGEX = re.compile(r'^\w+:\d{4}\w{2,3}', re.UNICODE)
+    TEXKEY_REGEX = re.compile(r'^[a-zA-Z\.-]+:\d{4}[a-z]{2,3}$', re.UNICODE)
     AUTHORS_NESTED_QUERY_PATH = 'authors'
     FIRST_AUTHOR_NESTED_QUERY_PATH = 'first_author'
     DATE_NESTED_FIELDS = [
