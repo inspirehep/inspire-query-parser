@@ -3328,3 +3328,32 @@ def test_query_author_with_composite_last_name():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_check_texkey_doesnt_match_recid():
+    query_str = 'recid:1793025'
+    generated_es_query = _parse_query(query_str)
+    expected_es_query = {
+        "bool": {
+          "should": [
+             {
+                "match": {
+                   "control_number": {
+                      "query": "1793025",
+                      "operator": "and"
+                   }
+                }
+             },
+             {
+                "match": {
+                   "_all": {
+                      "query": "control_number:1793025",
+                      "operator": "and"
+                   }
+                }
+             }
+          ]
+        }
+    }
+
+    assert generated_es_query == expected_es_query
