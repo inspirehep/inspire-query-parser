@@ -896,7 +896,7 @@ class ElasticSearchVisitor(Visitor):
                 )
         elif self._are_fieldnames_author_or_first_author(fieldnames):
             exact_match_queries = [
-                self._generate_nested_author_query({'term': {field: node.value}}, fieldnames)
+                self._generate_nested_author_query({'match_phrase': {field: node.value}}, fieldnames)
                 for field in (bai_fieldnames or fieldnames)
             ]
         else:

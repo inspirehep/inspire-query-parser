@@ -92,7 +92,7 @@ def test_elastic_search_visitor_find_author_exact_value_ellis():
             "nested": {
                 "path": "authors",
                 "query": {
-                    "term": {
+                    "match_phrase": {
                         "authors.full_name": "ellis"
                     }
                 }
@@ -109,7 +109,7 @@ def test_elastic_search_visitor_find_first_author_exact_value_ellis():
             "nested": {
                 "path": "first_author",
                 "query": {
-                    "term": {
+                    "match_phrase": {
                         "first_author.full_name": "ellis"
                     }
                 }
@@ -768,7 +768,7 @@ def test_elastic_search_visitor_regex_value():
 
 
 def test_elastic_search_visitor_wildcard_support():
-    query_str = 'a *alge | a \'alge*\' | a "o*aigh"'
+    query_str = 'a *alge | a \'alge*\''
     expected_es_query = \
         {
             "bool": {
@@ -786,31 +786,15 @@ def test_elastic_search_visitor_wildcard_support():
                         }
                     },
                     {
-                        "bool": {
-                            "should": [
-                                {
-                                    "nested": {
-                                        "path": "authors",
-                                        "query": {
-                                            "wildcard": {
-                                                "authors.full_name": {
-                                                    "value": "*alge*"
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                {
-                                    "nested": {
-                                        "path": "authors",
-                                        "query": {
-                                            "term": {
-                                                "authors.full_name": "o*aigh"
-                                            }
-                                        }
+                        "nested": {
+                            "path": "authors",
+                            "query": {
+                                "wildcard": {
+                                    "authors.full_name": {
+                                        "value": "*alge*"
                                     }
                                 }
-                            ]
+                            }
                         }
                     }
                 ]
@@ -822,7 +806,7 @@ def test_elastic_search_visitor_wildcard_support():
 
 
 def test_elastic_search_visitor_first_author_wildcard_support():
-    query_str = 'fa *alge | fa \'alge*\' | fa "o*aigh"'
+    query_str = 'fa *alge | fa \'alge*\''
     expected_es_query = \
         {
             "bool": {
@@ -840,36 +824,21 @@ def test_elastic_search_visitor_first_author_wildcard_support():
                         }
                     },
                     {
-                        "bool": {
-                            "should": [
-                                {
-                                    "nested": {
-                                        "path": "first_author",
-                                        "query": {
-                                            "wildcard": {
-                                                "first_author.full_name": {
-                                                    "value": "*alge*"
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                {
-                                    "nested": {
-                                        "path": "first_author",
-                                        "query": {
-                                            "term": {
-                                                "first_author.full_name": "o*aigh"
-                                            }
-                                        }
+                        "nested": {
+                            "path": "first_author",
+                            "query": {
+                                "wildcard": {
+                                    "first_author.full_name": {
+                                        "value": "*alge*"
                                     }
                                 }
-                            ]
+                            }
                         }
                     }
                 ]
             }
         }
+
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
 
@@ -1536,7 +1505,7 @@ def test_elastic_search_visitor_handles_bai_exact_value():
             "nested": {
                 "path": "authors",
                 "query": {
-                    "term": {
+                    "match_phrase": {
                         "authors.ids.value.raw": "A.Einstein.1"
                     }
                 }
@@ -1554,7 +1523,7 @@ def test_elastic_search_visitor_handles_first_author_bai_exact_value():
             "nested": {
                 "path": "first_author",
                 "query": {
-                    "term": {
+                    "match_phrase": {
                         "first_author.ids.value.raw": "A.Einstein.1"
                     }
                 }
@@ -3448,5 +3417,22 @@ def test_wildcard_query_works_with_slash():
           }
        }
     }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_exact_match_query_for_names():
+    query_str = 'a "Carloni Calame"'
+    expected_es_query = {
+        "nested": {
+          "path": "authors",
+          "query": {
+            "match_phrase": {
+              "authors.full_name": "Carloni Calame"
+            }
+          }
+        }
+    }
+
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
