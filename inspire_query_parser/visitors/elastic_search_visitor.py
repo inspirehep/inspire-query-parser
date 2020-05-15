@@ -52,7 +52,8 @@ from inspire_query_parser.utils.visitor_utils import (
     wrap_queries_in_bool_clauses_if_more_than_one,
     wrap_query_in_nested_if_field_is_nested,
     is_initial_of_a_name,
-    retokenize_first_names
+    retokenize_first_names,
+    escape_query_string_special_characters
 )
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
@@ -439,7 +440,7 @@ class ElasticSearchVisitor(Visitor):
 
         query = {
             'query_string': {
-                'query': value,
+                'query': escape_query_string_special_characters(value),
                 field_specifier: field_specifier_value,
             }
         }
@@ -447,14 +448,6 @@ class ElasticSearchVisitor(Visitor):
             query['query_string']['analyze_wildcard'] = True
 
         return query
-
-    def _generate_wildcard_query(self, value, fieldnames):
-        if not fieldnames:
-            fieldnames = ['_all']
-        if not isinstance(fieldnames, list):
-            fieldnames = [fieldnames]
-        should_query = [{"wildcard": {field: {"value": value}}} for field in fieldnames]
-        return wrap_queries_in_bool_clauses_if_more_than_one(should_query, use_must_clause=False)
 
     # TODO Move it to visitor utils and write tests for it.
     def _generate_term_query(self, fieldname, value, boost=None):
@@ -761,15 +754,17 @@ class ElasticSearchVisitor(Visitor):
                 bai_field_variation=FieldVariations.search,
                 query_bai_field_if_dots_in_name=True
             )
-            query = self._generate_wildcard_query(
+            query = self._generate_query_string_query(
                 node.value,
-                fieldnames=bai_fieldnames or fieldnames
+                fieldnames=bai_fieldnames or fieldnames,
+                analyze_wildcard=True
             )
             return self._generate_nested_author_query(query, fieldnames)
 
-        query = self._generate_wildcard_query(
+        query = self._generate_query_string_query(
             node.value,
-            fieldnames=fieldnames
+            fieldnames=fieldnames,
+            analyze_wildcard=True
         )
         return query
 
@@ -938,7 +933,7 @@ class ElasticSearchVisitor(Visitor):
             query_bai_field_if_dots_in_name=True
         )
 
-        query = self._generate_wildcard_query(value, fieldnames=bai_fieldnames or fieldnames)
+        query = self._generate_query_string_query(value, fieldnames=bai_fieldnames or fieldnames, analyze_wildcard=True)
         if self._are_fieldnames_author_or_first_author(bai_fieldnames) or self._are_fieldnames_author_or_first_author(fieldnames):
             return self._generate_nested_author_query(query, fieldnames)
 
