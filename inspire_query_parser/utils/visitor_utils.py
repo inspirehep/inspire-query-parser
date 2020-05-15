@@ -43,6 +43,7 @@ from inspire_query_parser.config import (DATE_LAST_MONTH_REGEX_PATTERN,
 
 
 NAME_INITIAL_FOLLOWED_BY_FIRSTNAME_WITHOUT_SPACE = re.compile(r"(\.[a-z])", re.IGNORECASE)
+QUERY_STRING_QUERY_SPECIAL_CHARACTERS = re.compile(r'\/|\+|\-|\=|\&\&|\|\||\>|\<|\!|\(|\)|\{|\}|\[|\]|\^|\"|\~|\?|\:|\\')
 
 
 def retokenize_first_names(names):
@@ -492,3 +493,15 @@ def wrap_query_in_nested_if_field_is_nested(query, field, nested_fields):
             return generate_nested_query(element, query)
 
     return query
+
+
+def escape_query_string_special_characters(value):
+    """
+    Helper to escape reserved characters in query_string query.
+    According do the documentation failing to escape these special
+    characters correctly could lead to a syntax error which prevents
+    your query from running.
+    """
+    value = re.sub(QUERY_STRING_QUERY_SPECIAL_CHARACTERS,
+                   lambda char: "\\" + char.group(), value)
+    return value
