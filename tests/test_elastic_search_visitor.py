@@ -3409,3 +3409,23 @@ def test_exact_match_query_for_names():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_range_date_queries_are_nested():
+    query_str = 'jy:2015->2018'
+    expected_es_query = {
+       "nested": {
+          "path": "publication_info",
+          "query": {
+             "range": {
+                "publication_info.year": {
+                   "gte": "2015",
+                   "lte": "2018"
+                }
+             }
+          }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query

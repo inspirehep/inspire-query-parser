@@ -513,14 +513,14 @@ class ElasticSearchVisitor(Visitor):
                         if fieldname in self.DATE_NESTED_FIELDS
                         else range_query
                     )
+        elif 'publication_info.year' in fieldnames:
+            range_queries = [generate_nested_query(self.DATE_NESTED_QUERY_PATH,
+                                                   {'range': {fieldname: operator_value_pairs}})
+                             for fieldname in fieldnames]
+
         else:
-            range_queries = [{
-                'range': {
-                    fieldname: operator_value_pairs
-                }
-            }
-                for fieldname in fieldnames
-            ]
+            range_queries = [{'range': {fieldname: operator_value_pairs}}
+                             for fieldname in fieldnames]
 
         return wrap_queries_in_bool_clauses_if_more_than_one(range_queries, use_must_clause=False)
 
