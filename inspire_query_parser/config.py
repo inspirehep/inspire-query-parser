@@ -159,8 +159,8 @@ INSPIRE_PARSER_KEYWORDS = {
     'vol': 'volume',
 
     # Journal year
-    'journal-year': 'journal-year',
-    'jy': 'journal-year',
+    'journal-year': 'publication_info.year',
+    'jy': 'publication_info.year',
 
     # Keyword
     # keyword is Invenio style, while the rest are from SPIRES syntax.
