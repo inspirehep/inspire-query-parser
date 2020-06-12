@@ -766,7 +766,7 @@ class ElasticSearchVisitor(Visitor):
             fieldnames=fieldnames,
             analyze_wildcard=True
         )
-        return query
+        return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
     def handle_author_query(self, node, fieldnames=None):
         bai_fieldnames = self._generate_fieldnames_if_bai_query(

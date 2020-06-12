@@ -3429,3 +3429,24 @@ def test_range_date_queries_are_nested():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_queries_with_wildcard_support_nested_fields():
+    query_str = 'publication_info.cnum:*'
+    expected_es_query = {
+       "nested": {
+          "path": "publication_info",
+          "query": {
+             "query_string": {
+                "query": "*",
+                "fields": [
+                   "publication_info.cnum"
+                ],
+                "analyze_wildcard": True
+             }
+          }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
