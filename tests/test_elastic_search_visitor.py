@@ -55,8 +55,7 @@ def test_elastic_search_visitor_find_institution_partial_value_cer():
     query_str = 'affautocomplete:cer*'
     expected_es_query = {
         "query_string": {
-            "query": "cer*",
-            "analyze_wildcard": True,
+            "query": "/cer.*/",
             "fields": [
                 "affautocomplete"
             ]
@@ -780,11 +779,10 @@ def test_elastic_search_visitor_wildcard_support():
                             "path": "authors",
                             "query": {
                                 "query_string": {
-                                    "query": "*alge",
+                                    "query": "/.*alge/",
                                     "fields": [
                                         "authors.full_name"
-                                    ],
-                                    "analyze_wildcard": True
+                                    ]
                                 }
                             }
                         }
@@ -838,11 +836,10 @@ def test_elastic_search_visitor_first_author_wildcard_support():
                             "path": "first_author",
                             "query": {
                                 "query_string": {
-                                    "query": "*alge",
+                                    "query": "/.*alge/",
                                     "fields": [
                                         "first_author.full_name"
-                                    ],
-                                    "analyze_wildcard": True
+                                    ]
                                 }
                             }
                         }
@@ -1617,34 +1614,39 @@ def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_p
 def test_elastic_search_visitor_handles_wildcard_simple_and_partial_bai_like_queries():
     query_str = "a S.Mele* and 'S.Mel*'"
     expected_es_query = {
-        "bool": {
-            "must": [
-                {
-                    "nested": {
-                        "path": "authors",
-                        "query": {
-                            "query_string": {
-                                "query": "S.Mele*",
-                                "fields": ["authors.ids.value.search", "authors.full_name"],
-                                "analyze_wildcard": True,
-                            }
-                        },
-                    }
-                },
-                {
-                    "nested": {
-                        "path": "authors",
-                        "query": {
-                            "query_string": {
-                                "query": "*S.Mel*",
-                                "fields": ["authors.ids.value.search", "authors.full_name"],
-                                "analyze_wildcard": True,
-                            }
-                        },
-                    }
-                },
-            ]
-        }
+       "bool":{
+          "must":[
+             {
+                "nested":{
+                   "path":"authors",
+                   "query":{
+                      "query_string":{
+                         "query":"/S.Mele.*/",
+                         "fields":[
+                            "authors.ids.value.search",
+                            "authors.full_name"
+                         ]
+                      }
+                   }
+                }
+             },
+             {
+                "nested":{
+                   "path":"authors",
+                   "query":{
+                      "query_string":{
+                         "query":"*S.Mel*",
+                         "fields":[
+                            "authors.ids.value.search",
+                            "authors.full_name"
+                         ],
+                         "analyze_wildcard":True
+                      }
+                   }
+                }
+             }
+          ]
+       }
     }
 
     generated_es_query = _parse_query(query_str)
@@ -3203,11 +3205,12 @@ def test_elastic_search_visitor_find_journal_with_year():
 def test_regression_wildcard_query_with_dot():
     query_string = 'references.reference.dois:10.7483/OPENDATA.CMS*'
     expected_es_query = {
-        'query_string': {
-            'query': '10.7483\\/OPENDATA.CMS*',
-            'fields': ['references.reference.dois'],
-            'analyze_wildcard': True
-        }
+       "query_string":{
+          "query":"/10.7483\\/OPENDATA.CMS.*/",
+          "fields":[
+             "references.reference.dois"
+          ]
+       }
     }
 
     generated_es_query = _parse_query(query_string)
@@ -3375,16 +3378,15 @@ def test_check_texkey_doesnt_match_recid():
 def test_wildcard_query_works_with_slash():
     query_str = r"a S.M/ele*"
     expected_es_query = {
-       "nested": {
-          "path": "authors",
-          "query": {
-             "query_string": {
-                "query": "S.M\\/ele*",
-                "fields": [
+       "nested":{
+          "path":"authors",
+          "query":{
+             "query_string":{
+                "query":"/S.M\\/ele.*/",
+                "fields":[
                    "authors.ids.value.search",
                    "authors.full_name"
-                ],
-                "analyze_wildcard": True
+                ]
              }
           }
        }
@@ -3434,17 +3436,31 @@ def test_range_date_queries_are_nested():
 def test_queries_with_wildcard_support_nested_fields():
     query_str = 'publication_info.cnum:*'
     expected_es_query = {
-       "nested": {
-          "path": "publication_info",
-          "query": {
-             "query_string": {
-                "query": "*",
-                "fields": [
+       "nested":{
+          "path":"publication_info",
+          "query":{
+             "query_string":{
+                "query":"/.*/",
+                "fields":[
                    "publication_info.cnum"
-                ],
-                "analyze_wildcard": True
+                ]
              }
           }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_wildcard_query_for_report_numbers_field():
+    query_str = 'r VBSCAN-*'
+    expected_es_query = {
+       "query_string":{
+          "query":"/.*VBSCAN\\-.*/",
+          "fields":[
+             "report_numbers.value.fuzzy"
+          ]
        }
     }
 

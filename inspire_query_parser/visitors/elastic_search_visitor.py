@@ -449,6 +449,23 @@ class ElasticSearchVisitor(Visitor):
 
         return query
 
+    def _generate_query_string_regex_query(self, value, fieldnames):
+        escaped_value = escape_query_string_special_characters(value)
+        regex_value = "/" + escaped_value.replace('*', '.*') + "/"
+        if not fieldnames:
+            field_specifier, field_specifier_value = 'default_field', '_all'
+        else:
+            field_specifier = 'fields'
+            field_specifier_value = fieldnames if isinstance(fieldnames, list) else [fieldnames]
+
+        query = {
+            'query_string': {
+                'query': regex_value,
+                field_specifier: field_specifier_value,
+            }
+        }
+        return query
+
     # TODO Move it to visitor utils and write tests for it.
     def _generate_term_query(self, fieldname, value, boost=None):
         if not boost:
@@ -754,18 +771,25 @@ class ElasticSearchVisitor(Visitor):
                 bai_field_variation=FieldVariations.search,
                 query_bai_field_if_dots_in_name=True
             )
-            query = self._generate_query_string_query(
+            query = self._generate_query_string_regex_query(
                 node.value,
-                fieldnames=bai_fieldnames or fieldnames,
-                analyze_wildcard=True
+                fieldnames=bai_fieldnames or fieldnames
             )
             return self._generate_nested_author_query(query, fieldnames)
 
-        query = self._generate_query_string_query(
+        if self.KEYWORD_TO_ES_FIELDNAME["reportnumber"] == fieldnames:
+            value = \
+                ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*') + \
+                node.value + \
+                ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
+
+            return self._generate_query_string_regex_query(value, fieldnames=fieldnames)
+
+        query = self._generate_query_string_regex_query(
             node.value,
-            fieldnames=fieldnames,
-            analyze_wildcard=True
+            fieldnames=fieldnames
         )
+
         return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
     def handle_author_query(self, node, fieldnames=None):
