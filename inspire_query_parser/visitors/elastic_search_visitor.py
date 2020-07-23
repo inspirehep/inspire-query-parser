@@ -493,12 +493,15 @@ class ElasticSearchVisitor(Visitor):
             Additionally, in the aforementioned case, if a malformed date has been given, then the the method will
             return an empty dictionary.
         """
-        if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+        if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames or all(
+                field in [self.KEYWORD_TO_ES_FIELDNAME['date-added'],
+                          self.KEYWORD_TO_ES_FIELDNAME['date-updated']] for field in fieldnames
+        ):
             range_queries = []
             for fieldname in fieldnames:
-                updated_operator_value_pairs = \
-                    update_date_value_in_operator_value_pairs_for_fieldname(fieldname, operator_value_pairs)
-
+                updated_operator_value_pairs = update_date_value_in_operator_value_pairs_for_fieldname(
+                    fieldname, operator_value_pairs
+                )
                 if not updated_operator_value_pairs:
                     break  # Malformed date
                 else:
@@ -791,13 +794,12 @@ class ElasticSearchVisitor(Visitor):
 
         if node.contains_wildcard:
             return self.handle_value_wildcard(node, fieldnames=fieldnames)
-
+        if fieldnames in [self.KEYWORD_TO_ES_FIELDNAME['date'], self.KEYWORD_TO_ES_FIELDNAME['date-added'],
+                          self.KEYWORD_TO_ES_FIELDNAME['date-updated']]:
+            # Date queries with simple values are transformed into range queries, among the given and the exact
+            # next date, according to the granularity of the given date.
+            return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
         if isinstance(fieldnames, list):
-            if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
-                # Date queries with simple values are transformed into range queries, among the given and the exact
-                # next date, according to the granularity of the given date.
-                return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
-
             if self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
                 return self._generate_journal_nested_queries(node.value)
 
