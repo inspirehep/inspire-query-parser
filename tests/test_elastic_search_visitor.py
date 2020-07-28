@@ -3429,3 +3429,105 @@ def test_range_date_queries_are_nested():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_date_updated_keyword_is_handled_with_range_query():
+    query_str = 'du 2019->2020'
+    expected_es_query = {
+       "range": {
+          "_updated": {
+             "gte": "2019||/y",
+             "lte": "2020||/y"
+          }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_date_added_keyword_is_handled_with_range_query():
+    query_str = 'da 1997'
+    expected_es_query = {
+       "range": {
+          "_created": {
+             "gte": "1997||/y",
+             "lt": "1998||/y"
+          }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_all_date_fields_are_handled_correctly_with_range_query():
+    query_str = 'du 2000 and date 1997'
+    expected_es_query = {
+       "bool": {
+          "must": [
+              {
+                  "range": {
+                      "_updated": {
+                          "gte": "2000||/y",
+                          "lt": "2001||/y"
+                      }
+                  }
+              },
+              {
+                "bool": {
+                   "should": [
+                      {
+                         "range": {
+                            "earliest_date": {
+                               "gte": "1997||/y",
+                               "lt": "1998||/y"
+                            }
+                         }
+                      },
+                      {
+                         "range": {
+                            "imprints.date": {
+                               "gte": "1997||/y",
+                               "lt": "1998||/y"
+                            }
+                         }
+                      },
+                      {
+                         "range": {
+                            "preprint_date": {
+                               "gte": "1997||/y",
+                               "lt": "1998||/y"
+                            }
+                         }
+                      },
+                      {
+                         "nested": {
+                            "path": "publication_info",
+                            "query": {
+                               "range": {
+                                  "publication_info.year": {
+                                     "gte": "1997||/y",
+                                     "lt": "1998||/y"
+                                  }
+                               }
+                            }
+                         }
+                      },
+                      {
+                         "range": {
+                            "thesis_info.date": {
+                               "gte": "1997||/y",
+                               "lt": "1998||/y"
+                            }
+                         }
+                      }
+                   ]
+                }
+              }
+          ]
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
