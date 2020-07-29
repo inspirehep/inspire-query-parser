@@ -3531,3 +3531,24 @@ def test_all_date_fields_are_handled_correctly_with_range_query():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_wildcard_queries_are_nested_for_nested_fields():
+    query_str = 'publication_info.journal_title: journal*'
+    expected_es_query = {
+       "nested": {
+          "path": "publication_info",
+          "query": {
+             "query_string": {
+                "query": "journal*",
+                "fields": [
+                   "publication_info.journal_title"
+                ],
+                "analyze_wildcard": True
+             }
+          }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
