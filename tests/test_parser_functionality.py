@@ -134,7 +134,7 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
                      InvenioKeywordQuery(InspireKeyword('cite'),
                                          Value(SimpleValue('M.N.1'))))))))))])
          ),
-        ("author ellis title boson not title higgs",
+        ("author ellis and title boson not title higgs",
          Query([Statement(BooleanQuery(
              Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword(u'author'), Value(SimpleValue(u'ellis'))))),
              And(), Statement(BooleanQuery(
@@ -465,7 +465,7 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
              And(), Statement(
                  Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(SimpleValue('foo'))))))))])
          ),
-        ('date this month author ellis',
+        ('date this month and author ellis',
          Query([Statement(BooleanQuery(
              Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('date'), Value(SimpleValue('this month'))))),
              And(), Statement(Expression(
@@ -513,10 +513,37 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
                      SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(SimpleValue('o*aigh'))))))))))])
          ),
 
-        # Unrecognized queries
+        # Queries for implicit "and" removal
         ('title and foo',
-         Query([MalformedQueryWords(['title', 'and', 'foo'])])
+         Query([Statement(Expression(
+             SimpleQuery(Value(SimpleValueBooleanQuery(SimpleValue('title'), And(), SimpleValue('foo'))))
+         ))])
          ),
+        ('author takumi doi',
+         Query([Statement(Expression(
+             SimpleQuery(SpiresKeywordQuery(InspireKeyword('author'), Value(SimpleValue('takumi doi'))))
+         ))])
+         ),
+        ('title cms and title experiment and date 2008',
+         Query([Statement(BooleanQuery(
+             Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(SimpleValue('cms'))))),
+             And(),
+             Statement(BooleanQuery(
+                 Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(SimpleValue('experiment'))))),
+                 And(),
+                 Statement(Expression(SimpleQuery(SpiresKeywordQuery(InspireKeyword('date'), Value(SimpleValue('2008'))))))
+             ))
+         ))])
+         ),
+        ('author:witten title:foo',
+         Query([Statement(BooleanQuery(
+             Expression(SimpleQuery(InvenioKeywordQuery(InspireKeyword('author'), Value(SimpleValue('witten'))))),
+             And(),
+             Statement(Expression(SimpleQuery(InvenioKeywordQuery(InspireKeyword('title'), Value(SimpleValue('foo'))))))
+         ))])
+         ),
+
+        # Unrecognized queries
         ('title γ-radiation and and',
          Query([Statement(Expression(
              SimpleQuery(SpiresKeywordQuery(InspireKeyword('title'), Value(SimpleValue('\u03b3-radiation')))))),

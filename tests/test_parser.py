@@ -49,14 +49,14 @@ def test_that_parse_terminal_token_does_not_accept_token_followed_by_colon():
     assert returned_unrecognised_text == query_str
 
 
-def test_that_parse_terminal_token_does_not_accept_non_shortened_inspire_keywords():
+def test_that_parse_terminal_token_accepts_non_shortened_inspire_keywords():
     query_str = "exact-author"
 
     parser = StatefulParser()
 
     returned_unrecognised_text, returned_result = SimpleValueUnit.parse_terminal_token(parser, query_str)
-    assert isinstance(returned_result, SyntaxError)
-    assert returned_unrecognised_text == query_str
+    assert returned_result == query_str
+    assert returned_unrecognised_text == ""
 
 
 # Testing SimpleValueUnit (terminals recognition) cases (no parenthesized SimpleValue).

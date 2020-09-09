@@ -942,7 +942,7 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     'inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES', ES_SHOULD_QUERY
 )
 def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_should():
-    query_str = 'subject astrophysics and author'
+    query_str = 'subject astrophysics and author:'
     expected_es_query = \
         {
             "bool": {
