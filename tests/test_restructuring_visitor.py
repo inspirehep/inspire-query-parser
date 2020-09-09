@@ -145,7 +145,7 @@ from inspire_query_parser.visitors.restructuring_visitor import \
 
         # ##### Boolean operators at terminals level ####
         (
-            'author ellis title boson not higgs',
+            'author ellis title:boson not higgs',
             AndOp(
                 KeywordOp(Keyword('author'), Value('ellis')),
                 AndOp(
@@ -410,14 +410,14 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             )
          ),
         (
-            'date this month author ellis',
+            'date this month and author ellis',
             AndOp(
                 KeywordOp(Keyword('date'), Value(str(date.today()))),
                 KeywordOp(Keyword('author'), Value('ellis'))
             )
          ),
         (
-            'date this month - 3 author ellis',
+            'date this month - 3 and author ellis',
             AndOp(
                 KeywordOp(Keyword('date'), Value(str(date.today() - relativedelta(months=3)))),
                 KeywordOp(Keyword('author'), Value('ellis'))
@@ -477,8 +477,28 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             KeywordOp(Keyword('texkeys'), Value('Hirata:1992*', contains_wildcard=True))
         ),
 
+        # Queries for implicit "and" removal
+        ('title and foo', AndOp(ValueOp(Value('title')), ValueOp(Value('foo')))),
+        ('author takumi doi', KeywordOp(Keyword('author'), Value('takumi doi'))),
+        (
+            'title cms and title experiment and date 2008',
+            AndOp(
+                 KeywordOp(Keyword('title'), Value('cms')),
+                 AndOp(
+                     KeywordOp(Keyword('title'), Value('experiment')),
+                     KeywordOp(Keyword('date'), Value('2008'))
+                 )
+            )
+        ),
+        (
+            'author:witten title:foo',
+            AndOp(
+                KeywordOp(Keyword('author'), Value('witten')),
+                KeywordOp(Keyword('title'), Value('foo'))
+            )
+        ),
+
         # Unrecognized queries
-        ('title and foo', MalformedQuery(['title', 'and', 'foo'])),
         (
             'title γ-radiation and and',
             QueryWithMalformedPart(

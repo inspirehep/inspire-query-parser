@@ -277,13 +277,6 @@ class SimpleValueUnit(LeafRule):
                 return text, \
                        SyntaxError("parsing a keyword (token followed by \":\"): \"" + repr(matched_token) + "\"")
 
-            # Attempt to recognize whether current terminal is a non shortened version of Inspire keywords. This is
-            # done for supporting implicit-and in case of SPIRES style keyword queries. Using the non shortened version
-            # of the keywords, makes this recognition not eager.
-            if not parser._parsing_parenthesized_simple_values_expression \
-                    and matched_token in INSPIRE_KEYWORDS_SET:
-                return text, SyntaxError("parsing a keyword (non shortened INSPIRE keyword)")
-
             result = remaining_text, matched_token
         else:
             result = text, SyntaxError("expecting match on " + repr(cls.token_regex.pattern))
