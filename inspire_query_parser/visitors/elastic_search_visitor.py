@@ -653,7 +653,7 @@ class ElasticSearchVisitor(Visitor):
         return {'match_all': {}}
 
     def visit_value_op(self, node):
-        return generate_match_query('_all', node.op.value, with_operator_and=True)
+        return node.op.accept(self)
 
     def visit_malformed_query(self, node):
         return self._generate_malformed_query(node)
@@ -790,7 +790,7 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_value(self, node, fieldnames=None):
         if not fieldnames:
-            fieldnames = '_all'
+            return generate_match_query('_all', node.value, with_operator_and=True)
 
         if node.contains_wildcard:
             return self.handle_value_wildcard(node, fieldnames=fieldnames)
@@ -941,7 +941,7 @@ class ElasticSearchVisitor(Visitor):
 
         return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
-    def visit_regex_value(self, node, fieldname):
+    def visit_regex_value(self, node, fieldname="_all"):
         query = {
             'regexp': {
                 fieldname: node.value

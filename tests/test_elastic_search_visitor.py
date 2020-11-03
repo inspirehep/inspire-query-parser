@@ -3552,3 +3552,67 @@ def test_wildcard_queries_are_nested_for_nested_fields():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_regex_search_works_without_keyword():
+    query_str = '/inve/'
+    expected_es_query = {
+       "regexp": {
+          "_all": "inve"
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_exact_match_works_without_keyword():
+    query_str = '"invenio"'
+    expected_es_query = {
+       "match_phrase": {
+          "_all": "invenio"
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_partial_match_works_without_keyword():
+    query_str = "'invenio'"
+    expected_es_query = {
+       "query_string": {
+          "query": "*invenio*",
+          "default_field": "_all",
+          "analyze_wildcard": True
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_exact_match_works_without_keyword_in_complex_query():
+    query_str = '"invenio" something'
+    expected_es_query = {
+       "bool": {
+          "must": [
+             {
+                "match_phrase": {
+                   "_all": "invenio"
+                }
+             },
+             {
+                "match": {
+                   "_all": {
+                      "query": "something",
+                      "operator": "and"
+                   }
+                }
+             }
+          ]
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
