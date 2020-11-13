@@ -32,7 +32,7 @@ URL = 'https://github.com/inspirehep/inspire-query-parser'
 readme = open('README.rst').read()
 
 setup_requires = [
-    'autosemver',
+    'autosemver==0.5.5',
 ]
 
 install_requires = [
