@@ -36,6 +36,7 @@ from unicodedata import normalize
 from inspire_schemas.utils import convert_old_publication_info_to_new
 from inspire_utils.helpers import force_list
 from inspire_utils.name import normalize_name, ParsedName
+from inspire_utils.query import wrap_queries_in_bool_clauses_if_more_than_one
 
 from inspire_query_parser import ast
 from inspire_query_parser.config import (
@@ -49,7 +50,6 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_match_query,
     generate_nested_query,
     update_date_value_in_operator_value_pairs_for_fieldname,
-    wrap_queries_in_bool_clauses_if_more_than_one,
     wrap_query_in_nested_if_field_is_nested,
     is_initial_of_a_name,
     retokenize_first_names,
@@ -248,82 +248,9 @@ class ElasticSearchVisitor(Visitor):
         """
         parsed_name = ParsedName(author_name)
         keyword = self._get_author_or_first_author_keyword_from_fieldnames(fieldnames)
-
-        def _match_query_with_names_initials_analyzer_with_and_operator(field, value):
-            return {
-                "match": {
-                    self.KEYWORD_TO_ES_FIELDNAME[field]: {
-                        "query": value,
-                        'operator': 'AND',
-                        "analyzer": "names_initials_analyzer"
-                    }
-                }
-            }
-
-        def _match_query_with_and_operator(field, value):
-            return {
-                'match': {
-                    self.KEYWORD_TO_ES_FIELDNAME[field]: {
-                        'query': value,
-                        'operator': 'AND'
-                    }
-                }
-            }
-
-        def _match_phrase_prefix_query(field, value):
-            return {
-                "match_phrase_prefix": {
-                    self.KEYWORD_TO_ES_FIELDNAME[field]: {
-                        "query": value,
-                        "analyzer": "names_analyzer"
-                    }
-                }
-            }
-
-        if len(parsed_name) == 1 and '.' not in parsed_name.first:
-            # ParsedName returns first name if there is only one name i.e. `Smith`
-            # in our case we consider it as a lastname
-            last_name = parsed_name.first
-            query = _match_query_with_and_operator('{}_last_name'.format(keyword), last_name)
-            return self._generate_nested_author_query(query, fieldnames)
-
-        bool_query_build = []
-        bool_query_build.append(
-            _match_query_with_and_operator('{}_last_name'.format(keyword), parsed_name.last)
-        )
-
-        should_query = []
-        first_names = retokenize_first_names(parsed_name.first_list)
-        for name in first_names:
-            name_query = []
-            if is_initial_of_a_name(name):
-                name_query.append(
-                    _match_query_with_names_initials_analyzer_with_and_operator(
-                        '{}_first_name_initials'.format(keyword), name)
-                )
-            else:
-                name_query.extend([
-                    _match_phrase_prefix_query('{}_first_name'.format(keyword), name),
-                    _match_query_with_names_initials_analyzer_with_and_operator('{}_first_name'.format(keyword), name)
-                ])
-            if '.' not in parsed_name.first and ',' not in author_name:
-                name_query.append(
-                    _match_query_with_and_operator('author', author_name)
-                )
-            should_query.append(
-                wrap_queries_in_bool_clauses_if_more_than_one(
-                    name_query, use_must_clause=False)
-            )
-
-        bool_query_build.append(
-            wrap_queries_in_bool_clauses_if_more_than_one(
-                should_query, use_must_clause=True)
-        )
-
-        query = wrap_queries_in_bool_clauses_if_more_than_one(
-            bool_query_build, use_must_clause=True
-        )
-        return self._generate_nested_author_query(query, fieldnames)
+        if keyword == "first-author":
+            return parsed_name.generate_es_query(keyword="first-author")
+        return parsed_name.generate_es_query()
 
     def _generate_exact_author_query(self, author_name_or_bai):
         """Generates a term query handling authors and BAIs.
