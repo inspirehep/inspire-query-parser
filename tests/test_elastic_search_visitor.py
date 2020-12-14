@@ -2781,3 +2781,93 @@ def test_exact_match_works_without_keyword_in_complex_query():
 
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_first_author_query_with_only_last_name():
+    query_str = 'fa beacom'
+    expected_es_query = {
+       "nested": {
+          "path": "first_author",
+          "query": {
+             "bool": {
+                "must": [
+                   {
+                      "match": {
+                         "first_author.last_name": {
+                            "operator": "AND",
+                            "query": "Beacom"
+                         }
+                      }
+                   }
+                ]
+             }
+          }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_first_author_query_with_full_name():
+    query_str = 'first-author Beacom, John F'
+    expected_es_query = {
+       "nested": {
+          "path": "first_author",
+          "query": {
+             "bool": {
+                "must": [
+                   {
+                      "match": {
+                         "first_author.last_name": {
+                            "operator": "AND",
+                            "query": "Beacom"
+                         }
+                      }
+                   },
+                   {
+                      "bool": {
+                         "must": [
+                            {
+                               "bool": {
+                                  "should": [
+                                     {
+                                        "match_phrase_prefix": {
+                                           "first_author.first_name": {
+                                              "analyzer": "names_analyzer",
+                                              "query": "John"
+                                           }
+                                        }
+                                     },
+                                     {
+                                        "match": {
+                                           "first_author.first_name": {
+                                              "analyzer": "names_initials_analyzer",
+                                              "operator": "AND",
+                                              "query": "John"
+                                           }
+                                        }
+                                     }
+                                  ]
+                               }
+                            },
+                            {
+                               "match": {
+                                  "first_author.first_name.initials": {
+                                     "analyzer": "names_initials_analyzer",
+                                     "operator": "AND",
+                                     "query": "F"
+                                  }
+                               }
+                            }
+                         ]
+                      }
+                   }
+                ]
+             }
+          }
+       }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert ordered(generated_es_query) == ordered(expected_es_query)
