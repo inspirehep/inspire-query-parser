@@ -248,8 +248,8 @@ class ElasticSearchVisitor(Visitor):
         """
         parsed_name = ParsedName(author_name)
         keyword = self._get_author_or_first_author_keyword_from_fieldnames(fieldnames)
-        if keyword == "first-author":
-            return parsed_name.generate_es_query(keyword="first-author")
+        if keyword == "first_author":
+            return parsed_name.generate_es_query(keyword="first_author")
         return parsed_name.generate_es_query()
 
     def _generate_exact_author_query(self, author_name_or_bai):
