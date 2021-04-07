@@ -225,9 +225,6 @@ class SimpleValueUnit(LeafRule):
     """
     token_regex = re.compile(r"[^\s:)(]+", re.UNICODE)
 
-    arxiv_token_regex = re.compile(r"(arxiv:)(" + token_regex.pattern + ")", re.IGNORECASE)
-    """Arxiv identifiers are special cases of tokens where the ":" symbol is allowed."""
-
     date_specifiers_regex = re.compile(r"({})\s*-\s*\d+".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
 
     parenthesized_token_grammar = None  # is set after SimpleValue definition.
@@ -289,7 +286,6 @@ class SimpleValueUnit(LeafRule):
         Specifically, this
         grammar = [
             SimpleValueUnit.date_specifiers_regex,
-            SimpleValueUnit.arxiv_token_regex,
             SimpleValueUnit.token_regex,
             SimpleValueUnit.parenthesized_token_grammar
         ].
@@ -307,31 +303,26 @@ class SimpleValueUnit(LeafRule):
         if match:
             remaining_text, token, found = text[len(match.group(0)):], match.group(0), True
         else:
-            # Attempt to parse arxiv identifier
-            match = cls.arxiv_token_regex.match(text)
-            if match:
-                remaining_text, token, found = text[len(match.group()):], match.group(2), True
+            # Attempt to parse a terminal token
+            remaining_text, token = cls.parse_terminal_token(parser, text)
+            if type(token) != SyntaxError:
+                found = True
             else:
-                # Attempt to parse a terminal token
-                remaining_text, token = cls.parse_terminal_token(parser, text)
-                if type(token) != SyntaxError:
-                    found = True
-                else:
-                    # Attempt to parse a terminal with parentheses
-                    try:
-                        # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
-                        parser._parsing_parenthesized_terminal = True
-                        remaining_text, token = parser.parse(text, cls.parenthesized_token_grammar, pos)
+                # Attempt to parse a terminal with parentheses
+                try:
+                    # Enable parsing a parenthesized terminal so that we can accept {+, -, |} as terminals.
+                    parser._parsing_parenthesized_terminal = True
+                    remaining_text, token = parser.parse(text, cls.parenthesized_token_grammar, pos)
 
-                        found = True
-                    except SyntaxError:
-                        pass
-                    except GrammarValueError:
-                        raise
-                    except ValueError:
-                        pass
-                    finally:
-                        parser._parsing_parenthesized_terminal = False
+                    found = True
+                except SyntaxError:
+                    pass
+                except GrammarValueError:
+                    raise
+                except ValueError:
+                    pass
+                finally:
+                    parser._parsing_parenthesized_terminal = False
 
         if found:
             result = remaining_text, cls(token)
@@ -643,11 +634,9 @@ class InvenioKeywordQuery(BinaryRule):
     any terminal as keyword for the former ones.
 
     Note:
-        "arxiv:arxiv_identifier" should be excluded from the generic keyword pattern as it is a special case of
-        SimpleValue, since it contains ":".
     E.g. author: ellis, title: boson, or unknown_keyword: foo.
     """
-    grammar = attr('left', [InspireKeyword, re.compile(r"(?!arxiv)[^\s:]+")]), \
+    grammar = attr('left', [InspireKeyword, re.compile(r"[^\s:]+")]), \
         omit(':'), \
         attr('right', Value)
 

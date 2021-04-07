@@ -690,7 +690,7 @@ def test_foo_bar():
             'citedby:recid:902780',
             NestedKeywordOp(Keyword('citedby'), KeywordOp(Keyword('control_number'), Value('902780')))
         ),
-        ('eprint:arxiv:1706.04080', KeywordOp(Keyword('eprint'), Value('1706.04080'))),
+        ('eprint:arxiv:1706.04080', KeywordOp(Keyword('eprint'), Value('arxiv:1706.04080'))),
         ('eprint:1706.04080', KeywordOp(Keyword('eprint'), Value('1706.04080'))),
         (
             'f a ostapchenko not olinto not haungs',
