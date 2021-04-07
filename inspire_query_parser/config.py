@@ -170,7 +170,7 @@ INSPIRE_PARSER_KEYWORDS = {
     'k': 'keyword',
 
     # Primary archive
-    'primarch': 'primarch',
+    'primarch': 'primary_arxiv_category',
 
     # rawref
     'rawref': 'rawref',

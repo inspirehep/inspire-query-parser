@@ -2871,3 +2871,32 @@ def test_first_author_query_with_full_name():
 
     generated_es_query = _parse_query(query_str)
     assert ordered(generated_es_query) == ordered(expected_es_query)
+
+
+def test_primary_arxiv_category():
+    query_string = "primarch: phys-nulc"
+    generated_es_query = _parse_query(query_string)
+    expected_es_query = {
+        'bool': {
+            'should': [
+                {
+                    'match': {
+                        'primary_arxiv_category': {
+                            'query': 'phys-nulc',
+                            'operator': 'and'
+                        }
+                    }
+                },
+                {
+                    'match': {
+                        '_all': {
+                            'query': 'primary_arxiv_category:phys-nulc',
+                            'operator': 'and'
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    assert ordered(generated_es_query) == ordered(expected_es_query)
