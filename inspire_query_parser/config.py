@@ -124,6 +124,8 @@ INSPIRE_PARSER_KEYWORDS = {
     'bb': 'eprint',
     'bull': 'eprint',
     'eprint': 'eprint',
+    'arxiv': 'eprint',
+    'arXiv': 'eprint',
 
     # Exact-Author
     'exact-author': 'exact-author',

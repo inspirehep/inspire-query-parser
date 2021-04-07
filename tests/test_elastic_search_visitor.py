@@ -2898,5 +2898,68 @@ def test_primary_arxiv_category():
             ]
         }
     }
+    assert ordered(generated_es_query) == ordered(expected_es_query)
 
+
+def test_arxiv_handling():
+    query_string = "eprint arXiv:1607.08327"
+    expected_es_query = {
+        "match": {
+            "arxiv_eprints.value.raw": {
+                "query": "1607.08327",
+                "operator": "and"
+                  }
+               }
+            }
+    generated_es_query = _parse_query(query_string)
+    assert ordered(generated_es_query) == ordered(expected_es_query)
+
+    query_string = "arXiv:1607.08327"
+    generated_es_query = _parse_query(query_string)
+    assert ordered(generated_es_query) == ordered(expected_es_query)
+
+    query_string = "arxiv:1607.08327"
+    generated_es_query = _parse_query(query_string)
+    assert ordered(generated_es_query) == ordered(expected_es_query)
+
+
+def test_eprint_as_invenio_keyword_handling():
+    query_string = "eprint: arxiv:1607.08327"
+    expected_es_query = {
+        "match": {
+            "arxiv_eprints.value.raw": {
+                "query": "1607.08327",
+                "operator": "and"
+                  }
+               }
+            }
+    generated_es_query = _parse_query(query_string)
+    assert ordered(generated_es_query) == ordered(expected_es_query)
+
+
+def test_arxiv_categories():
+    query_string = "arxiv_eprints.categories:hep-th"
+    expected_es_query = {
+        "bool": {
+          "should": [
+             {
+                "match": {
+                   "arxiv_eprints.categories": {
+                      "query": "hep-th",
+                      "operator": "and"
+                   }
+                }
+             },
+             {
+                "match": {
+                   "_all": {
+                      "query": "arxiv_eprints.categories:hep-th",
+                      "operator": "and"
+                   }
+                }
+             }
+          ]
+        }
+    }
+    generated_es_query = _parse_query(query_string)
     assert ordered(generated_es_query) == ordered(expected_es_query)

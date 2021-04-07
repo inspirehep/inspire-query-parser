@@ -772,6 +772,10 @@ class ElasticSearchVisitor(Visitor):
                 )
                 return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
 
+            elif self.KEYWORD_TO_ES_FIELDNAME['eprint'] == fieldnames:
+
+                return generate_match_query(fieldnames, re.sub('ar[xX]iv:', "", node.value), with_operator_and=True)
+
             elif fieldnames not in self.KEYWORD_TO_ES_FIELDNAME.values():
                 colon_value = ':'.join([fieldnames, node.value])
                 given_field_query = generate_match_query(fieldnames, node.value, with_operator_and=True)
@@ -781,7 +785,6 @@ class ElasticSearchVisitor(Visitor):
                 query = wrap_queries_in_bool_clauses_if_more_than_one(
                     [given_field_query, _all_field_query], use_must_clause=False)
                 return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
-
             return generate_match_query(fieldnames, node.value, with_operator_and=True)
 
     def visit_exact_match_value(self, node, fieldnames=None):

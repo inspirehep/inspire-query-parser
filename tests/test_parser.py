@@ -89,23 +89,6 @@ def test_that_parse_terminal_token_accepts_non_shortened_inspire_keywords():
             'result': SimpleValueUnit('today')
         },
 
-        # Only arxiv identifier should be accepted as a token that contains ":".
-        'Canonical arxiv identifier': {
-            'query_str': 'arxiv:1706.04080',
-            'unrecognized_text': '',
-            'result': SimpleValueUnit('1706.04080')
-        },
-        'Arxiv identifier with semantically erroneous value (semantic error)': {
-            'query_str': 'arxiv:foo',
-            'unrecognized_text': '',
-            'result': SimpleValueUnit('foo')
-        },
-        'Non arxiv-related terminal with colon': {
-            'query_str': 'not_arxiv:foo',
-            'unrecognized_text': 'not_arxiv:foo',
-            'result': SyntaxError(u'expecting match on SimpleValueUnit',)
-        },
-
         # Basic tokens
         'Simple token': {
             'query_str': 'foo',
