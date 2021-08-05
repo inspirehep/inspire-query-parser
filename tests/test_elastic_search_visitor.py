@@ -50,7 +50,8 @@ def test_elastic_search_visitor_find_institution_partial_value_cer():
             "analyze_wildcard": True,
             "fields": [
                 "affautocomplete"
-            ]
+            ],
+            "default_operator": "AND"
         }
     }
 
@@ -69,6 +70,7 @@ def test_elastic_search_visitor_find_author_partial_value_ellis():
                         "analyze_wildcard": True,
                         "fields": ["authors.full_name"],
                         "query": "*ellis*",
+                        "default_operator": "AND"
                     }
                 }
             }
@@ -622,6 +624,7 @@ def test_elastic_search_visitor_keyword_query_and_partial_value_query():
                             "analyze_wildcard": True,
                             "default_field": "_all",
                             "query": "*skands*",
+                            "default_operator": "AND"
                         }
                     }
                 ]
@@ -775,7 +778,8 @@ def test_elastic_search_visitor_wildcard_support():
                                     "fields": [
                                         "authors.full_name"
                                     ],
-                                    "analyze_wildcard": True
+                                    "analyze_wildcard": True,
+                                    "default_operator": "AND"
                                 }
                             }
                         }
@@ -792,7 +796,8 @@ def test_elastic_search_visitor_wildcard_support():
                                                 "fields": [
                                                     "authors.full_name"
                                                 ],
-                                                "analyze_wildcard": True
+                                                "analyze_wildcard": True,
+                                                "default_operator": "AND"
                                             }
                                         }
                                     }
@@ -833,7 +838,8 @@ def test_elastic_search_visitor_first_author_wildcard_support():
                                     "fields": [
                                         "first_author.full_name"
                                     ],
-                                    "analyze_wildcard": True
+                                    "analyze_wildcard": True,
+                                    "default_operator": "AND"
                                 }
                             }
                         }
@@ -850,7 +856,8 @@ def test_elastic_search_visitor_first_author_wildcard_support():
                                                 "fields": [
                                                     "first_author.full_name"
                                                 ],
-                                                "analyze_wildcard": True
+                                                "analyze_wildcard": True,
+                                                "default_operator": "AND"
                                             }
                                         }
                                     }
@@ -1580,7 +1587,8 @@ def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_p
                                 "query_string": {
                                     "analyze_wildcard": True,
                                     "fields": ["authors.ids.value.search"],
-                                    "query": "*A.Einstein.1*"
+                                    "query": "*A.Einstein.1*",
+                                    "default_operator": "AND"
                                 }
                             }
                         }
@@ -1592,7 +1600,8 @@ def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_p
                                 "query_string": {
                                     "analyze_wildcard": True,
                                     "fields": ["authors.ids.value.search", "authors.full_name"],
-                                    "query": "*S.Mele*"
+                                    "query": "*S.Mele*",
+                                    "default_operator": "AND"
                                 }
                             }
                         }
@@ -1618,6 +1627,7 @@ def test_elastic_search_visitor_handles_wildcard_simple_and_partial_bai_like_que
                                 "query": "S.Mele*",
                                 "fields": ["authors.ids.value.search", "authors.full_name"],
                                 "analyze_wildcard": True,
+                                "default_operator": "AND"
                             }
                         },
                     }
@@ -1630,6 +1640,7 @@ def test_elastic_search_visitor_handles_wildcard_simple_and_partial_bai_like_que
                                 "query": "*S.Mel*",
                                 "fields": ["authors.ids.value.search", "authors.full_name"],
                                 "analyze_wildcard": True,
+                                "default_operator": "AND"
                             }
                         },
                     }
@@ -1652,7 +1663,8 @@ def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_author_n
                     "query_string": {
                         "analyze_wildcard": True,
                         "fields": ["authors.ids.value.search", "authors.full_name"],
-                        "query": "*S.Mele*"
+                        "query": "*S.Mele*",
+                        "default_operator": "AND"
                     }
                 }
             }
@@ -1675,7 +1687,8 @@ def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_first_au
                             "first_author.ids.value.search",
                             "first_author.full_name"
                         ],
-                        "analyze_wildcard": True
+                        "analyze_wildcard": True,
+                        "default_operator": "AND"
                     }
                 }
             }
@@ -2294,7 +2307,8 @@ def test_nested_query_partial_match_affiliation():
                 "fields": [
                    "authors.affiliations.value"
                 ],
-                "analyze_wildcard": True
+                "analyze_wildcard": True,
+                "default_operator": "AND"
              }
           }
        }
@@ -2318,6 +2332,7 @@ def test_partial_author_match_and_exact_affiliation_match():
                                 "analyze_wildcard": True,
                                 "fields": ["authors.full_name"],
                                 "query": "*Jan*",
+                                "default_operator": "AND"
                             }
                         },
                     }
@@ -2428,7 +2443,8 @@ def test_regression_wildcard_query_with_dot():
         'query_string': {
             'query': '10.7483\\/OPENDATA.CMS*',
             'fields': ['references.reference.dois'],
-            'analyze_wildcard': True
+            'analyze_wildcard': True,
+            "default_operator": "AND"
         }
     }
 
@@ -2549,7 +2565,8 @@ def test_wildcard_query_works_with_slash():
                    "authors.ids.value.search",
                    "authors.full_name"
                 ],
-                "analyze_wildcard": True
+                "analyze_wildcard": True,
+                "default_operator": "AND"
              }
           }
        }
@@ -2709,7 +2726,8 @@ def test_wildcard_queries_are_nested_for_nested_fields():
                 "fields": [
                    "publication_info.journal_title"
                 ],
-                "analyze_wildcard": True
+                "analyze_wildcard": True,
+                "default_operator": "AND"
              }
           }
        }
@@ -2749,7 +2767,8 @@ def test_partial_match_works_without_keyword():
        "query_string": {
           "query": "*invenio*",
           "default_field": "_all",
-          "analyze_wildcard": True
+          "analyze_wildcard": True,
+          "default_operator": "AND"
        }
     }
 
@@ -2963,3 +2982,36 @@ def test_arxiv_categories():
     }
     generated_es_query = _parse_query(query_string)
     assert ordered(generated_es_query) == ordered(expected_es_query)
+
+
+def test_query_string_query_with_wildcard_should_use_and_operator():
+    query_string = "t cosmic rays*"
+    expected_es_query = {
+        "query_string": {
+            "analyze_wildcard": True,
+            "fields": ["titles.full_title"],
+            "query": "cosmic rays*",
+            "default_operator": "AND"
+        }
+    }
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_query_string_authors_query_with_wildcard_should_use_and_operator():
+    query_string = "a mich*"
+    expected_es_query = {
+        "nested": {
+            "path": "authors",
+            "query": {
+                "query_string": {
+                    "analyze_wildcard": True,
+                    "fields": ["authors.full_name"],
+                    "query": "mich*",
+                    "default_operator": "AND"
+                }
+            }
+        }
+    }
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
