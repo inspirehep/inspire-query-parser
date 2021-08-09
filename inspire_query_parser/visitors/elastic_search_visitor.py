@@ -369,6 +369,7 @@ class ElasticSearchVisitor(Visitor):
             'query_string': {
                 'query': escape_query_string_special_characters(value),
                 field_specifier: field_specifier_value,
+                'default_operator': "AND"
             }
         }
         if analyze_wildcard:
