@@ -29,7 +29,7 @@ a normalization of the shortened keywords to their full version.
 """
 from __future__ import unicode_literals
 
-INSPIRE_PARSER_KEYWORDS = {
+INSPIRE_PARSER_NONDATE_KEYWORDS = {
     # Abstract
     'abstract': 'abstract',
 
@@ -97,26 +97,6 @@ INSPIRE_PARSER_KEYWORDS = {
     'country': 'country',
     'cc': 'country',
 
-    # Date
-    'date': 'date',
-    'd': 'date',
-    # From queries dataset, users seem to use year and date interchangeably.
-    'year': 'date',
-
-    # Date added
-    'date-added': 'date-added',
-    'dadd': 'date-added',
-    'da': 'date-added',
-
-    # Date earliest
-    'date-earliest': 'date-earliest',
-    'de': 'date-earliest',
-
-    # Date updated
-    'date-updated': 'date-updated',
-    'dupd': 'date-updated',
-    'du': 'date-updated',
-
     # DOI
     'doi': 'doi',
 
@@ -159,10 +139,6 @@ INSPIRE_PARSER_KEYWORDS = {
     'published_in': 'journal',
     'volume': 'volume',
     'vol': 'volume',
-
-    # Journal year
-    'journal-year': 'publication_info.year',
-    'jy': 'publication_info.year',
 
     # Keyword
     # keyword is Invenio style, while the rest are from SPIRES syntax.
@@ -226,6 +202,34 @@ INSPIRE_PARSER_KEYWORDS = {
     'collection': 'type-code',  # Queries for this one include "collection published" only
 }
 
+INSPIRE_PARSER_DATE_KEYWORDS = {
+    # Date
+    'date': 'date',
+    'd': 'date',
+    # From queries dataset, users seem to use year and date interchangeably.
+    'year': 'date',
+
+    # Date added
+    'date-added': 'date-added',
+    'dadd': 'date-added',
+    'da': 'date-added',
+
+    # Date earliest
+    'date-earliest': 'date-earliest',
+    'de': 'date-earliest',
+
+    # Date updated
+    'date-updated': 'date-updated',
+    'dupd': 'date-updated',
+    'du': 'date-updated',
+
+    # Journal year
+    'journal-year': 'publication_info.year',
+    'jy': 'publication_info.year',
+}
+
+INSPIRE_PARSER_KEYWORDS = INSPIRE_PARSER_NONDATE_KEYWORDS.copy()
+INSPIRE_PARSER_KEYWORDS.update(INSPIRE_PARSER_DATE_KEYWORDS)
 INSPIRE_KEYWORDS_SET = set(INSPIRE_PARSER_KEYWORDS.values())
 
 # #### Date specifiers #####
@@ -239,6 +243,13 @@ DATE_SPECIFIERS_COLLECTION = (
     DATE_YESTERDAY_REGEX_PATTERN,
     DATE_THIS_MONTH_REGEX_PATTERN,
     DATE_LAST_MONTH_REGEX_PATTERN
+)
+MONTH_REGEX = "|".join(
+    [
+        "january", "jan", "february", "feb", "march", "mar", "april", "apr", "may",
+        "june", 'jun', "july", "jul", "august", "aug",
+        "september", "sep", "october", "oct", "november", "nov", "december", "dec"
+    ]
 )
 # #####
 

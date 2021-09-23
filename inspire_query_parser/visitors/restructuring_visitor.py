@@ -220,6 +220,23 @@ class RestructuringVisitor(Visitor):
 
         return KeywordOp(keyword, value)
 
+    def visit_spires_date_keyword_query(self, node):
+        """Transform a :class:`SpiresKeywordQuery` into a :class:`KeywordOp`.
+
+        Notes:
+            In case the value being a :class:`SimpleValueBooleanQuery`, the subtree is transformed to chained
+            :class:`AndOp` queries containing :class:`KeywordOp`, whose keyword is the keyword of the current node and
+            values, all the :class:`SimpleValueBooleanQuery` values (either :class:`SimpleValues` or
+            :class:`SimpleValueNegation`.)
+        """
+        keyword = node.left.accept(self)
+        value = node.right.accept(self)
+
+        if isinstance(value, SimpleValueBooleanQuery):
+            return _convert_simple_value_boolean_query_to_and_boolean_queries(value, keyword)
+
+        return KeywordOp(keyword, value)
+
     def visit_invenio_keyword_query(self, node):
         """Transform an :class:`InvenioKeywordQuery` into a :class:`KeywordOp`.
 
@@ -275,6 +292,9 @@ class RestructuringVisitor(Visitor):
     def visit_inspire_keyword(self, node):
         return Keyword(node.value)
 
+    def visit_inspire_date_keyword(self, node):
+        return Keyword(node.value)
+
     def visit_empty_query(self, node):
         return ast.EmptyQuery(None)
 
@@ -315,3 +335,17 @@ class RestructuringVisitor(Visitor):
 
     def visit_simple_range_value(self, node):
         return ast.Value(node.value)
+
+    def visit_date_value(self, node):
+        return node.op.accept(self)
+
+    def visit_simple_date_value(self, node):
+        for regexp, date_conversion_handler in DATE_SPECIFIERS_CONVERSION_HANDLERS.items():
+            date_value = node.value
+            regexp_match = regexp.match(node.value)
+            if regexp_match:
+                relative_date_specifier_suffix = date_value.split(regexp_match.group())[1]
+                return ast.Value(str(date_conversion_handler(relative_date_specifier_suffix)))
+
+        # Normal text value
+        return ast.Value(node.value, True if ast.GenericValue.WILDCARD_TOKEN in node.value else False)

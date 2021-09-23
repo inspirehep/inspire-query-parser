@@ -51,8 +51,6 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_nested_query,
     update_date_value_in_operator_value_pairs_for_fieldname,
     wrap_query_in_nested_if_field_is_nested,
-    is_initial_of_a_name,
-    retokenize_first_names,
     escape_query_string_special_characters
 )
 from inspire_query_parser.visitors.visitor_impl import Visitor

@@ -3029,3 +3029,45 @@ def test_partial_match_query_regression():
     }
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_regression_date_added_keyword():
+    query_string = "da Silva"
+    expected_es_query = {"match": {"_all": {"query": "da Silva", "operator": "and"}}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_date_edited_keyword():
+    query_string = "de Silva"
+    expected_es_query = {"match": {"_all": {"query": "de Silva", "operator": "and"}}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_date_added_in_bool_query():
+    query_string = "da Silva and du > 2010"
+    expected_es_query = {'bool': {'must': [{'match': {'_all': {'query': 'da Silva', 'operator': 'and'}}}, {'range': {'_updated': {'gt': '2010||/y'}}}]}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_date_added_name_as_month_name():
+    query_string = "da may"
+    expected_es_query = {'match': {'_all': {'query': 'da may', 'operator': 'and'}}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_date_edited_name_as_month_name():
+    query_string = "de augusto"
+    expected_es_query = {'match': {'_all': {'query': 'de augusto', 'operator': 'and'}}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_date_edited_with_date_with_month_name():
+    query_string = "de august 2002"
+    expected_es_query = {'match': {'earliest_date': {'query': 'august 2002', 'operator': 'and'}}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query

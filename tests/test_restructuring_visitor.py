@@ -563,6 +563,14 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             )
         ),
         ('find j Nucl.Phys. and not vol A531', KeywordOp(Keyword('journal'), Value('Nucl.Phys.'))),
+        # regression with date keyword followed by string not containing date
+        (
+            "find da Silva and j Nucl.Phys.",
+            AndOp(
+                ValueOp(Value("da Silva")),
+                KeywordOp(Keyword("journal"), Value("Nucl.Phys.")),
+            ),
+        ),
         (
             'find j Nucl.Phys. and not vol A531 and a ellis and a john',
             AndOp(

@@ -41,6 +41,7 @@ install_requires = [
     'pypeg2~=2.0,>=2.15.2',
     'python-dateutil~=2.0,>=2.6.1',
     'six~=1.0,>=1.11.0',
+    'datefinder~=0.7.1'
 ],
 
 docs_require = []
