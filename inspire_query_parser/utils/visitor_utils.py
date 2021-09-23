@@ -505,3 +505,11 @@ def escape_query_string_special_characters(value):
     value = re.sub(QUERY_STRING_QUERY_SPECIAL_CHARACTERS,
                    lambda char: "\\" + char.group(), value)
     return value
+
+
+def is_date_string(text):
+    value = re.split(' or | and ', text, re.IGNORECASE)[0].strip()
+    if any(
+        re.findall(regex, text) for regex in DATE_SPECIFIERS_COLLECTION
+    ) or re.findall('\d+', value):
+        return True

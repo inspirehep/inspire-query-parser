@@ -22,7 +22,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from pytest import raises
+from pytest import raises, mark
 
 from inspire_query_parser.utils.visitor_utils import (
     _truncate_wildcard_from_date,
@@ -30,6 +30,7 @@ from inspire_query_parser.utils.visitor_utils import (
     generate_match_query,
     generate_minimal_name_variations,
     generate_nested_query,
+    is_date_string,
     wrap_queries_in_bool_clauses_if_more_than_one,
     wrap_query_in_nested_if_field_is_nested,
 )
@@ -380,3 +381,24 @@ def test_boolean_string_argument_in_query_case_insensitive():
 
     query = generate_match_query('citeable', "FALSE", with_operator_and=True)
     assert expected == query
+
+
+@mark.parametrize(
+    "input_value, expected",
+    [
+        ("da Silva", None),
+        ("du Pont", None),
+        ("de Longhi", None),
+        ("today", True),
+        ("yesterday", True),
+        ("yesterday - 2", True),
+        ("2020.01.01", True),
+        ("last month", True),
+        (">last month", True),
+        ("2020", True),
+        ("2019->2020", True)
+
+    ]
+)
+def test_is_date(input_value, expected):
+    assert is_date_string(input_value) == expected

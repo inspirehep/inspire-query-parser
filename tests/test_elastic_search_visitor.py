@@ -3015,3 +3015,24 @@ def test_query_string_authors_query_with_wildcard_should_use_and_operator():
     }
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
+
+
+def test_regression_date_added_keyword():
+    query_string = "da Silva"
+    expected_es_query = {"match": {"_all": {"query": "da Silva", "operator": "and"}}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_date_edited_keyword():
+    query_string = "de Silva"
+    expected_es_query = {"match": {"_all": {"query": "de Silva", "operator": "and"}}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_date_added_in_bool_query():
+    query_string = "da Silva and du > 2010"
+    expected_es_query = {'bool': {'must': [{'match': {'_all': {'query': 'da Silva', 'operator': 'and'}}}, {'range': {'_updated': {'gt': '2010||/y'}}}]}}
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query

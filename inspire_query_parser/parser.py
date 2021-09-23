@@ -30,8 +30,8 @@ from pypeg2 import (Enum, GrammarValueError, K, Keyword, Literal, attr,
                     whitespace)
 
 from . import ast
-from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS
-
+from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS, INSPIRE_PARSER_DATE_KEYWORDS
+from inspire_query_parser.utils.visitor_utils import is_date_string
 # TODO  Restrict what a simple query (i.e. Value) can accept (remove LessThanOp, etc.).
 #       For 'date > 2013 and < 2017' probably allow LessThanOp into SimpleValueBooleanQuery.
 # TODO 'date > 2000-10 and < date 2000-12' parses without a malformed query. (First fix the above)
@@ -211,6 +211,8 @@ class InspireKeyword(LeafRule):
         """
         try:
             remaining_text, keyword = parser.parse(text, cls.grammar)
+            if keyword in INSPIRE_PARSER_DATE_KEYWORDS.keys() and not is_date_string(remaining_text):
+                raise SyntaxError
             return remaining_text, InspireKeyword(keyword)
         except SyntaxError as e:
             return text, e

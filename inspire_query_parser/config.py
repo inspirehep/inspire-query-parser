@@ -29,7 +29,7 @@ a normalization of the shortened keywords to their full version.
 """
 from __future__ import unicode_literals
 
-INSPIRE_PARSER_KEYWORDS = {
+INSPIRE_PARSER_NONDATE_KEYWORDS = {
     # Abstract
     'abstract': 'abstract',
 
@@ -96,26 +96,6 @@ INSPIRE_PARSER_KEYWORDS = {
     # Country
     'country': 'country',
     'cc': 'country',
-
-    # Date
-    'date': 'date',
-    'd': 'date',
-    # From queries dataset, users seem to use year and date interchangeably.
-    'year': 'date',
-
-    # Date added
-    'date-added': 'date-added',
-    'dadd': 'date-added',
-    'da': 'date-added',
-
-    # Date earliest
-    'date-earliest': 'date-earliest',
-    'de': 'date-earliest',
-
-    # Date updated
-    'date-updated': 'date-updated',
-    'dupd': 'date-updated',
-    'du': 'date-updated',
 
     # DOI
     'doi': 'doi',
@@ -226,6 +206,30 @@ INSPIRE_PARSER_KEYWORDS = {
     'collection': 'type-code',  # Queries for this one include "collection published" only
 }
 
+INSPIRE_PARSER_DATE_KEYWORDS = {
+    # Date
+    'date': 'date',
+    'd': 'date',
+    # From queries dataset, users seem to use year and date interchangeably.
+    'year': 'date',
+
+    # Date added
+    'date-added': 'date-added',
+    'dadd': 'date-added',
+    'da': 'date-added',
+
+    # Date earliest
+    'date-earliest': 'date-earliest',
+    'de': 'date-earliest',
+
+    # Date updated
+    'date-updated': 'date-updated',
+    'dupd': 'date-updated',
+    'du': 'date-updated',
+}
+
+INSPIRE_PARSER_KEYWORDS = INSPIRE_PARSER_NONDATE_KEYWORDS.copy()
+INSPIRE_PARSER_KEYWORDS.update(INSPIRE_PARSER_DATE_KEYWORDS)
 INSPIRE_KEYWORDS_SET = set(INSPIRE_PARSER_KEYWORDS.values())
 
 # #### Date specifiers #####
