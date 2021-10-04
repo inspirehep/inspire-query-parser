@@ -859,17 +859,17 @@ class ElasticSearchVisitor(Visitor):
             node.value + \
             ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
 
-        bai_fieldnames = self._generate_fieldnames_if_bai_query(
-            fieldnames,
-            node.value,
-            bai_field_variation=FieldVariations.search,
-            query_bai_field_if_dots_in_name=True
-        )
-
-        query = self._generate_query_string_query(value, fieldnames=bai_fieldnames or fieldnames, analyze_wildcard=True)
-        if self._are_fieldnames_author_or_first_author(bai_fieldnames) or self._are_fieldnames_author_or_first_author(fieldnames):
+        if self._are_fieldnames_author_or_first_author(fieldnames):
+            bai_fieldnames = self._generate_fieldnames_if_bai_query(
+                fieldnames,
+                node.value,
+                bai_field_variation=FieldVariations.search,
+                query_bai_field_if_dots_in_name=True
+            )
+            query = self._generate_query_string_query(value, fieldnames=bai_fieldnames or fieldnames, analyze_wildcard=True)
             return self._generate_nested_author_query(query, fieldnames)
 
+        query = self._generate_query_string_query(value, fieldnames, analyze_wildcard=True)
         return wrap_query_in_nested_if_field_is_nested(query, fieldnames, self.NESTED_FIELDS)
 
     def visit_regex_value(self, node, fieldname="_all"):

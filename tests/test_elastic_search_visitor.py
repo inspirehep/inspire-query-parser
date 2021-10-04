@@ -1615,7 +1615,7 @@ def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_p
 
 
 def test_elastic_search_visitor_handles_wildcard_simple_and_partial_bai_like_queries():
-    query_str = "a S.Mele* and 'S.Mel*'"
+    query_str = "a S.Mele* and a 'S.Mel*'"
     expected_es_query = {
         "bool": {
             "must": [
@@ -3014,4 +3014,18 @@ def test_query_string_authors_query_with_wildcard_should_use_and_operator():
         }
     }
     generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_partial_match_query_regression():
+    query_str = "urls.value:*lss.fnal.gov*"
+    expected_es_query = {
+        "query_string": {
+            "query": "*lss.fnal.gov*",
+            "fields": ["urls.value"],
+            "default_operator": "AND",
+            "analyze_wildcard": True,
+        }
+    }
+    generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
