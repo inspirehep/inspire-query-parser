@@ -30,8 +30,9 @@ from pypeg2 import (Enum, GrammarValueError, K, Keyword, Literal, attr,
                     whitespace)
 
 from . import ast
-from .config import INSPIRE_KEYWORDS_SET, INSPIRE_PARSER_KEYWORDS
-
+from .config import MONTH_REGEX, INSPIRE_PARSER_KEYWORDS, INSPIRE_PARSER_DATE_KEYWORDS, INSPIRE_PARSER_NONDATE_KEYWORDS
+from dateutil import parser as date_parser
+import datefinder
 # TODO  Restrict what a simple query (i.e. Value) can accept (remove LessThanOp, etc.).
 #       For 'date > 2013 and < 2017' probably allow LessThanOp into SimpleValueBooleanQuery.
 # TODO 'date > 2000-10 and < date 2000-12' parses without a malformed query. (First fix the above)
@@ -198,20 +199,49 @@ class Not(CIKeyword):
 
 
 # #### Lowest level operators #####
+class Whitespace(LeafRule):
+    grammar = attr('value', whitespace)
+
+
 class InspireKeyword(LeafRule):
     # InspireKeyword expects a word boundary at its end, excluding [.,] characters, since these might signify names.
-    grammar = re.compile(r"({0})(?![,.])(?=(:|\b))".format("|".join(INSPIRE_PARSER_KEYWORDS.keys())), re.IGNORECASE)
+    grammar = re.compile(
+        r"({0})(?![,.])(?=(:|\b))".format(
+            "|".join(INSPIRE_PARSER_NONDATE_KEYWORDS.keys())
+        ),
+        re.IGNORECASE,
+    )
 
     def __init__(self, value):
-        self.value = INSPIRE_PARSER_KEYWORDS[value.lower()]
+        self.value = INSPIRE_PARSER_NONDATE_KEYWORDS[value.lower()]
 
     @classmethod
     def parse(cls, parser, text, pos):
-        """Parse InspireKeyword.
-        """
+        """Parse InspireKeyword."""
         try:
             remaining_text, keyword = parser.parse(text, cls.grammar)
             return remaining_text, InspireKeyword(keyword)
+        except SyntaxError as e:
+            return text, e
+
+
+class InspireDateKeyword(LeafRule):
+    grammar = re.compile(
+        r"({0})(?![,.])(?=(:|\b))".format(
+            "|".join(INSPIRE_PARSER_DATE_KEYWORDS.keys())
+        ),
+        re.IGNORECASE,
+    )
+
+    def __init__(self, value):
+        self.value = INSPIRE_PARSER_DATE_KEYWORDS[value.lower()]
+
+    @classmethod
+    def parse(cls, parser, text, pos):
+        """Parse InspireDateKeyword."""
+        try:
+            remaining_text, keyword = parser.parse(text, cls.grammar)
+            return remaining_text, InspireDateKeyword(keyword)
         except SyntaxError as e:
             return text, e
 
@@ -336,23 +366,71 @@ class SimpleValueWithColonUnit(SimpleValueUnit):
     token_regex = re.compile(r"[^\s)(]+[^\s:)(]", re.UNICODE)
 
 
-class SimpleValue(LeafRule):
-    """Represents terminals as plaintext.
+class SimpleDateValueUnit(LeafRule):
+    grammar = re.compile(r"[\d*\-\.\/]{4,10}(?=($|\s))", re.UNICODE)
+    date_specifiers_regex = re.compile(r"({})\s*(-\s*\d+)?".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
+    string_month_date_regex = re.compile(MONTH_REGEX, re.IGNORECASE)
 
-    E.g. title top cross section, or title Si-28(p(pol.), n(pol.)).
-    """
-    class Whitespace(LeafRule):
-        grammar = attr('value', whitespace)
+    def __init__(self, args):
+        super(SimpleDateValueUnit, self).__init__()
+        if isinstance(args, six.string_types):
+            # Value was recognized by the 1st option of the list grammar (regex)
+            self.value = args
+        else:
+            # Value was recognized by the 2nd option of the list grammar
+            self.value = args[0] + args[1].value + args[2]
 
-    grammar = contiguous([SimpleValueUnit, SimpleValueWithColonUnit], maybe_some((optional(Whitespace), some(SimpleValueUnit))))
+    @classmethod
+    def _parse_date_with_string_month(cls, text):
+        dates = datefinder.find_dates(text, source=True)
+        try:
+            _, found_date_string = next(dates)
+            date_end_index = text.find(found_date_string) + len(found_date_string)
+            remaining_text = text[date_end_index:]
+            result = remaining_text, found_date_string
+        except StopIteration:
+            result = text, SyntaxError("expecting match on " + repr(cls.string_month_date_regex.pattern))
+        return result
 
+    @classmethod
+    def parse(cls, parser, text, pos):
+        token = None
+        # Attempt to parse date specifier
+        match = cls.date_specifiers_regex.match(text)
+        string_month_date_match = cls.string_month_date_regex.match(text)
+        if match:
+            remaining_text, token = text[len(match.group(0)):], match.group(0)
+        elif string_month_date_match:
+            remaining_text, token = cls._parse_date_with_string_month(text)
+        else:
+            try:
+                remaining_text, token = parser.parse(text, cls.grammar, pos)
+            except SyntaxError:
+                pass
+            except GrammarValueError:
+                raise
+            except ValueError:
+                pass
+        if token and type(token) != SyntaxError:
+            result = remaining_text, cls(token)
+        else:
+            result = text, SyntaxError("expecting match on " + cls.__name__)
+
+        return result
+
+
+class SimpleValueGeneric(LeafRule):
     def __init__(self, values):
-        super(SimpleValue, self).__init__()
+        super(SimpleValueGeneric, self).__init__()
         if isinstance(values, six.string_types):
             self.value = values
         else:
             self.value = six.text_type.strip(''.join([v.value for v in values]))
 
+    """Represents terminals as plaintext.
+
+    E.g. title top cross section, or title Si-28(p(pol.), n(pol.)).
+    """
     @staticmethod
     def unconsume_and_reconstruct_input(remaining_text, recognized_tokens, complex_value_idx):
         """Reconstruct input in case of consuming a keyword query or a value query with ComplexValue as value.
@@ -402,9 +480,9 @@ class SimpleValue(LeafRule):
                     break
 
             if found_complex_value:
-                result = reconstructed_text, SimpleValue(reconstructed_terminals)
+                result = reconstructed_text, cls(reconstructed_terminals)
             else:
-                result = remaining_text, SimpleValue(recognized_tokens)
+                result = remaining_text, cls(recognized_tokens)
 
         except SyntaxError as e:
             return text, e
@@ -412,7 +490,20 @@ class SimpleValue(LeafRule):
         return result
 
 
+class SimpleValue(SimpleValueGeneric):
+    """Represents terminals as plaintext.
+
+    E.g. title top cross section, or title Si-28(p(pol.), n(pol.)).
+    """
+    grammar = contiguous([SimpleValueUnit, SimpleValueWithColonUnit], maybe_some((optional(Whitespace), some(SimpleValueUnit))))
+
+
+class SimpleDateValue(SimpleValueGeneric):
+    grammar = contiguous(SimpleDateValueUnit, optional(Whitespace))
+
+
 SimpleValueUnit.parenthesized_token_grammar = (re.compile(r"\("), SimpleValue, re.compile(r"\)"))
+SimpleDateValueUnit.parenthesized_token_grammar = (re.compile(r"\("), SimpleDateValue, re.compile(r"\)"))
 
 
 # ################################################## #
@@ -421,6 +512,11 @@ SimpleValueUnit.parenthesized_token_grammar = (re.compile(r"\("), SimpleValue, r
 class SimpleValueNegation(UnaryRule):
     """Negation accepting only SimpleValues."""
     grammar = omit(Not), attr('op', SimpleValue)
+
+
+class SimpleDateValueNegation(UnaryRule):
+    """Negation accepting only SimpleValues."""
+    grammar = omit(Not), attr('op', SimpleDateValue)
 
 
 class SimpleValueBooleanQuery(BooleanRule):
@@ -449,6 +545,7 @@ class SimpleValueBooleanQuery(BooleanRule):
                     (
                         omit(optional(Not)),
                         [
+                            SpiresDateKeywordQuery,
                             InvenioKeywordQuery,
                             SpiresKeywordQuery,
                         ]
@@ -491,6 +588,8 @@ SimpleValueBooleanQuery.grammar = (
     [
         SimpleValueNegation,
         SimpleValue,
+        SimpleDateValueNegation,
+        SimpleDateValue,
     ],
 
     [And, Or, None],
@@ -500,6 +599,8 @@ SimpleValueBooleanQuery.grammar = (
         SimpleValueBooleanQuery,
         SimpleValueNegation,
         SimpleValue,
+        SimpleDateValueNegation,
+        SimpleDateValue,
     ]
 )
 
@@ -551,7 +652,7 @@ class GreaterThanOp(UnaryRule):
 
     Supports queries like author-count > 2000 or date after 10-2000.
     """
-    grammar = omit(re.compile(r"after|>", re.IGNORECASE)), attr('op', SimpleValue)
+    grammar = omit(re.compile(r"after|>", re.IGNORECASE)), attr('op', [SimpleDateValue, SimpleValue])
 
 
 class GreaterEqualOp(UnaryRule):
@@ -560,7 +661,7 @@ class GreaterEqualOp(UnaryRule):
     Supports queries like date >= 10-2000 or topcite 200+.
     """
     grammar = [
-        (omit(Literal(">=")), attr('op', SimpleValue)),
+        (omit(Literal(">=")), attr('op', [SimpleDateValue, SimpleValue])),
         # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
         # followed by \s or ) or end of input so that you don't accept a value like 1-e.
         (attr('op', re.compile(r"\d+([/-]\d+)*(?=\+)")), omit(re.compile(r'\+(?=\s|\)|$)'))),
@@ -572,7 +673,7 @@ class LessThanOp(UnaryRule):
 
     Supports queries like author-count < 100 or date before 1984.
     """
-    grammar = omit(re.compile(r"before|<", re.IGNORECASE)), attr('op', SimpleValue)
+    grammar = omit(re.compile(r"before|<", re.IGNORECASE)), attr('op', [SimpleDateValue, SimpleValue])
 
 
 class LessEqualOp(UnaryRule):
@@ -580,11 +681,15 @@ class LessEqualOp(UnaryRule):
 
     Supports queries like date <= 10-2000 or author-count 100-.
     """
+
     grammar = [
-        (omit(Literal("<=")), attr('op', SimpleValue)),
+        (omit(Literal("<=")), attr("op", [SimpleDateValue, SimpleValue])),
         # Accept a number or numbers that are separated with (/ or -) followed by a "-" which should be
         # followed by \s or ) or end of input so that you don't accept a value like 1-e.
-        (attr('op', re.compile(r"\d+([/-]\d+)*(?=-)")), omit(re.compile(r'-(?=\s|\)|$)'))),
+        (
+            attr("op", re.compile(r"\d+([/-]\d+)*(?=-)")),
+            omit(re.compile(r"-(?=\s|\)|$)")),
+        ),
     ]
 
 
@@ -624,6 +729,28 @@ class Value(UnaryRule):
             ]
         )
     ])
+
+
+class DateValue(UnaryRule):
+    """Generic rule for all kinds of phrases recognized.
+
+    Serves as an encapsulation of the listed rules.
+    """
+    grammar = attr('op', [
+        (optional(omit(Literal("="))), RangeOp),
+        GreaterEqualOp,
+        LessEqualOp,
+        GreaterThanOp,
+        LessThanOp,
+        (
+            optional(omit(Literal("="))),
+            [
+                ComplexValue,
+                SimpleValueBooleanQuery,
+                SimpleDateValue
+            ]
+        )
+    ])
 ########################
 
 
@@ -636,7 +763,7 @@ class InvenioKeywordQuery(BinaryRule):
     Note:
     E.g. author: ellis, title: boson, or unknown_keyword: foo.
     """
-    grammar = attr('left', [InspireKeyword, re.compile(r"[^\s:]+")]), \
+    grammar = attr('left', [[InspireKeyword, InspireDateKeyword], re.compile(r"[^\s:]+")]), \
         omit(':'), \
         attr('right', Value)
 
@@ -646,6 +773,11 @@ class SpiresKeywordQuery(BinaryRule):
     grammar = attr('left', InspireKeyword), attr('right', Value)
 
 
+class SpiresDateKeywordQuery(BinaryRule):
+    """Keyword queries with pace separator (i.e. Spires style)."""
+    grammar = attr('left', InspireDateKeyword), attr('right', DateValue)
+
+
 class SimpleQuery(UnaryRule):
     """Query basic units.
 
@@ -653,8 +785,10 @@ class SimpleQuery(UnaryRule):
     """
     grammar = attr('op', [
         InvenioKeywordQuery,
+        SpiresDateKeywordQuery,
         SpiresKeywordQuery,
         Value,
+        DateValue,
     ])
 
 
