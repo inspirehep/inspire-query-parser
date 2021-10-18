@@ -246,24 +246,15 @@ class InspireDateKeyword(LeafRule):
             return text, e
 
 
-class SimpleValueUnit(LeafRule):
-    """Represents either a terminal symbol (without parentheses) or a parenthesized SimpleValue.
-
-    The parenthesized case (2nd option of SimpleValueUnit) accepts a SimpleValue which is the more generic case of
-    plaintext and in turn (its grammar) encapsulates whitespace and SimpleValueUnit recognition.
-
-    """
+class SimpleValueUnitGeneric(LeafRule):
+    parenthesized_token_grammar = None  # is set after SimpleValue definition.
+    starts_with_colon = re.compile(r"\s*:", re.UNICODE)
     token_regex = re.compile(r"[^\s:)(]+", re.UNICODE)
 
-    date_specifiers_regex = re.compile(r"({})\s*-\s*\d+".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
-
-    parenthesized_token_grammar = None  # is set after SimpleValue definition.
-
-    starts_with_colon = re.compile(r"\s*:", re.UNICODE)
     """Used for recognizing whether terminal token is a keyword (i.e. followed by some whitespace and ":"."""
 
     def __init__(self, args):
-        super(SimpleValueUnit, self).__init__()
+        super(SimpleValueUnitGeneric, self).__init__()
         if isinstance(args, six.string_types):
             # Value was recognized by the 1st option of the list grammar (regex)
             self.value = args
@@ -308,6 +299,16 @@ class SimpleValueUnit(LeafRule):
         else:
             result = text, SyntaxError("expecting match on " + repr(cls.token_regex.pattern))
         return result
+
+
+class SimpleValueUnit(SimpleValueUnitGeneric):
+    """Represents either a terminal symbol (without parentheses) or a parenthesized SimpleValue.
+
+    The parenthesized case (2nd option of SimpleValueUnit) accepts a SimpleValue which is the more generic case of
+    plaintext and in turn (its grammar) encapsulates whitespace and SimpleValueUnit recognition.
+
+    """
+    date_specifiers_regex = re.compile(r"({})\s*-\s*\d+".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
 
     @classmethod
     def parse(cls, parser, text, pos):
@@ -366,19 +367,11 @@ class SimpleValueWithColonUnit(SimpleValueUnit):
     token_regex = re.compile(r"[^\s)(]+[^\s:)(]", re.UNICODE)
 
 
-class SimpleDateValueUnit(LeafRule):
+class SimpleDateValueUnit(SimpleValueUnitGeneric):
     grammar = re.compile(r"[\d*\-\.\/]{4,10}(?=($|\s))", re.UNICODE)
     date_specifiers_regex = re.compile(r"({})\s*(-\s*\d+)?".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
     string_month_date_regex = re.compile(MONTH_REGEX, re.IGNORECASE)
-
-    def __init__(self, args):
-        super(SimpleDateValueUnit, self).__init__()
-        if isinstance(args, six.string_types):
-            # Value was recognized by the 1st option of the list grammar (regex)
-            self.value = args
-        else:
-            # Value was recognized by the 2nd option of the list grammar
-            self.value = args[0] + args[1].value + args[2]
+    token_regex = re.compile(r"[^\s:)(A-Za-z]+", re.UNICODE)
 
     @classmethod
     def _parse_date_with_string_month(cls, text):
@@ -414,7 +407,11 @@ class SimpleDateValueUnit(LeafRule):
         if token and type(token) != SyntaxError:
             result = remaining_text, cls(token)
         else:
-            result = text, SyntaxError("expecting match on " + cls.__name__)
+            remaining_text, token = cls.parse_terminal_token(parser, text)
+            if type(token) != SyntaxError and re.match('[\d*\-\.\/]{4,10}', token):
+                result = remaining_text, cls(token)
+            else:
+                result = text, SyntaxError("expecting match on " + cls.__name__)
 
         return result
 
