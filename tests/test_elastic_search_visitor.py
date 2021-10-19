@@ -3071,3 +3071,85 @@ def test_date_edited_with_date_with_month_name():
     expected_es_query = {'match': {'earliest_date': {'query': 'august 2002', 'operator': 'and'}}}
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
+
+
+def test_regression_date_query_with_jy():
+    query_string = "(jy 2020 or jy 2021)"
+    expected_es_query = {
+        "bool": {
+            "should": [
+                {
+                    "nested": {
+                        "path": "publication_info",
+                        "query": {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match": {
+                                            "publication_info.year": {
+                                                "query": "2020",
+                                                "operator": "and",
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "_all": {
+                                                "query": "publication_info.year:2020",
+                                                "operator": "and",
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    }
+                },
+                {
+                    "nested": {
+                        "path": "publication_info",
+                        "query": {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match": {
+                                            "publication_info.year": {
+                                                "query": "2021",
+                                                "operator": "and",
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match": {
+                                            "_all": {
+                                                "query": "publication_info.year:2021",
+                                                "operator": "and",
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    }
+                },
+            ]
+        }
+    }
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == _parse_query("jy 2020 or jy 2021")
+    assert generated_es_query == expected_es_query
+
+
+def test_regression_date_query_with_months_as_string():
+    query_string = "(da may 2020 or da july 2021)"
+    expected_es_query = {
+        "bool": {
+            "should": [
+                {"range": {"_created": {"gte": "2020-05||/M", "lt": "2020-06||/M"}}},
+                {"range": {"_created": {"gte": "2021-07||/M", "lt": "2021-08||/M"}}},
+            ]
+        }
+    }
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == _parse_query("(da may 2020 or da july 2021)")
+    assert generated_es_query == expected_es_query
