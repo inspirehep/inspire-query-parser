@@ -367,7 +367,7 @@ class SimpleValueWithColonUnit(SimpleValueUnit):
 
 
 class SimpleDateValueUnit(LeafRule):
-    grammar = re.compile(r"[\d*\-\.\/]{4,10}(?=($|\s))", re.UNICODE)
+    grammar = re.compile(r"[\d*\-\.\/]{4,10}(?=($|\s|\)))", re.UNICODE)
     date_specifiers_regex = re.compile(r"({})\s*(-\s*\d+)?".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
     string_month_date_regex = re.compile(MONTH_REGEX, re.IGNORECASE)
 
