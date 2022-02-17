@@ -421,7 +421,8 @@ class ElasticSearchVisitor(Visitor):
         """
         if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames or all(
                 field in [self.KEYWORD_TO_ES_FIELDNAME['date-added'],
-                          self.KEYWORD_TO_ES_FIELDNAME['date-updated']] for field in fieldnames
+                          self.KEYWORD_TO_ES_FIELDNAME['date-updated'],
+                          self.KEYWORD_TO_ES_FIELDNAME['date-earliest']] for field in fieldnames
         ):
             range_queries = []
             for fieldname in fieldnames:
@@ -721,7 +722,7 @@ class ElasticSearchVisitor(Visitor):
         if node.contains_wildcard:
             return self.handle_value_wildcard(node, fieldnames=fieldnames)
         if fieldnames in [self.KEYWORD_TO_ES_FIELDNAME['date'], self.KEYWORD_TO_ES_FIELDNAME['date-added'],
-                          self.KEYWORD_TO_ES_FIELDNAME['date-updated']]:
+                          self.KEYWORD_TO_ES_FIELDNAME['date-updated'], self.KEYWORD_TO_ES_FIELDNAME['date-earliest']]:
             # Date queries with simple values are transformed into range queries, among the given and the exact
             # next date, according to the granularity of the given date.
             return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})

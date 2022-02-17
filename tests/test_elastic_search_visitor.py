@@ -3068,7 +3068,7 @@ def test_regression_date_edited_name_as_month_name():
 
 def test_date_edited_with_date_with_month_name():
     query_string = "de august 2002"
-    expected_es_query = {'match': {'earliest_date': {'query': 'august 2002', 'operator': 'and'}}}
+    expected_es_query = {'range': {'earliest_date': {'gte': '2002-08||/M', 'lt': '2002-09||/M'}}}
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
 
@@ -3152,4 +3152,11 @@ def test_regression_date_query_with_months_as_string():
     }
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == _parse_query("(da may 2020 or da july 2021)")
+    assert generated_es_query == expected_es_query
+
+
+def test_date_edited_is_interpreted_as_range_query():
+    query_string = "de 2002"
+    expected_es_query = {'range': {'earliest_date': {'gte': '2002||/y', 'lt': '2003||/y'}}}
+    generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
