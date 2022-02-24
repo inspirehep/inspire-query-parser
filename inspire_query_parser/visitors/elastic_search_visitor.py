@@ -77,7 +77,7 @@ class ElasticSearchVisitor(Visitor):
     JOURNAL_ART_ID = 'artid'
     JOURNAL_YEAR = 'year'
     JOURNAL_FIELDS_MAPPING = {
-        JOURNAL_TITLE: ('journal_title_variants'),
+        JOURNAL_TITLE: 'journal_title_variants',
         JOURNAL_VOLUME: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_VOLUME)),
         JOURNAL_PAGE_START: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_PAGE_START)),
         JOURNAL_ART_ID: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_ART_ID)),
