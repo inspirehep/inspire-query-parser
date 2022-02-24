@@ -309,13 +309,14 @@ def test_elastic_search_visitor_find_exact_author_with_bai_partial_value_ellis()
 
 
 def test_elastic_search_visitor_find_journal_title_simple_value():
+
     query_str = 'j Phys.Lett.B'
     expected_es_query = \
         {
             "nested": {
                 "path": "publication_info",
                 "query": {
-                    "match": {"publication_info.journal_title.raw": "Phys.Lett.B"}
+                    "match": {"journal_title_variants": "Phys.Lett.B"}
                 }
             }
         }
@@ -333,7 +334,7 @@ def test_elastic_search_visitor_find_journal_title_and_new_style_vol_simple_valu
                 "query": {
                     "bool": {
                         "must": [
-                            {"match": {"publication_info.journal_title.raw": "Phys.Lett.B"}},
+                            {"match": {"journal_title_variants": "Phys.Lett.B"}},
                             {"match": {"publication_info.journal_volume": "351"}}
                         ]
                     }
@@ -354,7 +355,7 @@ def test_elastic_search_visitor_find_journal_title_and_old_style_vol_simple_valu
                 "query": {
                     "bool": {
                         "must": [
-                            {"match": {"publication_info.journal_title.raw": "Phys.Lett.B"}},
+                            {"match": {"journal_title_variants": "Phys.Lett.B"}},
                             {"match": {"publication_info.journal_volume": "351"}}
                         ]
                     }
@@ -377,7 +378,7 @@ def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_pa
                         "must": [
                             {
                                 "match": {
-                                    "publication_info.journal_title.raw": "Phys.Lett.B"
+                                    "journal_title_variants": "Phys.Lett.B"
                                 }
                             },
                             {
@@ -2398,7 +2399,7 @@ def test_elastic_search_visitor_find_journal_with_year():
                     "must": [
                         {
                             "match": {
-                                "publication_info.journal_title.raw": "jhep"
+                                "journal_title_variants": "jhep"
                             }
                         },
                         {
