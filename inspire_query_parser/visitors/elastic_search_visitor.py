@@ -529,14 +529,12 @@ class ElasticSearchVisitor(Visitor):
 
         # We always expect a journal title, otherwise query would be considered malformed, and thus this method would
         # not have been called.
-        queries_for_each_field = [
-            generate_match_query(self.JOURNAL_FIELDS_MAPPING[self.JOURNAL_TITLE],
-                                 new_publication_info[self.JOURNAL_TITLE],
-                                 with_operator_and=False)
-        ]
+        queries = [generate_match_query(self.JOURNAL_FIELDS_MAPPING[self.JOURNAL_TITLE], new_publication_info[self.JOURNAL_TITLE],with_operator_and=False)]
+
+        queries_for_each_nested_field = []
 
         if self.JOURNAL_VOLUME in new_publication_info:
-            queries_for_each_field.append(
+            queries_for_each_nested_field.append(
                 generate_match_query(
                     self.JOURNAL_FIELDS_MAPPING[self.JOURNAL_VOLUME],
                     new_publication_info[self.JOURNAL_VOLUME],
@@ -545,7 +543,7 @@ class ElasticSearchVisitor(Visitor):
             )
 
         if self.JOURNAL_YEAR in new_publication_info:
-            queries_for_each_field.append(
+            queries_for_each_nested_field.append(
                 generate_match_query(
                     self.JOURNAL_FIELDS_MAPPING[self.JOURNAL_YEAR],
                     new_publication_info[self.JOURNAL_YEAR],
@@ -565,14 +563,17 @@ class ElasticSearchVisitor(Visitor):
                 in (self.JOURNAL_PAGE_START, self.JOURNAL_ART_ID)
             ]
 
-            queries_for_each_field.append(
+            queries_for_each_nested_field.append(
                 wrap_queries_in_bool_clauses_if_more_than_one(match_queries, use_must_clause=False)
             )
-
-        return generate_nested_query(
-            self.JOURNAL_FIELDS_PREFIX,
-            wrap_queries_in_bool_clauses_if_more_than_one(queries_for_each_field, use_must_clause=True)
-        )
+        if queries_for_each_nested_field:
+            queries.append(generate_nested_query(
+                self.JOURNAL_FIELDS_PREFIX,
+                wrap_queries_in_bool_clauses_if_more_than_one(queries_for_each_nested_field, use_must_clause=True)
+            ))
+        import pdb
+        pdb.set_trace()
+        return wrap_queries_in_bool_clauses_if_more_than_one(queries, use_must_clause=False)
 
     # ################
 

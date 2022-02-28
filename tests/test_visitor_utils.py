@@ -309,6 +309,8 @@ def test_generate_nested_query():
         }
     }
     path = 'journal'
+    import pdb
+    pdb.set_trace()
 
     generated_query = generate_nested_query(path, query)
 
