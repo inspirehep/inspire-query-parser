@@ -2399,7 +2399,7 @@ def test_elastic_search_visitor_find_journal_with_year():
                     "must": [
                         {
                             "match": {
-                            "journal_title_variants": "jhep"
+                                "journal_title_variants": "jhep"
                             }
                         },
                         {

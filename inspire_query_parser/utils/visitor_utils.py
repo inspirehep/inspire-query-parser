@@ -432,8 +432,7 @@ def generate_nested_query(path, queries):
     Returns:
         (dict): The nested query if queries is not falsy, otherwise an empty dict.
     """
-    import pdb
-    pdb.set_trace()
+
     if not queries:
         return {}
 
