@@ -571,8 +571,7 @@ class ElasticSearchVisitor(Visitor):
                 self.JOURNAL_FIELDS_PREFIX,
                 wrap_queries_in_bool_clauses_if_more_than_one(queries_for_each_nested_field, use_must_clause=True)
             ))
-        import pdb
-        pdb.set_trace()
+
         return wrap_queries_in_bool_clauses_if_more_than_one(queries, use_must_clause=False)
 
     # ################
