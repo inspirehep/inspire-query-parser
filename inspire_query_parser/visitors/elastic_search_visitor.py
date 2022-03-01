@@ -71,13 +71,12 @@ class ElasticSearchVisitor(Visitor):
     # ##### Configuration #####
     # ## Journal queries ##
     JOURNAL_FIELDS_PREFIX = 'publication_info'
-    JOURNAL_TITLE = 'journal_title'
+    JOURNAL_TITLE = 'journal_title_variants'
     JOURNAL_VOLUME = 'journal_volume'
     JOURNAL_PAGE_START = 'page_start'
     JOURNAL_ART_ID = 'artid'
     JOURNAL_YEAR = 'year'
     JOURNAL_FIELDS_MAPPING = {
-        JOURNAL_TITLE: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_TITLE, 'raw')),
         JOURNAL_VOLUME: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_VOLUME)),
         JOURNAL_PAGE_START: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_PAGE_START)),
         JOURNAL_ART_ID: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_ART_ID)),
@@ -511,7 +510,7 @@ class ElasticSearchVisitor(Visitor):
 
         return new_publication_info
 
-    def _generate_journal_nested_queries(self, value):
+    def _generate_journal_queries(self, value):
         """Generates ElasticSearch nested query(s).
         Args:
             value (string): Contains the journal_title, journal_volume and artid or start_page separated by a comma.
@@ -528,12 +527,13 @@ class ElasticSearchVisitor(Visitor):
         new_publication_info = self._preprocess_journal_query_value(third_journal_field, value)
 
         # We always expect a journal title, otherwise query would be considered malformed, and thus this method would
-        # not have been called.
-        queries_for_each_field = [
-            generate_match_query(self.JOURNAL_FIELDS_MAPPING[self.JOURNAL_TITLE],
-                                 new_publication_info[self.JOURNAL_TITLE],
-                                 with_operator_and=False)
-        ]
+
+        journal_title_query = generate_match_query(
+                    self.JOURNAL_TITLE,
+                    new_publication_info[self.JOURNAL_TITLE],
+                    with_operator_and=False
+                )
+        queries_for_each_field = []
 
         if self.JOURNAL_VOLUME in new_publication_info:
             queries_for_each_field.append(
@@ -569,10 +569,13 @@ class ElasticSearchVisitor(Visitor):
                 wrap_queries_in_bool_clauses_if_more_than_one(match_queries, use_must_clause=False)
             )
 
-        return generate_nested_query(
+        nested_query = generate_nested_query(
             self.JOURNAL_FIELDS_PREFIX,
             wrap_queries_in_bool_clauses_if_more_than_one(queries_for_each_field, use_must_clause=True)
         )
+
+        journal_queries = [journal_title_query, nested_query]
+        return wrap_queries_in_bool_clauses_if_more_than_one(journal_queries, use_must_clause=True)
 
     # ################
 
@@ -728,7 +731,7 @@ class ElasticSearchVisitor(Visitor):
             return self._generate_range_queries(force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value})
         if isinstance(fieldnames, list):
             if self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
-                return self._generate_journal_nested_queries(node.value)
+                return self._generate_journal_queries(node.value)
 
             if self.KEYWORD_TO_ES_FIELDNAME['affiliation-id'] == fieldnames:
                 match_queries = [
@@ -801,7 +804,7 @@ class ElasticSearchVisitor(Visitor):
             return self._generate_type_code_query(node.value)
 
         elif self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
-            return self._generate_journal_nested_queries(node.value)
+            return self._generate_journal_queries(node.value)
 
         bai_fieldnames = self._generate_fieldnames_if_bai_query(
             fieldnames,
@@ -850,7 +853,7 @@ class ElasticSearchVisitor(Visitor):
             return self._generate_type_code_query(node.value)
 
         elif self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
-            return self._generate_journal_nested_queries(node.value)
+            return self._generate_journal_queries(node.value)
 
         # Add wildcard token as prefix and suffix.
         value = \
