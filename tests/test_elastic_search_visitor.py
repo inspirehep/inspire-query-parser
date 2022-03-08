@@ -288,11 +288,11 @@ def test_elastic_search_visitor_find_journal_title_and_old_style_vol_simple_valu
     expected_es_query = {
         "bool": {
             "must": [
-                {"match": {"journal_title_variants": "Phys.Lett."}},
+                {"match": {"journal_title_variants": "Phys.Lett.B"}},
                 {
                     "nested": {
                         "path": "publication_info",
-                        "query": {"match": {"publication_info.journal_volume": "B351"}},
+                        "query": {"match": {"publication_info.journal_volume": "351"}},
                     }
                 },
             ]
@@ -2378,9 +2378,10 @@ def test_elastic_search_visitor_find_journal_with_year():
                                 "must": [
                                     {
                                         "match": {
-                                            "publication_info.journal_volume": "0903"
+                                            "publication_info.journal_volume": "03"
                                         }
                                     },
+                                    {"match": {"publication_info.year": 2009}},
                                     {
                                         "bool": {
                                             "should": [
@@ -3049,6 +3050,71 @@ def test_date_edited_is_interpreted_as_range_query():
     query_string = "de 2002"
     expected_es_query = {
         "range": {"earliest_date": {"gte": "2002||/y", "lt": "2003||/y"}}
+    }
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_journal_title_variants_regression():
+    query_string = "j JHEP,0412,015"
+    expected_es_query = {
+        "bool": {
+            "must": [
+                {"match": {"journal_title_variants": "JHEP"}},
+                {
+                    "nested": {
+                        "path": "publication_info",
+                        "query": {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "match": {
+                                            "publication_info.journal_volume": "12"
+                                        }
+                                    },
+                                    {"match": {"publication_info.year": 2004}},
+                                    {
+                                        "bool": {
+                                            "should": [
+                                                {
+                                                    "match": {
+                                                        "publication_info.page_start": "015"
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "publication_info.artid": "015"
+                                                    }
+                                                },
+                                            ]
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    }
+                },
+            ]
+        }
+    }
+    generated_es_query = _parse_query(query_string)
+    assert generated_es_query == expected_es_query
+
+
+def test_journal_title_variants_regression_complex_journal_title():
+    query_string = "j Phys.Lett.,B351"
+    expected_es_query = {
+        "bool": {
+            "must": [
+                {"match": {"journal_title_variants": "Phys.Lett.B"}},
+                {
+                    "nested": {
+                        "path": "publication_info",
+                        "query": {"match": {"publication_info.journal_volume": "351"}},
+                    }
+                },
+            ]
+        }
     }
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
