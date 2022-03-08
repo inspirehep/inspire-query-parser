@@ -72,6 +72,7 @@ class ElasticSearchVisitor(Visitor):
     # ## Journal queries ##
     JOURNAL_FIELDS_PREFIX = 'publication_info'
     JOURNAL_TITLE = 'journal_title_variants'
+    JOURNAL_TITLE_FOR_OLD_PUBLICATION_INFO = 'journal_title'
     JOURNAL_VOLUME = 'journal_volume'
     JOURNAL_PAGE_START = 'page_start'
     JOURNAL_ART_ID = 'artid'
@@ -484,7 +485,7 @@ class ElasticSearchVisitor(Visitor):
         """
         # Prepare old publication info for :meth:`inspire_schemas.utils.convert_old_publication_info_to_new`.
         publication_info_keys = [
-            self.JOURNAL_TITLE,
+            self.JOURNAL_TITLE_FOR_OLD_PUBLICATION_INFO,
             self.JOURNAL_VOLUME,
             third_journal_field
         ]
@@ -530,7 +531,7 @@ class ElasticSearchVisitor(Visitor):
 
         journal_title_query = generate_match_query(
                     self.JOURNAL_TITLE,
-                    new_publication_info[self.JOURNAL_TITLE],
+                    new_publication_info[self.JOURNAL_TITLE_FOR_OLD_PUBLICATION_INFO],
                     with_operator_and=False
                 )
         queries_for_each_field = []
