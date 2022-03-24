@@ -116,7 +116,7 @@ class ElasticSearchVisitor(Visitor):
         'exact-author': 'authors.full_name_unicode_normalized',
         'irn': 'external_system_identifiers.value.raw',
         'journal': [
-            JOURNAL_FIELDS_MAPPING.values()
+            *JOURNAL_FIELDS_MAPPING.values()
         ],
         'keyword': 'keywords.value',
         'refersto': 'references.record.$ref',
