@@ -766,6 +766,25 @@ def test_elastic_search_visitor_wildcard_support():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_wildcard_journal_search():
+    query_str = 'j Phys.Rev.*'
+    expected_query = {
+        'nested': {
+            'path': 'publication_info',
+            'query': {
+                'query_string': {
+                    'query': 'Phys.Rev.*',
+                    'fields': ['publication_info.journal_volume', 'publication_info.page_start', 'publication_info.artid', 'publication_info.year'],
+                    'default_operator': 'AND',
+                    'analyze_wildcard': True,
+                }
+            }
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_query
+
+
 def test_elastic_search_visitor_first_author_wildcard_support():
     query_str = "fa *alge | fa 'alge*' | fa \"o*aigh\""
     expected_es_query = {

@@ -489,8 +489,12 @@ def wrap_query_in_nested_if_field_is_nested(query, field, nested_fields):
 
     for element in nested_fields:
         match_pattern = r'^{}.'.format(element)
-        if re.match(match_pattern, field):
-            return generate_nested_query(element, query)
+        if type(field) is list:
+            if list(filter(lambda v: re.match(match_pattern, v), field)):
+                return generate_nested_query(element, query)
+        else:
+            if re.match(match_pattern, field):
+                return generate_nested_query(element, query)
 
     return query
 
