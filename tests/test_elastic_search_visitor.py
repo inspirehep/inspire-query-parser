@@ -774,7 +774,7 @@ def test_elastic_search_visitor_wildcard_journal_search():
             'query': {
                 'query_string': {
                     'query': 'Phys.Rev.*',
-                    'fields': ['publication_info.journal_volume', 'publication_info.page_start', 'publication_info.artid', 'publication_info.year'],
+                    'fields': ['publication_info.journal_volume', 'publication_info.page_start', 'publication_info.artid'],
                     'default_operator': 'AND',
                     'analyze_wildcard': True,
                 }

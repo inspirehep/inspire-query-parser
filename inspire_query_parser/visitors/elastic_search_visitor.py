@@ -362,6 +362,10 @@ class ElasticSearchVisitor(Visitor):
         else:
             field_specifier = 'fields'
             field_specifier_value = fieldnames if isinstance(fieldnames, list) else [fieldnames]
+            # Can only use prefix queries on keyword, text and wildcard
+            # fields so in journal * searches with type date need to be removed
+            if 'publication_info.year' in field_specifier_value:
+                field_specifier_value.remove('publication_info.year')
 
         query = {
             'query_string': {
