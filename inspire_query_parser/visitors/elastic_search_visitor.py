@@ -78,6 +78,7 @@ class ElasticSearchVisitor(Visitor):
     JOURNAL_ART_ID = 'artid'
     JOURNAL_YEAR = 'year'
     JOURNAL_FIELDS_MAPPING = {
+        JOURNAL_TITLE: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_TITLE_FOR_OLD_PUBLICATION_INFO)),
         JOURNAL_VOLUME: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_VOLUME)),
         JOURNAL_PAGE_START: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_PAGE_START)),
         JOURNAL_ART_ID: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_ART_ID)),
@@ -366,7 +367,6 @@ class ElasticSearchVisitor(Visitor):
             # fields so in journal * searches with type date need to be removed
             if 'publication_info.year' in field_specifier_value:
                 field_specifier_value.remove('publication_info.year')
-
         query = {
             'query_string': {
                 'query': escape_query_string_special_characters(value),
