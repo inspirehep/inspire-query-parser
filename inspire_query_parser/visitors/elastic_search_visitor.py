@@ -133,6 +133,7 @@ class ElasticSearchVisitor(Visitor):
             'thesis_info.institutions.record.$ref',
             'record_affiliations.record.$ref',
         ],
+        'fulltext': 'documents.attachment.content',
     }
     """Mapping from keywords to ElasticSearch fields.
     Note:

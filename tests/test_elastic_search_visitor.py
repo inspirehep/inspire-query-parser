@@ -3137,3 +3137,57 @@ def test_journal_title_variants_regression_complex_journal_title():
     }
     generated_es_query = _parse_query(query_string)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_fulltext():
+    query_str = "fulltext FCC"
+    expected_es_query = {'match':{
+            'documents.attachment.content': {
+                'query': 'FCC',
+                'operator': 'and'
+            }
+    }}
+    generated_es_query = _parse_query(query_str)
+    assert expected_es_query == generated_es_query
+
+
+def test_elastic_search_visitor_fulltext_and_other_field():
+    query_str = "ft something and t boson"
+    expected_es_query = {
+        'bool': {
+            'must': [
+                {
+                    'match': {
+                        'documents.attachment.content': {
+                            'query': 'something',
+                            'operator': 'and'
+                        }
+                    }
+                },
+                {
+                    'match': {
+                        'titles.full_title': {
+                            'query': 'boson',
+                            'operator': 'and'
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert expected_es_query == generated_es_query
+
+
+def test_elastic_search_visitor_partial_match_fulltext():
+    query_str = "ft 'this is a test'"
+    expected_es_query = {
+        'query_string': {
+            'query': '*this is a test*',
+            'fields': ['documents.attachment.content'],
+            'default_operator': 'AND',
+            'analyze_wildcard': True
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert expected_es_query == generated_es_query
