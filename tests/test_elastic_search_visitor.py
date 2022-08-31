@@ -3191,3 +3191,47 @@ def test_elastic_search_visitor_partial_match_fulltext():
     }
     generated_es_query = _parse_query(query_str)
     assert expected_es_query == generated_es_query
+
+
+def test_elastic_search_visitor_citedby():
+    query_str = "citedby:recid:432ca02b-f54d-472c-8f86-5dced89dcc61"
+    expected_es_query = {
+        "terms": {
+            "self.$ref.raw": {
+                "index": "records-hep",
+                "id": "432ca02b-f54d-472c-8f86-5dced89dcc61",
+                "path": "references.record.$ref.raw"
+            }
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_complex_query():
+    query_str = "citedby:recid:432ca02b-f54d-472c-8f86-5dced89dcc61 and t Test"
+    expected_es_query = {
+        "bool": {
+            "must": [
+                {
+                    "terms": {
+                        "self.$ref.raw": {
+                            "index": "records-hep",
+                            "id": "432ca02b-f54d-472c-8f86-5dced89dcc61",
+                            "path": "references.record.$ref.raw"
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "titles.full_title": {
+                            "query": "Test",
+                            "operator": "and"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query

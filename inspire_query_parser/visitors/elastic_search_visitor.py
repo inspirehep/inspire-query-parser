@@ -100,7 +100,6 @@ class ElasticSearchVisitor(Visitor):
         'first_author_first_name_initials': 'first_author.first_name.initials',
         'first_author_bai': 'first_author.ids.value',
         'author-count': 'author_count',
-        'citedby': 'citedby',
         'collaboration': 'collaborations.value',
         'date': [
             'earliest_date',
@@ -134,6 +133,10 @@ class ElasticSearchVisitor(Visitor):
             'record_affiliations.record.$ref',
         ],
         'fulltext': 'documents.attachment.content',
+        'citedby': {
+            'path': 'references.record.$ref.raw',
+            'search_path': 'self.$ref.raw'
+        }
     }
     """Mapping from keywords to ElasticSearch fields.
     Note:
@@ -583,6 +586,17 @@ class ElasticSearchVisitor(Visitor):
         journal_queries = [journal_title_query, nested_query]
         return wrap_queries_in_bool_clauses_if_more_than_one(journal_queries, use_must_clause=True)
 
+    def _generate_terms_lookup(self, path, search_path, value):
+        return {
+            "terms": {
+                search_path : {
+                    "index" : "records-hep",
+                    "id" : value,
+                    "path" : path
+                }
+            }
+        }
+
     # ################
 
     def visit_empty_query(self, node):
@@ -647,35 +661,43 @@ class ElasticSearchVisitor(Visitor):
     def visit_nested_keyword_op(self, node):  # TODO Cannot be completed as of yet.
         # FIXME: quick and dirty implementation of refersto:recid:<recid>
         right = node.right
-        if node.left.value == 'refersto' and hasattr(right, 'left') and hasattr(right, 'right'):
-            if right.left.value == 'control_number':
-                recid = right.right.value
-                citing_records_query = generate_match_query(
-                    self.KEYWORD_TO_ES_FIELDNAME['refersto'],
-                    recid,
-                    with_operator_and=False
+        if hasattr(right, 'left') and hasattr(right, 'right'):
+            if node.left.value == 'citedby':
+                record_id = right.right.value
+                return self._generate_terms_lookup(
+                    self.KEYWORD_TO_ES_FIELDNAME['citedby']['path'],
+                    self.KEYWORD_TO_ES_FIELDNAME['citedby']['search_path'],
+                    record_id
                 )
-                records_with_collection_literature_query = generate_match_query(
-                    '_collections',
-                    'Literature',
-                    with_operator_and=False
-                )
-                superseded_records_query = generate_match_query(
-                    self.RECORD_RELATION_FIELD,
-                    'successor',
-                    with_operator_and=False
-                )
-                self_citation = generate_match_query(
-                    "control_number",
-                    recid,
-                    with_operator_and=False
-                )
-                return {
-                    'bool': {
-                        'must': [citing_records_query, records_with_collection_literature_query],
-                        'must_not': [superseded_records_query, self_citation]
+            if node.left.value == 'refersto':
+                if right.left.value == 'control_number':
+                    recid = right.right.value
+                    citing_records_query = generate_match_query(
+                        self.KEYWORD_TO_ES_FIELDNAME['refersto'],
+                        recid,
+                        with_operator_and=False
+                    )
+                    records_with_collection_literature_query = generate_match_query(
+                        '_collections',
+                        'Literature',
+                        with_operator_and=False
+                    )
+                    superseded_records_query = generate_match_query(
+                        self.RECORD_RELATION_FIELD,
+                        'successor',
+                        with_operator_and=False
+                    )
+                    self_citation = generate_match_query(
+                        "control_number",
+                        recid,
+                        with_operator_and=False
+                    )
+                    return {
+                        'bool': {
+                            'must': [citing_records_query, records_with_collection_literature_query],
+                            'must_not': [superseded_records_query, self_citation]
+                        }
                     }
-                }
             if right.left.value == 'author':
                 return generate_match_query("referenced_authors_bais", right.right.value, with_operator_and=False)
 
