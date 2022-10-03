@@ -3194,12 +3194,12 @@ def test_elastic_search_visitor_partial_match_fulltext():
 
 
 def test_elastic_search_visitor_citedby():
-    query_str = "citedby:recid:432ca02b-f54d-472c-8f86-5dced89dcc61"
+    query_str = "citedby:recid:123456"
     expected_es_query = {
         "terms": {
             "self.$ref.raw": {
                 "index": "records-hep",
-                "id": "432ca02b-f54d-472c-8f86-5dced89dcc61",
+                "temp_recid_for_uuid": "123456",
                 "path": "references.record.$ref.raw"
             }
         }
@@ -3209,7 +3209,7 @@ def test_elastic_search_visitor_citedby():
 
 
 def test_elastic_search_visitor_complex_query():
-    query_str = "citedby:recid:432ca02b-f54d-472c-8f86-5dced89dcc61 and t Test"
+    query_str = "citedby:recid:123456 and t Test"
     expected_es_query = {
         "bool": {
             "must": [
@@ -3217,7 +3217,7 @@ def test_elastic_search_visitor_complex_query():
                     "terms": {
                         "self.$ref.raw": {
                             "index": "records-hep",
-                            "id": "432ca02b-f54d-472c-8f86-5dced89dcc61",
+                            "temp_recid_for_uuid": "123456",
                             "path": "references.record.$ref.raw"
                         }
                     }
