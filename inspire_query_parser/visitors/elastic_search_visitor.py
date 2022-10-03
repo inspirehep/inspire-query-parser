@@ -591,7 +591,7 @@ class ElasticSearchVisitor(Visitor):
             "terms": {
                 search_path : {
                     "index" : "records-hep",
-                    "id" : value,
+                    "temp_recid_for_uuid" : value,
                     "path" : path
                 }
             }
