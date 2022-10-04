@@ -3199,7 +3199,7 @@ def test_elastic_search_visitor_citedby():
         "terms": {
             "self.$ref.raw": {
                 "index": "records-hep",
-                "temp_recid_for_uuid": "123456",
+                "id": "123456",
                 "path": "references.record.$ref.raw"
             }
         }
@@ -3217,7 +3217,7 @@ def test_elastic_search_visitor_complex_query():
                     "terms": {
                         "self.$ref.raw": {
                             "index": "records-hep",
-                            "temp_recid_for_uuid": "123456",
+                            "id": "123456",
                             "path": "references.record.$ref.raw"
                         }
                     }
