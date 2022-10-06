@@ -268,6 +268,9 @@ class RestructuringVisitor(Visitor):
     def visit_range_op(self, node):
         return ast.RangeOp(node.left.accept(self), node.right.accept(self))
 
+    def visit_greater_than_date_op(self, node):
+        return ast.GreaterThanDateOp(node.op.accept(self))
+
     def visit_greater_than_op(self, node):
         return ast.GreaterThanOp(node.op.accept(self))
 
@@ -279,6 +282,9 @@ class RestructuringVisitor(Visitor):
         return ast.GreaterEqualThanOp(value)
 
     def visit_less_than_op(self, node):
+        return ast.LessThanDateOp(node.op.accept(self))
+
+    def visit_less_than_date_op(self, node):
         return ast.LessThanOp(node.op.accept(self))
 
     def visit_less_equal_op(self, node):

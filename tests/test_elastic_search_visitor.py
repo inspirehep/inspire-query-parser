@@ -3235,3 +3235,21 @@ def test_elastic_search_visitor_complex_query():
     }
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_regression_greater_than_for_non_date():
+    query_str = "t after something"
+    expected_es_query = {
+        "match": {"titles.full_title": {"query": "after something", "operator": "and"}}
+    }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_regression_less_than_for_non_date():
+    query_str = "t before something"
+    expected_es_query = {
+        "match": {"titles.full_title": {"query": "before something", "operator": "and"}}
+    }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query

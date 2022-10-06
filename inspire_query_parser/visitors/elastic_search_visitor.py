@@ -649,10 +649,16 @@ class ElasticSearchVisitor(Visitor):
     def visit_greater_than_op(self, node, fieldnames):
         return self._generate_range_queries(force_list(fieldnames), {'gt': node.op.value})
 
+    def visit_greater_than_date_op(self, node, fieldnames):
+        return self._generate_range_queries(force_list(fieldnames), {'gt': node.op.value})
+
     def visit_greater_equal_than_op(self, node, fieldnames):
         return self._generate_range_queries(force_list(fieldnames), {'gte': node.op.value})
 
     def visit_less_than_op(self, node, fieldnames):
+        return self._generate_range_queries(force_list(fieldnames), {'lt': node.op.value})
+
+    def visit_less_than_date_op(self, node, fieldnames):
         return self._generate_range_queries(force_list(fieldnames), {'lt': node.op.value})
 
     def visit_less_equal_than_op(self, node, fieldnames):

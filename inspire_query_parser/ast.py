@@ -168,6 +168,14 @@ class GreaterThanOp(UnaryOp):
     pass
 
 
+class GreaterThanDateOp(UnaryOp):
+    pass
+
+
+class LessThanDateOp(UnaryOp):
+    pass
+
+
 class LessThanOp(UnaryOp):
     pass
 
