@@ -30,6 +30,7 @@ from dateutil.relativedelta import relativedelta
 from inspire_query_parser import parser
 from inspire_query_parser.ast import (AndOp, EmptyQuery, ExactMatchValue,
                                       GreaterEqualThanOp, GreaterThanOp,
+                                      GreaterThanDateOp,LessThanDateOp,
                                       Keyword, KeywordOp, LessEqualThanOp,
                                       LessThanOp, MalformedQuery,
                                       NestedKeywordOp, NotOp, OrOp,
@@ -354,17 +355,11 @@ from inspire_query_parser.visitors.restructuring_visitor import \
         # G, GE, LT, LE, E queries
         (
              'date > 2000-10 and date < 2000-12',
-             AndOp(
-                 KeywordOp(Keyword('date'), GreaterThanOp(Value('2000-10'))),
-                 KeywordOp(Keyword('date'), LessThanOp(Value('2000-12')))
-             )
+             AndOp(KeywordOp(Keyword('date'), GreaterThanDateOp(Value('2000-10'))), KeywordOp(Keyword('date'), LessThanOp(Value('2000-12'))))
          ),
         (
              'date after 10/2000 and date before 2000-12',
-             AndOp(
-                 KeywordOp(Keyword('date'), GreaterThanOp(Value('10/2000'))),
-                 KeywordOp(Keyword('date'), LessThanOp(Value('2000-12')))
-             )
+             AndOp(KeywordOp(Keyword('date'), GreaterThanDateOp(Value('10/2000'))), KeywordOp(Keyword('date'), LessThanOp(Value('2000-12'))))
          ),
         (
             'date >= nov 2000 and d<=2005',
@@ -445,23 +440,11 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             'du > yesterday - 2',
             KeywordOp(
                 Keyword('date-updated'),
-                GreaterThanOp(Value(str((date.today() - relativedelta(days=3)))))
+                GreaterThanDateOp(Value(str((date.today() - relativedelta(days=3)))))
             )
          ),
 
         # Wildcard queries
-        (
-            'find a \'o*aigh\' and t "alge*" and date >2013',
-            AndOp(
-                KeywordOp(Keyword('author'), PartialMatchValue('o*aigh', contains_wildcard=True)),
-                AndOp(
-                    KeywordOp(Keyword('title'), ExactMatchValue('alge*'
-
-                                                                )),
-                    KeywordOp(Keyword('date'), GreaterThanOp(Value('2013')))
-                )
-            )
-         ),
         (
             'a *alge | a alge* | a o*aigh',
             OrOp(
@@ -476,7 +459,19 @@ from inspire_query_parser.visitors.restructuring_visitor import \
             'find texkey Hirata:1992*',
             KeywordOp(Keyword('texkeys'), Value('Hirata:1992*', contains_wildcard=True))
         ),
-
+        (
+            "find a 'o*aigh' and t \"alge*\" and date >2013",
+            AndOp(
+                KeywordOp(
+                    Keyword("author"),
+                    PartialMatchValue("o*aigh", contains_wildcard=True),
+                ),
+                AndOp(
+                    KeywordOp(Keyword("title"), ExactMatchValue("alge*")),
+                    KeywordOp(Keyword("date"), GreaterThanDateOp(Value("2013"))),
+                ),
+            ),
+        ),
         # Queries for implicit "and" removal
         ('title and foo', AndOp(ValueOp(Value('title')), ValueOp(Value('foo')))),
         ('author takumi doi', KeywordOp(Keyword('author'), Value('takumi doi'))),
@@ -711,7 +706,7 @@ def test_foo_bar():
             )
         ),
         ('find cc italy', KeywordOp(Keyword('country'), Value('italy'))),
-        ('fin date > today', KeywordOp(Keyword('date'), GreaterThanOp(Value(str(date.today()))))),
+        ('fin date > today', KeywordOp(Keyword('date'), GreaterThanDateOp(Value(str(date.today()))))),
         ('find r atlas-conf-*', KeywordOp(Keyword('reportnumber'), Value('atlas-conf-*', contains_wildcard=True))),
         (
             'find caption "Diagram for the fermion flow violating process"',

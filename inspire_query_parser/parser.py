@@ -367,7 +367,7 @@ class SimpleValueWithColonUnit(SimpleValueUnit):
 
 
 class SimpleDateValueUnit(LeafRule):
-    grammar = re.compile(r"[\d*\-\.\/]{4,10}(?=($|\s|\)))", re.UNICODE)
+    grammar = re.compile(r"[\d*\-\.\/\_]{1,10}(?=($|\s|\)))", re.UNICODE)
     date_specifiers_regex = re.compile(r"({})\s*(-\s*\d+)?".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE)
     string_month_date_regex = re.compile(MONTH_REGEX, re.IGNORECASE)
 
@@ -555,6 +555,7 @@ class SimpleValueBooleanQuery(BooleanRule):
                         GreaterEqualOp,
                         LessEqualOp,
                         GreaterThanOp,
+                        GreaterThanDateOp,
                         LessThanOp,
                         ComplexValue
                     ]
@@ -600,7 +601,6 @@ SimpleValueBooleanQuery.grammar = (
         SimpleValueNegation,
         SimpleValue,
         SimpleDateValueNegation,
-        SimpleDateValue,
     ]
 )
 
@@ -652,7 +652,15 @@ class GreaterThanOp(UnaryRule):
 
     Supports queries like author-count > 2000 or date after 10-2000.
     """
-    grammar = omit(re.compile(r"after|>", re.IGNORECASE)), attr('op', [SimpleDateValue, SimpleValue])
+    grammar = omit(re.compile(r">", re.IGNORECASE)), attr('op', [SimpleValue])
+
+
+class GreaterThanDateOp(UnaryRule):
+    """Greater than operator.
+
+    Supports queries like author-count > 2000 or date after 10-2000.
+    """
+    grammar = omit(re.compile(r"after|>", re.IGNORECASE)), attr('op', [SimpleDateValue])
 
 
 class GreaterEqualOp(UnaryRule):
@@ -673,7 +681,15 @@ class LessThanOp(UnaryRule):
 
     Supports queries like author-count < 100 or date before 1984.
     """
-    grammar = omit(re.compile(r"before|<", re.IGNORECASE)), attr('op', [SimpleDateValue, SimpleValue])
+    grammar = omit(re.compile(r"<", re.IGNORECASE)), attr('op', [SimpleValue])
+
+
+class LessThanDateOp(UnaryRule):
+    """Less than operator.
+
+    Supports queries like author-count < 100 or date before 1984.
+    """
+    grammar = omit(re.compile(r"before|<", re.IGNORECASE)), attr('op', [SimpleDateValue])
 
 
 class LessEqualOp(UnaryRule):
@@ -740,8 +756,8 @@ class DateValue(UnaryRule):
         (optional(omit(Literal("="))), RangeOp),
         GreaterEqualOp,
         LessEqualOp,
-        GreaterThanOp,
-        LessThanOp,
+        GreaterThanDateOp,
+        LessThanDateOp,
         (
             optional(omit(Literal("="))),
             [

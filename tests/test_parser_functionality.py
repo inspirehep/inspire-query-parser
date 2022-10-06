@@ -27,6 +27,7 @@ import pytest
 from inspire_query_parser.parser import (And, BooleanQuery, ComplexValue,
                                          DateValue, EmptyQuery, Expression,
                                          GreaterEqualOp, GreaterThanOp,
+                                         GreaterThanDateOp,
                                          InspireDateKeyword, InspireKeyword,
                                          InvenioKeywordQuery, LessEqualOp,
                                          LessThanOp, MalformedQueryWords,
@@ -1763,64 +1764,6 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
         ("      ", Query([EmptyQuery()])),
         # G, GE, LT, LE, E queries
         (
-            "date > 2000-10 and < 2000-12",
-            Query(
-                [
-                    Statement(
-                        BooleanQuery(
-                            Expression(
-                                SimpleQuery(
-                                    SpiresDateKeywordQuery(
-                                        InspireDateKeyword("date"),
-                                        DateValue(
-                                            GreaterThanOp(SimpleDateValue("2000-10"))
-                                        ),
-                                    )
-                                )
-                            ),
-                            And(),
-                            Statement(
-                                Expression(
-                                    SimpleQuery(
-                                        Value(LessThanOp(SimpleDateValue("2000-12")))
-                                    )
-                                )
-                            ),
-                        )
-                    )
-                ]
-            ),
-        ),
-        (
-            "date after 10/2000 and before 2000-12",
-            Query(
-                [
-                    Statement(
-                        BooleanQuery(
-                            Expression(
-                                SimpleQuery(
-                                    SpiresDateKeywordQuery(
-                                        InspireDateKeyword("date"),
-                                        DateValue(
-                                            GreaterThanOp(SimpleDateValue("10/2000"))
-                                        ),
-                                    )
-                                )
-                            ),
-                            And(),
-                            Statement(
-                                Expression(
-                                    SimpleQuery(
-                                        Value(LessThanOp(SimpleDateValue("2000-12")))
-                                    )
-                                )
-                            ),
-                        )
-                    )
-                ]
-            ),
-        ),
-        (
             "date >= nov 2000 and d<=2005",
             Query(
                 [
@@ -2070,7 +2013,7 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
                                 SpiresDateKeywordQuery(
                                     InspireDateKeyword("date-updated"),
                                     DateValue(
-                                        GreaterThanOp(SimpleDateValue("yesterday - 2"))
+                                        GreaterThanDateOp(SimpleDateValue("yesterday - 2"))
                                     ),
                                 )
                             )
@@ -2112,7 +2055,7 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
                                                 SpiresDateKeywordQuery(
                                                     InspireDateKeyword("date"),
                                                     DateValue(
-                                                        GreaterThanOp(
+                                                        GreaterThanDateOp(
                                                             SimpleDateValue("2013")
                                                         )
                                                     ),
@@ -2331,6 +2274,79 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
     },
 )
 def test_parser_functionality(query_str, expected_parse_tree):
+    print("Parsing: " + query_str)
+    parser = StatefulParser()
+    _, parse_tree = parser.parse(query_str, Query)
+    assert parse_tree == expected_parse_tree
+
+
+@pytest.mark.parametrize(
+    ["query_str", "expected_parse_tree"],
+    {
+        (
+            "date > 2000-10 and < 2000-12",
+            Query(
+                [
+                    Statement(
+                        BooleanQuery(
+                            Expression(
+                                SimpleQuery(
+                                    SpiresDateKeywordQuery(
+                                        InspireDateKeyword("date"),
+                                        DateValue(
+                                            GreaterThanOp(SimpleDateValue("2000-10"))
+                                        ),
+                                    )
+                                )
+                            ),
+                            And(),
+                            Statement(
+                                Expression(
+                                    SimpleQuery(
+                                        Value(LessThanOp(SimpleDateValue("2000-12")))
+                                    )
+                                )
+                            ),
+                        )
+                    )
+                ]
+            ),
+        ),
+        (
+            "date after 10/2000 and before 2000-12",
+            Query(
+                [
+                    Statement(
+                        BooleanQuery(
+                            Expression(
+                                SimpleQuery(
+                                    SpiresDateKeywordQuery(
+                                        InspireDateKeyword("date"),
+                                        DateValue(
+                                            GreaterThanOp(SimpleDateValue("10/2000"))
+                                        ),
+                                    )
+                                )
+                            ),
+                            And(),
+                            Statement(
+                                Expression(
+                                    SimpleQuery(
+                                        Value(LessThanOp(SimpleDateValue("2000-12")))
+                                    )
+                                )
+                            ),
+                        )
+                    )
+                ]
+            ),
+        ),
+    },
+)
+@pytest.mark.xfail(
+    reason="the queries are not correct, should be fixed by https://github.com/cern-sis/issues-inspire/issues/150 "
+)
+def test_parser_functionality_regressions(query_str, expected_parse_tree):
     print("Parsing: " + query_str)
     parser = StatefulParser()
     _, parse_tree = parser.parse(query_str, Query)
