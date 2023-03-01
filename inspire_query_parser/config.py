@@ -184,7 +184,7 @@ INSPIRE_PARSER_NONDATE_KEYWORDS = {
     't': 'title',
 
     # texkey
-    'texkey': 'texkeys',
+    'texkey': 'texkeys.raw',
 
     # Topcite, i.e. citation count
     # Cited used to be for Invenio style syntax while topcite for SPIRES

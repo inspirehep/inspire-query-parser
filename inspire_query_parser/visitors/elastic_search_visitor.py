@@ -122,6 +122,7 @@ class ElasticSearchVisitor(Visitor):
         'refersto': 'references.record.$ref',
         'reportnumber': 'report_numbers.value.fuzzy',
         'subject': 'facet_inspire_categories',
+        'texkey': 'texkeys.raw',
         'title': 'titles.full_title',
         'type-code': 'document_type',
         'topcite': 'citation_count',
@@ -806,6 +807,9 @@ class ElasticSearchVisitor(Visitor):
             elif self.KEYWORD_TO_ES_FIELDNAME['eprint'] == fieldnames:
 
                 return generate_match_query(fieldnames, re.sub('ar[xX]iv:', "", node.value), with_operator_and=True)
+
+            elif self.KEYWORD_TO_ES_FIELDNAME['texkey'] == fieldnames:
+                return generate_match_query('texkeys.raw', node.value, with_operator_and=False)
 
             elif fieldnames not in self.KEYWORD_TO_ES_FIELDNAME.values():
                 colon_value = ':'.join([fieldnames, node.value])
