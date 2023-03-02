@@ -3235,3 +3235,50 @@ def test_elastic_search_visitor_complex_query():
     }
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_texkeys_regression():
+    query_str = "texkey Chen:2014cwa"
+    expected_es_query = {
+        "match": {
+            "texkeys.raw": "Chen:2014cwa"
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_texkeys_regression_bool_query():
+    query_str = "texkey Chen:2014cwa and a Moskovic"
+    expected_es_query = {
+        "bool": {
+            "must": [
+                {
+                    "match": {
+                        "texkeys.raw": "Chen:2014cwa"
+                    }
+                },
+                {
+                    "nested": {
+                        "path": "authors",
+                        "query": {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "match": {
+                                            "authors.last_name": {
+                                                "query": "Moskovic",
+                                                "operator": "AND"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
