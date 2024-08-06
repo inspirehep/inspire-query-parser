@@ -19,10 +19,9 @@
 # In applying this license, CERN does not waive the privileges and immunities
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
-
-"""A PEG-based query parser for INSPIRE"""
+"""A PEG-based query parser for INSPIRE."""
 
 from __future__ import absolute_import, print_function
 
-from . import config  # noqa: F401
-from .parsing_driver import parse_query  # noqa: F401
+from inspire_query_parser import config  # noqa: F401
+from inspire_query_parser.parsing_driver import parse_query  # noqa: F401

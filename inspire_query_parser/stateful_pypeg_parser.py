@@ -26,19 +26,22 @@ from pypeg2 import Parser
 class StatefulParser(Parser):
     """Defines a stateful parser for encapsulating parsing flags functionality.
 
-    Attributes:
-        _parsing_parenthesized_terminal (bool):
-            Signifies whether the parser is trying to identify a parenthesized terminal. Used for disabling the
-            terminals parsing related check "stop on DSL keyword", for allowing to parse symbols such as "+", "-" which
-            are also DSL keywords ('and' and 'not' respectively).
+    Attributes:     _parsing_parenthesized_terminal (bool):
+    Signifies whether the parser is trying to identify a parenthesized
+    terminal. Used for disabling the         terminals parsing related
+    check "stop on DSL keyword", for allowing to parse symbols such as
+    "+", "-" which         are also DSL keywords ('and' and 'not'
+    respectively).
 
-        _parsing_parenthesized_simple_values_expression (bool):
-            Signifies whether we are parsing a parenthesized simple values expression. Used for disabling the simple
-            values parsing related check "stop on INSPIRE keyword", for allowing parsing more expressions and not
-            restrict the input accepted by the parser.
+    _parsing_parenthesized_simple_values_expression (bool):
+    Signifies whether we are parsing a parenthesized simple values
+    expression. Used for disabling the simple     values parsing related
+    check "stop on INSPIRE keyword", for allowing parsing more
+    expressions and not     restrict the input accepted by the parser.
 
-        _parsing_texkey_expression (bool):
-            Signifies whether we are parsing a `texkey` expression which has special value in which we must accept ':'.
+    _parsing_texkey_expression (bool):     Signifies whether we are
+    parsing a `texkey` expression which has special value in which we
+    must accept ':'.
     """
 
     def __init__(self):
