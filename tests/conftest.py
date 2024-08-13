@@ -38,15 +38,20 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
 
 def pytest_assertrepr_compare(op, left, right):
     if (
-            isinstance(left, Query) and isinstance(right, Query) or
-            isinstance(left, KeywordOp) and isinstance(right, KeywordOp) or
-            isinstance(left, AndOp) and isinstance(right, AndOp) or
-            isinstance(left, OrOp) and isinstance(right, OrOp)
+        isinstance(left, Query)
+        and isinstance(right, Query)
+        or isinstance(left, KeywordOp)
+        and isinstance(right, KeywordOp)
+        or isinstance(left, AndOp)
+        and isinstance(right, AndOp)
+        or isinstance(left, OrOp)
+        and isinstance(right, OrOp)
     ) and op == "==":
         left_parse_tree = emit_tree_format(left).splitlines()
         right_parse_tree = emit_tree_format(right).splitlines()
-        return \
-            ['that given parse trees are equal:'] \
-            + left_parse_tree \
-            + ['', "──────── == ────────", ''] \
+        return (
+            ['that given parse trees are equal:']
+            + left_parse_tree
+            + ['', "──────── == ────────", '']
             + right_parse_tree
+        )

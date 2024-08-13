@@ -19,10 +19,9 @@
 # In applying this license, CERN does not waive the privileges and immunities
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
-
-"""
-This module encapsulates the restructuring visitor logic, that receives the output of the parser and converts it to a
-more compact and restructured parse tree.
+"""This module encapsulates the restructuring visitor logic, that receives the
+output of the parser and converts it to a more compact and restructured parse
+tree.
 
 Additionally, the date specifier conversion handlers logic is defined.
 """
@@ -32,46 +31,64 @@ from __future__ import absolute_import, unicode_literals
 import logging
 
 from inspire_query_parser import ast
-from inspire_query_parser.ast import (AndOp, ExactMatchValue, Keyword,
-                                      KeywordOp, NotOp, OrOp,
-                                      PartialMatchValue,
-                                      QueryWithMalformedPart, RegexValue, ValueOp)
-from inspire_query_parser.parser import (And, ComplexValue,
-                                         SimpleValueBooleanQuery)
-from inspire_query_parser.utils.visitor_utils import \
-    DATE_SPECIFIERS_CONVERSION_HANDLERS
+from inspire_query_parser.ast import (
+    AndOp,
+    ExactMatchValue,
+    Keyword,
+    KeywordOp,
+    NotOp,
+    OrOp,
+    PartialMatchValue,
+    QueryWithMalformedPart,
+    RegexValue,
+    ValueOp,
+)
+from inspire_query_parser.parser import And, ComplexValue, SimpleValueBooleanQuery
+from inspire_query_parser.utils.visitor_utils import DATE_SPECIFIERS_CONVERSION_HANDLERS
 from inspire_query_parser.visitors.visitor_impl import Visitor
 
 logger = logging.getLogger(__name__)
 
 
 def _restructure_if_volume_follows_journal(left, right):
-    """Remove volume node if it follows a journal logically in the tree hierarchy.
+    """Remove volume node if it follows a journal logically in the tree
+    hierarchy.
 
-    Args:
-        left (ast.ASTElement): The journal KeywordOp node.
-        right (ast.ASTElement): The rest of the tree to be restructured.
+    Args:     left (ast.ASTElement): The journal KeywordOp node. right
+    (ast.ASTElement): The rest of the tree to be restructured.
 
-    Return:
-        (ast.ASTElement): The restructured tree, with the volume node removed.
+    Return:     (ast.ASTElement): The restructured tree, with the volume
+    node removed.
 
-    Notes:
-        This happens to support queries like "journal Phys.Rev. and vol d85". Appends the value of KeywordOp with
-        Keyword 'volume' and discards 'volume' KeywordOp node from the tree.
+    Notes:     This happens to support queries like "journal Phys.Rev.
+    and vol d85". Appends the value of KeywordOp with     Keyword
+    'volume' and discards 'volume' KeywordOp node from the tree.
     """
+
     def _get_volume_keyword_op_and_remaining_subtree(right_subtree):
-        if isinstance(right_subtree, NotOp) and isinstance(right_subtree.op, KeywordOp) \
-                and right_subtree.op.left == Keyword('volume'):
+        if (
+            isinstance(right_subtree, NotOp)
+            and isinstance(right_subtree.op, KeywordOp)
+            and right_subtree.op.left == Keyword('volume')
+        ):
             return None, None
 
-        elif isinstance(right_subtree, AndOp) and isinstance(right_subtree.left, NotOp) \
-                and isinstance(right_subtree.left.op, KeywordOp) and right_subtree.left.op.left == Keyword('volume'):
+        elif (
+            isinstance(right_subtree, AndOp)
+            and isinstance(right_subtree.left, NotOp)
+            and isinstance(right_subtree.left.op, KeywordOp)
+            and right_subtree.left.op.left == Keyword('volume')
+        ):
             return None, right_subtree.right
 
-        elif isinstance(right_subtree, KeywordOp) and right_subtree.left == Keyword('volume'):
+        elif isinstance(right_subtree, KeywordOp) and right_subtree.left == Keyword(
+            'volume'
+        ):
             return right_subtree, None
 
-        elif isinstance(right_subtree, AndOp) and right_subtree.left.left == Keyword('volume'):
+        elif isinstance(right_subtree, AndOp) and right_subtree.left.left == Keyword(
+            'volume'
+        ):
             return right_subtree.left, right_subtree.right
 
     journal_value = left.right.value
@@ -88,14 +105,21 @@ def _restructure_if_volume_follows_journal(left, right):
 
 
 def _convert_simple_value_boolean_query_to_and_boolean_queries(tree, keyword):
-    """Chain SimpleValueBooleanQuery values into chained AndOp queries with the given current Keyword."""
+    """Chain SimpleValueBooleanQuery values into chained AndOp queries with the
+    given current Keyword."""
 
     def _create_operator_node(value_node):
         """Creates a KeywordOp or a ValueOp node."""
         base_node = value_node.op if isinstance(value_node, NotOp) else value_node
-        updated_base_node = KeywordOp(keyword, base_node) if keyword else ValueOp(base_node)
+        updated_base_node = (
+            KeywordOp(keyword, base_node) if keyword else ValueOp(base_node)
+        )
 
-        return NotOp(updated_base_node) if isinstance(value_node, NotOp) else updated_base_node
+        return (
+            NotOp(updated_base_node)
+            if isinstance(value_node, NotOp)
+            else updated_base_node
+        )
 
     def _get_bool_op_type(bool_op):
         return AndOp if isinstance(bool_op, And) else OrOp
@@ -119,11 +143,12 @@ def _convert_simple_value_boolean_query_to_and_boolean_queries(tree, keyword):
 
 
 class RestructuringVisitor(Visitor):
-    """Converts the output of the parser to a more compact and restructured parse tree.
+    """Converts the output of the parser to a more compact and restructured
+    parse tree.
 
-    Notes:
-        Compaction, as in removing intermediate nodes, such as Statement, Expression, etc. and restructure, as in,
-        breaking down a :class:`SimpleValueBooleanQuery` to chained boolean queries.
+    Notes:     Compaction, as in removing intermediate nodes, such as
+    Statement, Expression, etc. and restructure, as in,     breaking
+    down a :class:`SimpleValueBooleanQuery` to chained boolean queries.
     """
 
     def _create_not_op(self, node):
@@ -134,9 +159,10 @@ class RestructuringVisitor(Visitor):
 
         if len(result) == 1:
             result = result[0]
-            if isinstance(result, (ast.Value, ast.ExactMatchValue)) \
-                    or isinstance(result, ast.PartialMatchValue) \
-                    or isinstance(result, ast.RegexValue):
+            if isinstance(
+                result,
+                (ast.Value, ast.ExactMatchValue, ast.PartialMatchValue, ast.RegexValue),
+            ):
                 # The only Values that can be standalone queries are the above.
                 return ast.ValueOp(result)
         else:
@@ -162,26 +188,34 @@ class RestructuringVisitor(Visitor):
         left = node.left.accept(self)
         right = node.right.accept(self)
 
-        is_journal_keyword_op = isinstance(left, KeywordOp) and left.left == Keyword('journal')
+        is_journal_keyword_op = isinstance(left, KeywordOp) and left.left == Keyword(
+            'journal'
+        )
 
         if is_journal_keyword_op:
-            journal_and_volume_conjunction = _restructure_if_volume_follows_journal(left, right)
+            journal_and_volume_conjunction = _restructure_if_volume_follows_journal(
+                left, right
+            )
 
             if journal_and_volume_conjunction:
                 return journal_and_volume_conjunction
 
-        return AndOp(left, right) if isinstance(node.bool_op, And) else OrOp(left, right)
+        return (
+            AndOp(left, right) if isinstance(node.bool_op, And) else OrOp(left, right)
+        )
 
     def visit_simple_value_boolean_query(self, node):
-        """
-        Visits only the children of :class:`SimpleValueBooleanQuery` without substituting the actual node type.
+        """Visits only the children of :class:`SimpleValueBooleanQuery` without
+        substituting the actual node type.
 
-        Notes:
-            Defer conversion from :class:`SimpleValueBooleanQuery` to AndOp or OrOp.
-            This transformation needs to occur higher in the tree, so that we don't lose the information that this is a
-            boolean query among terminals and thus the associative rule needs to be applied if we reached here from a
-            keyword query, or a conversion from :class:`SimpleValueBooleanQuery` to :class:`AndOp` or :class:`OrOp`,
-            otherwise.
+        Notes:     Defer conversion from
+        :class:`SimpleValueBooleanQuery` to AndOp or OrOp.     This
+        transformation needs to occur higher in the tree, so that we
+        don't     lose the information that this is a boolean query
+        among terminals and thus     the associative rule needs to be
+        applied if we reached here from a keyword query,     or a
+        conversion from :class:`SimpleValueBooleanQuery` to
+        :class:`AndOp` or :class:`OrOp`,     otherwise.
         """
         node.left, node.right = node.left.accept(self), node.right.accept(self)
         return node
@@ -192,10 +226,14 @@ class RestructuringVisitor(Visitor):
     def visit_simple_query(self, node):
         node = node.op.accept(self)
         if isinstance(node, SimpleValueBooleanQuery):
-            # Case in which the node is a simple value boolean query not paired with a keyword query. e.g. 'foo and bar'
-            return _convert_simple_value_boolean_query_to_and_boolean_queries(node, None)
+            # Case in which the node is a simple value boolean query not
+            # paired with a keyword query. e.g. 'foo and bar'
+            return _convert_simple_value_boolean_query_to_and_boolean_queries(
+                node, None
+            )
         elif isinstance(node, ast.Value):
-            # Case in which the node is a SimpleQuery(Value(...)) e.g. for a value query "Ellis"
+            # Case in which the node is a SimpleQuery(Value(...)) e.g. for
+            # a value query "Ellis"
             return ast.ValueOp(node)
 
         return node
@@ -206,45 +244,55 @@ class RestructuringVisitor(Visitor):
     def visit_spires_keyword_query(self, node):
         """Transform a :class:`SpiresKeywordQuery` into a :class:`KeywordOp`.
 
-        Notes:
-            In case the value being a :class:`SimpleValueBooleanQuery`, the subtree is transformed to chained
-            :class:`AndOp` queries containing :class:`KeywordOp`, whose keyword is the keyword of the current node and
-            values, all the :class:`SimpleValueBooleanQuery` values (either :class:`SimpleValues` or
-            :class:`SimpleValueNegation`.)
+        Notes:     In case the value being a
+        :class:`SimpleValueBooleanQuery`, the subtree is transformed to
+        chained     :class:`AndOp` queries containing
+        :class:`KeywordOp`, whose keyword is the keyword of the current
+        node and     values, all the :class:`SimpleValueBooleanQuery`
+        values (either :class:`SimpleValues` or
+        :class:`SimpleValueNegation`.)
         """
         keyword = node.left.accept(self)
         value = node.right.accept(self)
 
         if isinstance(value, SimpleValueBooleanQuery):
-            return _convert_simple_value_boolean_query_to_and_boolean_queries(value, keyword)
+            return _convert_simple_value_boolean_query_to_and_boolean_queries(
+                value, keyword
+            )
 
         return KeywordOp(keyword, value)
 
     def visit_spires_date_keyword_query(self, node):
         """Transform a :class:`SpiresKeywordQuery` into a :class:`KeywordOp`.
 
-        Notes:
-            In case the value being a :class:`SimpleValueBooleanQuery`, the subtree is transformed to chained
-            :class:`AndOp` queries containing :class:`KeywordOp`, whose keyword is the keyword of the current node and
-            values, all the :class:`SimpleValueBooleanQuery` values (either :class:`SimpleValues` or
-            :class:`SimpleValueNegation`.)
+        Notes:     In case the value being a
+        :class:`SimpleValueBooleanQuery`, the subtree is transformed to
+        chained     :class:`AndOp` queries containing
+        :class:`KeywordOp`, whose keyword is the keyword of the current
+        node and     values, all the :class:`SimpleValueBooleanQuery`
+        values (either :class:`SimpleValues` or
+        :class:`SimpleValueNegation`.)
         """
         keyword = node.left.accept(self)
         value = node.right.accept(self)
 
         if isinstance(value, SimpleValueBooleanQuery):
-            return _convert_simple_value_boolean_query_to_and_boolean_queries(value, keyword)
+            return _convert_simple_value_boolean_query_to_and_boolean_queries(
+                value, keyword
+            )
 
         return KeywordOp(keyword, value)
 
     def visit_invenio_keyword_query(self, node):
         """Transform an :class:`InvenioKeywordQuery` into a :class:`KeywordOp`.
 
-        Notes:
-            In case the value being a :class:`SimpleValueBooleanQuery`, the subtree is transformed to chained
-            :class:`AndOp` queries containing :class:`KeywordOp`, whose keyword is the keyword of the current node and
-            values, all the :class:`SimpleValueBooleanQuery` values (either :class:`SimpleValues` or
-            :class:`SimpleValueNegation`.)
+        Notes:     In case the value being a
+        :class:`SimpleValueBooleanQuery`, the subtree is transformed to
+        chained     :class:`AndOp` queries containing
+        :class:`KeywordOp`, whose keyword is the keyword of the current
+        node and     values, all the :class:`SimpleValueBooleanQuery`
+        values (either :class:`SimpleValues` or
+        :class:`SimpleValueNegation`.)
         """
         try:
             keyword = node.left.accept(self)
@@ -255,7 +303,9 @@ class RestructuringVisitor(Visitor):
         value = node.right.accept(self)
 
         if isinstance(value, SimpleValueBooleanQuery):
-            return _convert_simple_value_boolean_query_to_and_boolean_queries(value, keyword)
+            return _convert_simple_value_boolean_query_to_and_boolean_queries(
+                value, keyword
+            )
 
         return KeywordOp(keyword, value)
 
@@ -274,7 +324,8 @@ class RestructuringVisitor(Visitor):
     def visit_greater_equal_op(self, node):
         try:
             value = node.op.accept(self)
-        except AttributeError:  # Case of "100+" format, where 100 is text (and not a SimpleValue).
+        # Case of "100+" format, where 100 is text (and not a SimpleValue).
+        except AttributeError:
             value = ast.Value(node.op)
         return ast.GreaterEqualThanOp(value)
 
@@ -284,7 +335,8 @@ class RestructuringVisitor(Visitor):
     def visit_less_equal_op(self, node):
         try:
             value = node.op.accept(self)
-        except AttributeError:  # Case of "100-" format where 100 is text (and not a SimpleValue).
+        # Case of "100-" format where 100 is text (and not a SimpleValue).
+        except AttributeError:
             value = ast.Value(node.op)
         return ast.LessEqualThanOp(value)
 
@@ -299,19 +351,21 @@ class RestructuringVisitor(Visitor):
         return ast.EmptyQuery(None)
 
     def visit_complex_value(self, node):
-        """Convert :class:`ComplexValue` to one of ExactMatch, PartialMatch and Regex Value nodes."""
+        """Convert :class:`ComplexValue` to one of ExactMatch, PartialMatch and
+        Regex Value nodes."""
         if node.value.startswith(ComplexValue.EXACT_VALUE_TOKEN):
             value = node.value.strip(ComplexValue.EXACT_VALUE_TOKEN)
             return ExactMatchValue(value)
 
         elif node.value.startswith(ComplexValue.PARTIAL_VALUE_TOKEN):
             value = node.value.strip(ComplexValue.PARTIAL_VALUE_TOKEN)
-            return PartialMatchValue(value, True if ast.GenericValue.WILDCARD_TOKEN in value else False)
+            return PartialMatchValue(value, ast.GenericValue.WILDCARD_TOKEN in value)
 
         elif node.value.startswith(ComplexValue.REGEX_VALUE_TOKEN):
             return RegexValue(node.value.strip(ComplexValue.REGEX_VALUE_TOKEN))
         else:
-            # Covering the case where ComplexValue supports more than ExactMatch, PartialMatch and Regex values.
+            # Covering the case where ComplexValue supports more than ExactMatch,
+            # PartialMatch and Regex values.
             msg = self.__class__.__name__ + ': Unrecognized complex value'
             try:
                 msg += ' lookahead token: "' + node.value[0] + '"'
@@ -323,15 +377,22 @@ class RestructuringVisitor(Visitor):
 
     def visit_simple_value(self, node):
         # In case of date specifiers convert relative or text date to normal date.
-        for regexp, date_conversion_handler in DATE_SPECIFIERS_CONVERSION_HANDLERS.items():
+        for (
+            regexp,
+            date_conversion_handler,
+        ) in DATE_SPECIFIERS_CONVERSION_HANDLERS.items():
             date_value = node.value
             regexp_match = regexp.match(node.value)
             if regexp_match:
-                relative_date_specifier_suffix = date_value.split(regexp_match.group())[1]
-                return ast.Value(str(date_conversion_handler(relative_date_specifier_suffix)))
+                relative_date_specifier_suffix = date_value.split(regexp_match.group())[
+                    1
+                ]
+                return ast.Value(
+                    str(date_conversion_handler(relative_date_specifier_suffix))
+                )
 
         # Normal text value
-        return ast.Value(node.value, True if ast.GenericValue.WILDCARD_TOKEN in node.value else False)
+        return ast.Value(node.value, ast.GenericValue.WILDCARD_TOKEN in node.value)
 
     def visit_simple_range_value(self, node):
         return ast.Value(node.value)
@@ -340,12 +401,19 @@ class RestructuringVisitor(Visitor):
         return node.op.accept(self)
 
     def visit_simple_date_value(self, node):
-        for regexp, date_conversion_handler in DATE_SPECIFIERS_CONVERSION_HANDLERS.items():
+        for (
+            regexp,
+            date_conversion_handler,
+        ) in DATE_SPECIFIERS_CONVERSION_HANDLERS.items():
             date_value = node.value
             regexp_match = regexp.match(node.value)
             if regexp_match:
-                relative_date_specifier_suffix = date_value.split(regexp_match.group())[1]
-                return ast.Value(str(date_conversion_handler(relative_date_specifier_suffix)))
+                relative_date_specifier_suffix = date_value.split(regexp_match.group())[
+                    1
+                ]
+                return ast.Value(
+                    str(date_conversion_handler(relative_date_specifier_suffix))
+                )
 
         # Normal text value
-        return ast.Value(node.value, True if ast.GenericValue.WILDCARD_TOKEN in node.value else False)
+        return ast.Value(node.value, ast.GenericValue.WILDCARD_TOKEN in node.value)

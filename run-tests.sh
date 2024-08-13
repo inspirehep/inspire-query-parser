@@ -22,5 +22,4 @@
 
 set -e
 
-flake8 inspire_query_parser tests
 py.test tests

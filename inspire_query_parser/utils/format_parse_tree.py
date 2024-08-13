@@ -24,9 +24,8 @@ from __future__ import absolute_import, unicode_literals
 
 import six
 
+from inspire_query_parser.ast import BinaryOp, Leaf, ListOp, UnaryOp
 from inspire_query_parser.parser import BooleanRule
-
-from ..ast import BinaryOp, Leaf, ListOp, UnaryOp
 
 INDENTATION = 4
 
@@ -34,12 +33,11 @@ INDENTATION = 4
 def emit_tree_format(tree, verbose=False):
     """Returns a tree representation of a parse tree.
 
-    Arguments:
-        tree:           the parse tree whose tree representation is to be generated
-        verbose (bool): if True prints the parse tree to be formatted
+    Arguments:     tree:           the parse tree whose tree
+    representation is to be generated     verbose (bool): if True prints
+    the parse tree to be formatted
 
-    Returns:
-        str:  tree-like representation of the parse tree
+    Returns:     str:  tree-like representation of the parse tree
     """
     if verbose:
         print("Converting: " + repr(tree))
@@ -65,14 +63,19 @@ def __recursive_formatter(node, level=-INDENTATION):
     new_level = INDENTATION + level
 
     if isinstance(node, Leaf):
-        value = "" if not repr(node.value) else node.__class__.__name__ \
-                                                + " {" + (node.value if node.value else "") + "}"
+        value = (
+            ""
+            if not repr(node.value)
+            else node.__class__.__name__
+            + " {"
+            + (node.value if node.value else "")
+            + "}"
+        )
 
         ret_str = __emit_symbol_at_level_str(value, new_level) if value != "" else ""
 
     elif isinstance(node, six.text_type):
-        value = "" if not repr(node) or repr(node) == "None" \
-            else "Text {" + node + "}"
+        value = "" if not repr(node) or repr(node) == "None" else "Text {" + node + "}"
 
         ret_str = __emit_symbol_at_level_str(value, new_level) if value != "" else ""
 
@@ -88,7 +91,7 @@ def __recursive_formatter(node, level=-INDENTATION):
                 if isinstance(node, BooleanRule):
                     ret_str = __emit_symbol_at_level_str(
                         node.__class__.__name__ + " {" + str(node.bool_op) + "}",
-                        new_level
+                        new_level,
                     )
             except AttributeError:
                 pass

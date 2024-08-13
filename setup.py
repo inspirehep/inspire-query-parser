@@ -22,27 +22,28 @@
 
 """A PEG-based query parser for INSPIRE."""
 
-import os
 
 from setuptools import find_packages, setup
 
-
 URL = 'https://github.com/inspirehep/inspire-query-parser'
 
-readme = open('README.rst').read()
+with open("README.rst") as f:
+    readme = f.read()
 
 setup_requires = [
     'autosemver==0.5.5',
 ]
 
-install_requires = [
-    'inspire-schemas~=61.0',
-    'inspire-utils~=3.0,>=3.0.0',
-    'pypeg2~=2.0,>=2.15.2',
-    'python-dateutil~=2.0,>=2.6.1',
-    'six~=1.0,>=1.11.0',
-    'datefinder~=0.7.1'
-],
+install_requires = (
+    [
+        'inspire-schemas~=61.0',
+        'inspire-utils~=3.0,>=3.0.0',
+        'pypeg2~=2.0,>=2.15.2',
+        'python-dateutil~=2.0,>=2.6.1',
+        'six~=1.0,>=1.11.0',
+        'datefinder~=0.7.1',
+    ],
+)
 
 docs_require = []
 
@@ -53,13 +54,18 @@ tests_require = [
     'pytest~=3.0,>=3.2.2',
 ]
 
+dev_require = [
+    "pre-commit==3.5.0",
+]
+
 extras_require = {
     'docs': docs_require,
     'tests': tests_require,
+    'dev': dev_require,
 }
 
 extras_require['all'] = []
-for name, reqs in extras_require.items():
+for _name, reqs in extras_require.items():
     extras_require['all'].extend(reqs)
 
 packages = find_packages(exclude=['docs'])

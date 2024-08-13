@@ -47,18 +47,25 @@ def parametrize(test_configurations):
 
     if not isinstance(test_configurations, dict):
         __tracebackhide__ = True
-        pytest.fail('In parametrize test configurations parameter must be a dictionary.')
+        pytest.fail(
+            'In parametrize test configurations parameter must be a dictionary.'
+        )
 
     ordered_tests_config = OrderedDict(sorted(viewitems(test_configurations)))
 
     for test_name, test_configuration in iteritems(ordered_tests_config):
-        ordered_tests_config[test_name] = OrderedDict(sorted(viewitems(test_configuration)))
+        ordered_tests_config[test_name] = OrderedDict(
+            sorted(viewitems(test_configuration))
+        )
 
     # Extract arg_names from a test configuration
     arg_names = list(iterkeys(next(itervalues(ordered_tests_config))))
 
     # Generate list of arg_values
-    arg_values = [ordered_tests_config[test_config].values() for test_config in ordered_tests_config]
+    arg_values = [
+        ordered_tests_config[test_config].values()
+        for test_config in ordered_tests_config
+    ]
 
     # Generate ids list
     ids = list(iterkeys(ordered_tests_config))

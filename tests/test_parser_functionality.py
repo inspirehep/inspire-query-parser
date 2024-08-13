@@ -24,26 +24,44 @@ from __future__ import print_function, unicode_literals
 
 import pytest
 
-from inspire_query_parser.parser import (And, BooleanQuery, ComplexValue,
-                                         DateValue, EmptyQuery, Expression,
-                                         GreaterEqualOp, GreaterThanOp,
-                                         InspireDateKeyword, InspireKeyword,
-                                         InvenioKeywordQuery, LessEqualOp,
-                                         LessThanOp, MalformedQueryWords,
-                                         NestedKeywordQuery, NotQuery, Or,
-                                         ParenthesizedQuery, Query, RangeOp,
-                                         SimpleDateValue, SimpleQuery,
-                                         SimpleRangeValue, SimpleValue,
-                                         SimpleValueBooleanQuery,
-                                         SpiresDateKeywordQuery,
-                                         SpiresKeywordQuery, Statement, Value)
+from inspire_query_parser.parser import (
+    And,
+    BooleanQuery,
+    ComplexValue,
+    DateValue,
+    EmptyQuery,
+    Expression,
+    GreaterEqualOp,
+    GreaterThanOp,
+    InspireDateKeyword,
+    InspireKeyword,
+    InvenioKeywordQuery,
+    LessEqualOp,
+    LessThanOp,
+    MalformedQueryWords,
+    NestedKeywordQuery,
+    NotQuery,
+    Or,
+    ParenthesizedQuery,
+    Query,
+    RangeOp,
+    SimpleDateValue,
+    SimpleQuery,
+    SimpleRangeValue,
+    SimpleValue,
+    SimpleValueBooleanQuery,
+    SpiresDateKeywordQuery,
+    SpiresKeywordQuery,
+    Statement,
+    Value,
+)
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
 
 # TODO Reformat parentheses around parametrize entries
 
 
 @pytest.mark.parametrize(
-    ["query_str", "expected_parse_tree"],
+    ("query_str", "expected_parse_tree"),
     {
         (
             "date nov 2020 12",
@@ -807,7 +825,10 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
             ),
         ),
         (
-            "author ellis, j. and not (title boson or not (author /^xi$/ and title foo))",
+            (
+                "author ellis, j. and not (title boson or not (author /^xi$/ and title"
+                " foo))"
+            ),
             Query(
                 [
                     Statement(
@@ -1061,7 +1082,8 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
                 ]
             ),
         ),
-        # Parenthesized keyword query values (working also with SPIRES operators - doesn't on legacy)
+        # Parenthesized keyword query values (working also with
+        # SPIRES operators - doesn't on legacy)
         (
             "author:(title ellis)",
             Query(
@@ -1173,7 +1195,10 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
             ),
         ),
         (
-            "find title Alternative the Phase-II upgrade of the ATLAS Inner Detector or na61/shine",
+            (
+                "find title Alternative the Phase-II upgrade of the ATLAS Inner"
+                " Detector or na61/shine"
+            ),
             Query(
                 [
                     Statement(
@@ -1184,7 +1209,8 @@ from inspire_query_parser.stateful_pypeg_parser import StatefulParser
                                     Value(
                                         SimpleValueBooleanQuery(
                                             SimpleValue(
-                                                "Alternative the Phase-II upgrade of the ATLAS Inner Detector"
+                                                "Alternative the Phase-II upgrade of"
+                                                " the ATLAS Inner Detector"
                                             ),
                                             Or(),
                                             SimpleValue("na61/shine"),

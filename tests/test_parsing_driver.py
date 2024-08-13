@@ -31,10 +31,7 @@ def test_driver_with_simple_query():
     query_str = 'subject astrophysics'
     expected_es_query = {
         "match": {
-            "facet_inspire_categories": {
-                "query": "astrophysics",
-                "operator": "and"
-            }
+            "facet_inspire_categories": {"query": "astrophysics", "operator": "and"}
         }
     }
 
@@ -50,7 +47,7 @@ def test_driver_with_nothing_recognized(mocked_parser):
         'multi_match': {
             'query': 'unrecognized query',
             'fields': ['_all'],
-            'zero_terms_query': 'all'
+            'zero_terms_query': 'all',
         }
     }
 
@@ -68,7 +65,7 @@ def test_driver_with_syntax_error(mocked_parser):
         'multi_match': {
             'query': 'query with syntax error',
             'fields': ['_all'],
-            'zero_terms_query': 'all'
+            'zero_terms_query': 'all',
         }
     }
 
@@ -83,13 +80,11 @@ def test_driver_with_syntax_error(mocked_parser):
 def test_driver_with_rst_visitor_error(mocked_rst_visitor):
     query_str = 'foo'
     expected_es_query = {
-        'multi_match': {
-            'query': 'foo',
-            'fields': ['_all'],
-            'zero_terms_query': 'all'
-        }
+        'multi_match': {'query': 'foo', 'fields': ['_all'], 'zero_terms_query': 'all'}
     }
-    mocked_rst_visitor.return_value.visit.side_effect = Exception('Something went wrong with visit_value')
+    mocked_rst_visitor.return_value.visit.side_effect = Exception(
+        'Something went wrong with visit_value'
+    )
     mocked_rst_visitor.__name__ = 'MockedRestructuringVisitor'
 
     es_query = parse_query(query_str)
@@ -101,13 +96,11 @@ def test_driver_with_rst_visitor_error(mocked_rst_visitor):
 def test_driver_with_es_visitor_error(mocked_es_visitor):
     query_str = 'foo'
     expected_es_query = {
-        'multi_match': {
-            'query': 'foo',
-            'fields': ['_all'],
-            'zero_terms_query': 'all'
-        }
+        'multi_match': {'query': 'foo', 'fields': ['_all'], 'zero_terms_query': 'all'}
     }
-    mocked_es_visitor.return_value.visit.side_effect = Exception('Something went wrong with visit_value')
+    mocked_es_visitor.return_value.visit.side_effect = Exception(
+        'Something went wrong with visit_value'
+    )
     mocked_es_visitor.__name__ = 'MockedElasticSearchVisitor'
 
     es_query = parse_query(query_str)
@@ -121,7 +114,7 @@ def test_driver_with_es_visitor_empty_query_generates_a_query_against_all():
         'multi_match': {
             'query': 'd < 200',
             'fields': ['_all'],
-            'zero_terms_query': 'all'
+            'zero_terms_query': 'all',
         }
     }
 

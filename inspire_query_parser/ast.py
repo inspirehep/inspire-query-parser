@@ -19,18 +19,15 @@
 # In applying this license, CERN does not waive the privileges and immunities
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
+"""AbstractSyntaxTree classes along with their concrete ones.
 
-"""
-AbstractSyntaxTree classes along with their concrete ones.
+The module defines a generic AST element along with four AST node
+categories (which act as a basis for all the concrete AST nodes) and
+finally, the concrete classes which represent the output of the parsing
+process.
 
-The module defines a generic AST element along with four AST node categories (which act as a basis for all the concrete
-AST nodes) and finally, the concrete classes which represent the output of the parsing process.
-
-The generic AST node categories are:
-    - Leaf
-    - UnaryOp
-    - BinaryOp
-    - ListOp
+The generic AST node categories are:     - Leaf     - UnaryOp     -
+BinaryOp     - ListOp
 
 The concrete AST nodes, represent higher level (domain specific) nodes.
 """
@@ -40,18 +37,19 @@ from __future__ import unicode_literals
 
 # #### Abstract Syntax Tree classes ####
 class ASTElement(object):
-    """Root AbstractSyntaxTree node that acts as a stub for calling the Visitor's `visit` dispatcher method."""
+    """Root AbstractSyntaxTree node that acts as a stub for calling the
+    Visitor's `visit` dispatcher method."""
+
     def accept(self, visitor, *args, **kwargs):
         return visitor.visit(self, *args, **kwargs)
 
 
 class Leaf(ASTElement):
-
     def __init__(self, value=None):
         self.value = value
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.value == other.value
+        return type(self) is type(other) and self.value == other.value
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.value)
@@ -61,12 +59,11 @@ class Leaf(ASTElement):
 
 
 class UnaryOp(ASTElement):
-
     def __init__(self, op):
         self.op = op
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.op == other.op
+        return type(self) is type(other) and self.op == other.op
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.op)
@@ -76,30 +73,29 @@ class UnaryOp(ASTElement):
 
 
 class BinaryOp(ASTElement):
-
     def __init__(self, left, right):
         self.left = left
         self.right = right
 
     def __eq__(self, other):
         return (
-            type(self) == type(other)
-        ) and (
-            self.left == other.left
-        ) and (
-            self.right == other.right
+            (type(self) is type(other))
+            and (self.left == other.left)
+            and (self.right == other.right)
         )
 
     def __repr__(self):
-        return "%s(%s, %s)" % (self.__class__.__name__,
-                               repr(self.left), repr(self.right))
+        return "%s(%s, %s)" % (
+            self.__class__.__name__,
+            repr(self.left),
+            repr(self.right),
+        )
 
     def __hash__(self):
         return hash((self.left, self.right))
 
 
 class ListOp(ASTElement):
-
     def __init__(self, children):
         try:
             iter(children)
@@ -109,7 +105,7 @@ class ListOp(ASTElement):
             self.children = children
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.children == other.children
+        return type(self) is type(other) and self.children == other.children
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.children)
@@ -144,15 +140,20 @@ class ValueOp(UnaryOp):
 
 
 class QueryWithMalformedPart(BinaryOp):
-    """A combination of recognized part of a query (with a parse tree) and some malformed input.
+    """A combination of recognized part of a query (with a parse tree) and some
+    malformed input.
 
-    Its left child is the recognized parse tree, while its right child has the :class:`MalformedQuery`.
+    Its left child is the recognized parse tree, while its right child
+    has the :class:`MalformedQuery`.
     """
+
     pass
 
 
 class MalformedQuery(ListOp):
-    """A :class:`ListOp` with children the unrecognized words of the parser's input."""
+    """A :class:`ListOp` with children the unrecognized words of the parser's
+    input."""
+
     pass
 
 
@@ -183,6 +184,7 @@ class Keyword(Leaf):
 
 class GenericValue(Leaf):
     """Represents a generic value, which might contain a wildcard."""
+
     WILDCARD_TOKEN = '*'
 
     def __init__(self, value, contains_wildcard=False):
@@ -190,7 +192,10 @@ class GenericValue(Leaf):
         self.contains_wildcard = contains_wildcard
 
     def __eq__(self, other):
-        return super(GenericValue, self).__eq__(other) and self.contains_wildcard == other.contains_wildcard
+        return (
+            super(GenericValue, self).__eq__(other)
+            and self.contains_wildcard == other.contains_wildcard
+        )
 
     def __hash__(self):
         return hash((super(GenericValue, self).__hash__(), self.contains_wildcard))
