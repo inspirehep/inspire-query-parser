@@ -2276,6 +2276,60 @@ def test_elastic_search_visitor_PDG_keyword():
     assert generated_es_query == expected_es_query
 
 
+def test_elastic_search_visitor_PDG_keyword_with_dot_character():
+    query_str = 'keyword "S044.a"'
+    expected_es_query = {
+        "match_phrase": {
+            "keywords.value": "S044.a",
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_PDG_keyword_with_dot_digit():
+    query_str = 'keyword "S044.4"'
+    expected_es_query = {
+        "match_phrase": {
+            "keywords.value": "S044.4",
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_PDG_keyword_with_dot_character_no_quotes():
+    query_str = 'keyword:S044.a'
+    expected_es_query = {
+        "match": {
+            "keywords.value": {
+                "query": "S044.a",
+                "operator": "and"
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
+def test_elastic_search_visitor_PDG_keyword_with_dot_digit_no_quotes():
+    query_str = 'keyword:S044.4'
+    expected_es_query = {
+        "match": {
+            "keywords.value": {
+                "query": "S044.4",
+                "operator": "and"
+            }
+        }
+    }
+
+    generated_es_query = _parse_query(query_str)
+    assert generated_es_query == expected_es_query
+
+
 def test_nested_query_author_exact_match_affiliation():
     query_string = 'aff "Warsaw U. of Tech."'
     expected_es_query = {
