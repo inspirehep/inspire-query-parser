@@ -954,7 +954,7 @@ class ElasticSearchVisitor(Visitor):
         else:
             exact_match_queries = [
                 {'match_phrase': {field: node.value}}
-                for field in (bai_fieldnames or fieldnames)
+                for field in (fieldnames)
             ]
             query = wrap_queries_in_bool_clauses_if_more_than_one(
                 exact_match_queries, use_must_clause=False
