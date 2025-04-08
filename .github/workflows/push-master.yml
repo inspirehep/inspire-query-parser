@@ -3,24 +3,24 @@ name: Build and release
 on:
   push:
     branches: [master]
-  pull_request:
-    branches: [master]
-
+  
 jobs:
-  Test:
-    runs-on: ubuntu-20.04
-
+  tests:
+    uses: ./.github/workflows/test.yml
+  
+  release:
+    runs-on: ubuntu-22.04
+    needs: [tests]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
-          python-version: 3.6
           fetch-depth: 0
 
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.6
+          python-version: '3.7'
 
       - name: Install python dependencies
         run: |
@@ -32,17 +32,11 @@ jobs:
         run: |
           pip freeze
 
-      - name: Run tests
-        run: |
-          ./run-tests.sh
-
       - name: Build package
-        if: ${{ success() && github.event_name == 'push'  }}
         run: |
           python setup.py sdist bdist_wheel
 
       - name: Publish package
-        if: ${{ success() && github.event_name == 'push'  }}
         uses: pypa/gh-action-pypi-publish@v1.3.1
         with:
           user: __token__
