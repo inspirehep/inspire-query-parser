@@ -24,9 +24,6 @@
  INSPIRE-QueryParser
 =====================
 
-.. image:: https://travis-ci.org/inspirehep/inspire-query-parser.svg?branch=master
-    :target: https://travis-ci.org/inspirehep/inspire-query-parser
-
 .. image:: https://coveralls.io/repos/github/inspirehep/inspire-query-parser/badge.svg?branch=master
     :target: https://coveralls.io/github/inspirehep/inspire-query-parser?branch=master
 

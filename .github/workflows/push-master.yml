@@ -3,11 +3,11 @@ name: Build and release
 on:
   push:
     branches: [master]
-  
+
 jobs:
   tests:
     uses: ./.github/workflows/test.yml
-  
+
   release:
     runs-on: ubuntu-22.04
     needs: [tests]
