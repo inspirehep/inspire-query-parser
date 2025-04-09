@@ -27,7 +27,7 @@ from setuptools import find_packages, setup
 
 URL = 'https://github.com/inspirehep/inspire-query-parser'
 
-with open("README.rst") as f:
+with open("README.md") as f:
     readme = f.read()
 
 setup_requires = [
@@ -85,6 +85,7 @@ setup(
     platforms='any',
     description=__doc__,
     long_description=readme,
+    long_description_content_type='text/markdown',
     setup_requires=setup_requires,
     install_requires=install_requires,
     tests_require=tests_require,

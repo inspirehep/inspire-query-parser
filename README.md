@@ -1,6 +1,6 @@
-..
+<!--
     This file is part of INSPIRE.
-    Copyright (C) 2014-2017 CERN.
+    Copyright (C) 2014-2025 CERN.
 
     INSPIRE is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,17 +18,10 @@
     In applying this license, CERN does not waive the privileges and immunities
     granted to it by virtue of its status as an Intergovernmental Organization
     or submit itself to any jurisdiction.
+-->
 
+# INSPIRE-QueryParser
 
-=====================
- INSPIRE-QueryParser
-=====================
-
-.. image:: https://coveralls.io/repos/github/inspirehep/inspire-query-parser/badge.svg?branch=master
-    :target: https://coveralls.io/github/inspirehep/inspire-query-parser?branch=master
-
-
-About
-=====
+### About
 
 A PEG-based query parser for INSPIRE.
