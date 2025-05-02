@@ -30,32 +30,28 @@ URL = 'https://github.com/inspirehep/inspire-query-parser'
 with open("README.md") as f:
     readme = f.read()
 
-setup_requires = [
-    'autosemver==0.5.5',
-]
-
 install_requires = (
     [
         'inspire-schemas~=61.0',
         'inspire-utils~=3.0,>=3.0.0',
-        'pypeg2~=2.0,>=2.15.2',
-        'python-dateutil~=2.0,>=2.6.1',
-        'six~=1.0,>=1.11.0',
-        'datefinder~=0.7.1',
+        'pypeg2>=2.15.2',
+        'python-dateutil>=2.6.1',
+        'six>=1.11.0',
+        'datefinder>=0.7.1',
     ],
 )
 
 docs_require = []
 
 tests_require = [
-    'flake8~=3.0,>=3.5.0',
-    'mock~=2.0,>=2.0.0',
-    'pytest-cov~=2.0,<=2.6.0',
-    'pytest~=3.0,>=3.2.2',
+    'flake8>=3.5.0',
+    'mock>=2.0.0',
+    'pytest-cov>=2.6.0',
+    'pytest>=6.2.5',
 ]
 
 dev_require = [
-    "pre-commit==3.5.0",
+    "pre-commit>=4.2.0",
 ]
 
 extras_require = {
@@ -86,7 +82,6 @@ setup(
     description=__doc__,
     long_description=readme,
     long_description_content_type='text/markdown',
-    setup_requires=setup_requires,
     install_requires=install_requires,
     tests_require=tests_require,
     extras_require=extras_require,
@@ -97,10 +92,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
