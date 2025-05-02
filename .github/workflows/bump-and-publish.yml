@@ -35,7 +35,7 @@ jobs:
       - name: Bump version
         shell: bash
         run: |
-          bump2version patch --tag --verbose --commit
+          bump2version patch --tag --verbose
 
       - name: Push changes
         uses: ad-m/github-push-action@v0.8.0
@@ -81,7 +81,7 @@ jobs:
           python setup.py sdist bdist_wheel --universal
 
       - name: Publish package
-        uses: pypa/gh-action-pypi-publish@v1.9.0
+        uses: pypa/gh-action-pypi-publish@v1.12.4
         with:
           user: __token__
           password: ${{ secrets.pypi_password }}
