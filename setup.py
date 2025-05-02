@@ -80,6 +80,7 @@ setup(
     zip_safe=False,
     platforms='any',
     description=__doc__,
+    version='6.0.57',
     long_description=readme,
     long_description_content_type='text/markdown',
     install_requires=install_requires,
