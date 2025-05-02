@@ -35,7 +35,7 @@ jobs:
       - name: Bump version
         shell: bash
         run: |
-          bump2version patch --tag --verbose
+          bump2version patch --tag --verbose --commit
 
       - name: Push changes
         uses: ad-m/github-push-action@v0.8.0
