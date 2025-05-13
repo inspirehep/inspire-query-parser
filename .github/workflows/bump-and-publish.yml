@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.email "38065702145+github-actions[bot]@users.noreply.github.com"
 
       - name: Bump version
         shell: bash
