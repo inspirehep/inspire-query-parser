@@ -32,7 +32,7 @@ with open("README.md") as f:
 
 install_requires = (
     [
-        'inspire-schemas~=61.0',
+        'inspire-schemas~=61.6,>=61.6.17',
         'inspire-utils~=3.0,>=3.0.0',
         'pypeg2>=2.15.2',
         'python-dateutil>=2.6.1',
