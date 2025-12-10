@@ -79,7 +79,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms='any',
-    version='6.0.61',
+    version='6.0.62',
     description=__doc__,
     long_description=readme,
     long_description_content_type='text/markdown',
