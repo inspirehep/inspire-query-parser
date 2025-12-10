@@ -135,7 +135,7 @@ class ElasticSearchVisitor(Visitor):
         ],
         'fulltext': 'documents.attachment.content',
         'citedby': {
-            'path': 'references.record.$ref.raw',
+            'path': 'references.record.$ref',
             'search_path': 'self.$ref.raw',
         },
     }
