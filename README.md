@@ -25,3 +25,13 @@
 ### About
 
 A PEG-based query parser for INSPIRE.
+
+### Install
+
+To run the project
+
+```bash
+pyenv virtualenv 3.11.0 query-parser
+pip install -e ".[tests]"
+./run-tests.sh
+```

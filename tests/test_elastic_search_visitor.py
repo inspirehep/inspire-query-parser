@@ -3258,7 +3258,7 @@ def test_elastic_search_visitor_citedby():
             "self.$ref.raw": {
                 "index": "records-hep",
                 "id": "123456",
-                "path": "references.record.$ref.raw",
+                "path": "references.record.$ref",
             }
         }
     }
@@ -3276,7 +3276,7 @@ def test_elastic_search_visitor_complex_query():
                         "self.$ref.raw": {
                             "index": "records-hep",
                             "id": "123456",
-                            "path": "references.record.$ref.raw",
+                            "path": "references.record.$ref",
                         }
                     }
                 },
