@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -21,11 +20,7 @@
 # or submit itself to any jurisdiction.
 """This module provides the public API of INSPIRE query parser."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
-
-import six
 
 from inspire_query_parser.parser import Query
 from inspire_query_parser.stateful_pypeg_parser import StatefulParser
@@ -40,10 +35,10 @@ def parse_query(query_str):
     """Drives the whole logic, by parsing, restructuring and finally,
     generating an ElasticSearch query.
 
-    Args:     query_str (six.text_types): the given query to be
+    Args:     query_str (str or bytes): the given query to be
     translated to an ElasticSearch query
 
-    Returns:     six.text_types: Return an ElasticSearch query.
+    Returns:     dict: Return an ElasticSearch query.
 
     Notes:     In case there's an error, an ElasticSearch `multi_match`
     query is generated with its `query` value, being the     query_str
@@ -52,19 +47,19 @@ def parse_query(query_str):
 
     def _generate_match_all_fields_query():
         # Strip colon character (special character for ES)
-        stripped_query_str = ' '.join(query_str.replace(':', ' ').split())
+        stripped_query_str = " ".join(query_str.replace(":", " ").split())
         return {
-            'multi_match': {
-                'query': stripped_query_str,
-                'fields': ['_all'],
-                'zero_terms_query': 'all',
+            "multi_match": {
+                "query": stripped_query_str,
+                "fields": ["_all"],
+                "zero_terms_query": "all",
             }
         }
 
-    if not isinstance(query_str, six.text_type):
-        query_str = six.text_type(query_str.decode('utf-8'))
+    if not isinstance(query_str, str):
+        query_str = query_str.decode("utf-8")
 
-    logger.info('Parsing: "' + query_str + '\".')
+    logger.info('Parsing: "' + query_str + '".')
 
     parser = StatefulParser()
     rst_visitor = RestructuringVisitor()
@@ -87,13 +82,13 @@ def parse_query(query_str):
                 logger.warn(msg)
                 return _generate_match_all_fields_query()
             else:
-                msg += 'Continuing with recognized parse tree.'
+                msg += "Continuing with recognized parse tree."
             logger.warn(msg)
 
     except SyntaxError as e:
         logger.warn(
-            'Parser syntax error ('
-            + six.text_type(e)
+            "Parser syntax error ("
+            + str(e)
             + ') with query: "'
             + query_str
             + '". Continuing with a match_all with the given query.'
@@ -104,13 +99,13 @@ def parse_query(query_str):
     # never fails for the user.
     try:
         restructured_parse_tree = parse_tree.accept(rst_visitor)
-        logger.debug('Parse tree: \n' + emit_tree_format(restructured_parse_tree))
+        logger.debug("Parse tree: \n" + emit_tree_format(restructured_parse_tree))
 
     except Exception as e:
         logger.exception(
-            RestructuringVisitor.__name__ + " crashed" + (": " + six.text_type(e) + ".")
-            if six.text_type(e)
-            else '.'
+            RestructuringVisitor.__name__ + " crashed" + (": " + str(e) + ".")
+            if str(e)
+            else "."
         )
         return _generate_match_all_fields_query()
 
@@ -118,9 +113,9 @@ def parse_query(query_str):
         es_query = restructured_parse_tree.accept(es_visitor)
     except Exception as e:
         logger.exception(
-            ElasticSearchVisitor.__name__ + " crashed" + (": " + six.text_type(e) + ".")
-            if six.text_type(e)
-            else '.'
+            ElasticSearchVisitor.__name__ + " crashed" + (": " + str(e) + ".")
+            if str(e)
+            else "."
         )
         return _generate_match_all_fields_query()
 

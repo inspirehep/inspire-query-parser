@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -20,8 +19,6 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from __future__ import absolute_import, unicode_literals
-
 from inspire_query_parser.parser import (
     Expression,
     InvenioKeywordQuery,
@@ -36,7 +33,7 @@ from inspire_query_parser.utils.format_parse_tree import emit_tree_format
 
 def test_format_parse_tree_handles_unicode_values():
     parse_tree = Query(
-        [Statement(Expression(SimpleQuery(Value(SimpleValue('γ-radiation')))))]
+        [Statement(Expression(SimpleQuery(Value(SimpleValue("γ-radiation")))))]
     )
     assert emit_tree_format(parse_tree, verbose=True)
 
@@ -48,7 +45,7 @@ def test_format_parse_tree_handles_unicode_nodes():
                 Expression(
                     SimpleQuery(
                         InvenioKeywordQuery(
-                            'unicode-keyword-φοο', Value(SimpleValue('γ-radiation'))
+                            "unicode-keyword-φοο", Value(SimpleValue("γ-radiation"))
                         )
                     )
                 )

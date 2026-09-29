@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -19,10 +18,6 @@
 # In applying this license, CERN does not waive the privileges and immunities
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
-
-from __future__ import absolute_import, unicode_literals
-
-import six
 
 from inspire_query_parser.ast import BinaryOp, Leaf, ListOp, UnaryOp
 from inspire_query_parser.parser import BooleanRule
@@ -74,7 +69,7 @@ def __recursive_formatter(node, level=-INDENTATION):
 
         ret_str = __emit_symbol_at_level_str(value, new_level) if value != "" else ""
 
-    elif isinstance(node, six.text_type):
+    elif isinstance(node, str):
         value = "" if not repr(node) or repr(node) == "None" else "Text {" + node + "}"
 
         ret_str = __emit_symbol_at_level_str(value, new_level) if value != "" else ""

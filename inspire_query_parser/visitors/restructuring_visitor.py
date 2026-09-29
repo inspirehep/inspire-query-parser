@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -25,8 +24,6 @@ tree.
 
 Additionally, the date specifier conversion handlers logic is defined.
 """
-
-from __future__ import absolute_import, unicode_literals
 
 import logging
 
@@ -69,7 +66,7 @@ def _restructure_if_volume_follows_journal(left, right):
         if (
             isinstance(right_subtree, NotOp)
             and isinstance(right_subtree.op, KeywordOp)
-            and right_subtree.op.left == Keyword('volume')
+            and right_subtree.op.left == Keyword("volume")
         ):
             return None, None
 
@@ -77,17 +74,17 @@ def _restructure_if_volume_follows_journal(left, right):
             isinstance(right_subtree, AndOp)
             and isinstance(right_subtree.left, NotOp)
             and isinstance(right_subtree.left.op, KeywordOp)
-            and right_subtree.left.op.left == Keyword('volume')
+            and right_subtree.left.op.left == Keyword("volume")
         ):
             return None, right_subtree.right
 
         elif isinstance(right_subtree, KeywordOp) and right_subtree.left == Keyword(
-            'volume'
+            "volume"
         ):
             return right_subtree, None
 
         elif isinstance(right_subtree, AndOp) and right_subtree.left.left == Keyword(
-            'volume'
+            "volume"
         ):
             return right_subtree.left, right_subtree.right
 
@@ -99,7 +96,7 @@ def _restructure_if_volume_follows_journal(left, right):
 
     volume_node, remaining_subtree = volume_and_remaining_subtree
     if volume_node:
-        left.right.value = ','.join([journal_value, volume_node.right.value])
+        left.right.value = ",".join([journal_value, volume_node.right.value])
 
     return AndOp(left, remaining_subtree) if remaining_subtree else left
 
@@ -189,7 +186,7 @@ class RestructuringVisitor(Visitor):
         right = node.right.accept(self)
 
         is_journal_keyword_op = isinstance(left, KeywordOp) and left.left == Keyword(
-            'journal'
+            "journal"
         )
 
         if is_journal_keyword_op:
@@ -366,11 +363,11 @@ class RestructuringVisitor(Visitor):
         else:
             # Covering the case where ComplexValue supports more than ExactMatch,
             # PartialMatch and Regex values.
-            msg = self.__class__.__name__ + ': Unrecognized complex value'
+            msg = self.__class__.__name__ + ": Unrecognized complex value"
             try:
                 msg += ' lookahead token: "' + node.value[0] + '"'
             except IndexError:
-                msg += ': \"' + repr(node.value) + '"'
+                msg += ': "' + repr(node.value) + '"'
             msg += '.\nUsing simple value instead: "' + node.value + '".'
             logger.warn(msg)
             return ast.Value(node.value)

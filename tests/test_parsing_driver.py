@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -20,15 +19,13 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from __future__ import absolute_import, unicode_literals
-
-import mock
+from unittest import mock
 
 from inspire_query_parser.parsing_driver import parse_query
 
 
 def test_driver_with_simple_query():
-    query_str = 'subject astrophysics'
+    query_str = "subject astrophysics"
     expected_es_query = {
         "match": {
             "facet_inspire_categories": {"query": "astrophysics", "operator": "and"}
@@ -40,32 +37,37 @@ def test_driver_with_simple_query():
     assert es_query == expected_es_query
 
 
-@mock.patch('inspire_query_parser.parsing_driver.StatefulParser')
+def test_driver_with_utf8_bytes():
+    query = "title γ-radiation"
+    assert parse_query(query.encode("utf-8")) == parse_query(query)
+
+
+@mock.patch("inspire_query_parser.parsing_driver.StatefulParser")
 def test_driver_with_nothing_recognized(mocked_parser):
-    query_str = 'unrecognized query'
+    query_str = "unrecognized query"
     expected_es_query = {
-        'multi_match': {
-            'query': 'unrecognized query',
-            'fields': ['_all'],
-            'zero_terms_query': 'all',
+        "multi_match": {
+            "query": "unrecognized query",
+            "fields": ["_all"],
+            "zero_terms_query": "all",
         }
     }
 
-    mocked_parser.return_value.parse.return_value = ('unrecognized query', None)
+    mocked_parser.return_value.parse.return_value = ("unrecognized query", None)
 
     es_query = parse_query(query_str)
 
     assert es_query == expected_es_query
 
 
-@mock.patch('inspire_query_parser.parsing_driver.StatefulParser')
+@mock.patch("inspire_query_parser.parsing_driver.StatefulParser")
 def test_driver_with_syntax_error(mocked_parser):
-    query_str = 'query with syntax error'
+    query_str = "query with syntax error"
     expected_es_query = {
-        'multi_match': {
-            'query': 'query with syntax error',
-            'fields': ['_all'],
-            'zero_terms_query': 'all',
+        "multi_match": {
+            "query": "query with syntax error",
+            "fields": ["_all"],
+            "zero_terms_query": "all",
         }
     }
 
@@ -76,32 +78,32 @@ def test_driver_with_syntax_error(mocked_parser):
     assert es_query == expected_es_query
 
 
-@mock.patch('inspire_query_parser.parsing_driver.RestructuringVisitor')
+@mock.patch("inspire_query_parser.parsing_driver.RestructuringVisitor")
 def test_driver_with_rst_visitor_error(mocked_rst_visitor):
-    query_str = 'foo'
+    query_str = "foo"
     expected_es_query = {
-        'multi_match': {'query': 'foo', 'fields': ['_all'], 'zero_terms_query': 'all'}
+        "multi_match": {"query": "foo", "fields": ["_all"], "zero_terms_query": "all"}
     }
     mocked_rst_visitor.return_value.visit.side_effect = Exception(
-        'Something went wrong with visit_value'
+        "Something went wrong with visit_value"
     )
-    mocked_rst_visitor.__name__ = 'MockedRestructuringVisitor'
+    mocked_rst_visitor.__name__ = "MockedRestructuringVisitor"
 
     es_query = parse_query(query_str)
 
     assert es_query == expected_es_query
 
 
-@mock.patch('inspire_query_parser.parsing_driver.ElasticSearchVisitor')
+@mock.patch("inspire_query_parser.parsing_driver.ElasticSearchVisitor")
 def test_driver_with_es_visitor_error(mocked_es_visitor):
-    query_str = 'foo'
+    query_str = "foo"
     expected_es_query = {
-        'multi_match': {'query': 'foo', 'fields': ['_all'], 'zero_terms_query': 'all'}
+        "multi_match": {"query": "foo", "fields": ["_all"], "zero_terms_query": "all"}
     }
     mocked_es_visitor.return_value.visit.side_effect = Exception(
-        'Something went wrong with visit_value'
+        "Something went wrong with visit_value"
     )
-    mocked_es_visitor.__name__ = 'MockedElasticSearchVisitor'
+    mocked_es_visitor.__name__ = "MockedElasticSearchVisitor"
 
     es_query = parse_query(query_str)
 
@@ -109,12 +111,12 @@ def test_driver_with_es_visitor_error(mocked_es_visitor):
 
 
 def test_driver_with_es_visitor_empty_query_generates_a_query_against_all():
-    query_str = 'd < 200'
+    query_str = "d < 200"
     expected_es_query = {
-        'multi_match': {
-            'query': 'd < 200',
-            'fields': ['_all'],
-            'zero_terms_query': 'all',
+        "multi_match": {
+            "query": "d < 200",
+            "fields": ["_all"],
+            "zero_terms_query": "all",
         }
     }
 

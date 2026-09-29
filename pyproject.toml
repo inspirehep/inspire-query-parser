@@ -1,0 +1,49 @@
+[project]
+name = "inspire-query-parser"
+version = "6.0.62"
+description = "A PEG-based query parser for INSPIRE."
+authors = [{ name = "CERN", email = "admin@inspirehep.net" }]
+license = "GPL-3.0-or-later"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "inspire-schemas (>=61.6.35,<62.0.0)",
+    "inspire-utils (>=3.0.70,<4.0.0)",
+    "pypeg2 (>=2.15.2,<3.0)",
+    "python-dateutil (>=2.6.1,<3.0)",
+    "datefinder (>=0.7.1,<0.8)",
+]
+
+[project.urls]
+Homepage = "https://github.com/inspirehep/inspire-query-parser"
+Repository = "https://github.com/inspirehep/inspire-query-parser"
+Issues = "https://github.com/inspirehep/inspire-query-parser/issues"
+
+[tool.poetry]
+packages = [{ include = "inspire_query_parser" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3"
+pytest-cov = "^6.0"
+pre-commit = "3.5.0"
+
+[tool.pytest.ini_options]
+addopts = "--cov=inspire_query_parser --cov-report=term-missing:skip-covered"
+norecursedirs = ["tests/helpers"]
+
+[tool.coverage.run]
+include = ["inspire_query_parser/*.py"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

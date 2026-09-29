@@ -5,28 +5,32 @@ on:
 
 jobs:
   test:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name : Set up Python 3.11
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
 
       - name: Install python dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel
-          pip install -e .[tests]
+          python -m pip install poetry==2.2.1
+          poetry install --no-interaction
 
       - name: Show python dependencies
         run: |
-          pip freeze
+          poetry show
 
       - name: Run tests
         run: |
-          ./run-tests.sh
+          poetry run pytest tests

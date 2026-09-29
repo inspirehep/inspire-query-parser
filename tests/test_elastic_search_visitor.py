@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -21,9 +20,8 @@
 # or submit itself to any jurisdiction.
 
 
-from __future__ import print_function, unicode_literals
+from unittest import mock
 
-import mock
 from inspire_utils.query import ordered
 
 from inspire_query_parser import parse_query, parser
@@ -300,7 +298,7 @@ def test_elastic_search_visitor_find_journal_title_and_old_style_vol_simple_valu
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_page_simple_value(): # noqa E501
+def test_elastic_search_visitor_find_journal_title_and_vol_and_artid_or_start_page_simple_value():  # noqa E501
     query_str = "j Phys.Lett.B,351,123"
     expected_es_query = {
         "bool": {
@@ -767,21 +765,21 @@ def test_elastic_search_visitor_wildcard_support():
 
 
 def test_elastic_search_visitor_wildcard_journal_search():
-    query_str = 'j Phys.Rev.*'
+    query_str = "j Phys.Rev.*"
     expected_query = {
-        'nested': {
-            'path': 'publication_info',
-            'query': {
-                'query_string': {
-                    'query': 'Phys.Rev.*',
-                    'fields': [
-                        'publication_info.journal_title',
-                        'publication_info.journal_volume',
-                        'publication_info.page_start',
-                        'publication_info.artid',
+        "nested": {
+            "path": "publication_info",
+            "query": {
+                "query_string": {
+                    "query": "Phys.Rev.*",
+                    "fields": [
+                        "publication_info.journal_title",
+                        "publication_info.journal_volume",
+                        "publication_info.page_start",
+                        "publication_info.artid",
                     ],
-                    'default_operator': 'AND',
-                    'analyze_wildcard': True,
+                    "default_operator": "AND",
+                    "analyze_wildcard": True,
                 }
             },
         }
@@ -867,7 +865,7 @@ def test_elastic_search_visitor_with_malformed_query():
     "inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES",
     ES_MUST_QUERY,
 )
-def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_must(): # noqa E501
+def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_must():  # noqa E501
     query_str = "subject astrophysics and: author:"
     expected_es_query = {
         "bool": {
@@ -893,7 +891,7 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     "inspire_query_parser.visitors.elastic_search_visitor.DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES",
     ES_SHOULD_QUERY,
 )
-def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_should(): # noqa E501
+def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malformed_query_op_as_should():  # noqa E501
     query_str = "subject astrophysics and author:"
     expected_es_query = {
         "bool": {
@@ -917,7 +915,7 @@ def test_elastic_search_visitor_with_query_with_malformed_part_and_default_malfo
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_only_year_fields(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_only_year_fields():  # noqa E501
     query_str = "date 2000-10"
     expected_es_query = {
         "bool": {
@@ -963,7 +961,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_o
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_year(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_year():  # noqa E501
     query_str = "date 2017-12"
     expected_es_query = {
         "bool": {
@@ -1009,7 +1007,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_r
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_month(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_rollover_month():  # noqa E501
     query_str = "date 2017-10-31"
     expected_es_query = {
         "bool": {
@@ -1067,7 +1065,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_simple_value_handles_r
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_day(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_day():  # noqa E501
     query_str = "date 2000-10-*"
     expected_es_query = {
         "bool": {
@@ -1113,7 +1111,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month():  # noqa E501
     query_str = "date 2015-*"
     expected_es_query = {
         "bool": {
@@ -1143,7 +1141,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_as_month_part(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_as_month_part():  # noqa E501
     query_str = "date 2015-1*"
     expected_es_query = {
         "bool": {
@@ -1173,7 +1171,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_one_query_date_multi_field_and_wildcard_infix_generates_to_all_field(): # noqa E501
+def test_elastic_search_visitor_with_one_query_date_multi_field_and_wildcard_infix_generates_to_all_field():  # noqa E501
     query_str = "date: 2017-*-12"
     expected_es_query = {
         "multi_match": {
@@ -1187,7 +1185,7 @@ def test_elastic_search_visitor_with_one_query_date_multi_field_and_wildcard_inf
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_two_queries_date_multi_field_and_wildcard_infix_drops_date(): # noqa E501
+def test_elastic_search_visitor_with_two_queries_date_multi_field_and_wildcard_infix_drops_date():  # noqa E501
     query_str = "date: 2017-*-12 and title collider"
     expected_es_query = {
         "bool": {
@@ -1208,7 +1206,7 @@ def test_elastic_search_visitor_with_two_queries_date_multi_field_and_wildcard_i
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_year_drops_date_query(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_year_drops_date_query():  # noqa E501
     query_str = "date 201* and title collider"
     expected_es_query = {
         "bool": {
@@ -1229,7 +1227,7 @@ def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month_drops_date_query(): # noqa E501
+def test_elastic_search_visitor_with_date_multi_field_and_wildcard_value_suffix_in_month_drops_date_query():  # noqa E501
     query_str = "date 2000-*-01 and title collider"
     expected_es_query = {
         "bool": {
@@ -1732,7 +1730,7 @@ def test_elastic_search_visitor_handles_first_author_bai_exact_value():
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_partial_bai_value(): # noqa E501
+def test_elastic_search_visitor_handles_partial_match_value_with_bai_value_and_partial_bai_value():  # noqa E501
     query_str = "a 'A.Einstein.1' and a 'S.Mele'"
     expected_es_query = {
         "bool": {
@@ -1819,7 +1817,7 @@ def test_elastic_search_visitor_handles_wildcard_simple_and_partial_bai_like_que
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_author_name_contains_dot_and_no_spaces(): # noqa E501
+def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_author_name_contains_dot_and_no_spaces():  # noqa E501
     query_str = "a S.Mele"
     expected_es_query = {
         "nested": {
@@ -1839,7 +1837,7 @@ def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_author_n
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_first_author_name_contains_dot_and_no_spaces(): # noqa E501
+def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_first_author_name_contains_dot_and_no_spaces():  # noqa E501
     query_str = "fa S.Mele"
     expected_es_query = {
         "nested": {
@@ -1862,14 +1860,14 @@ def test_elastic_search_visitor_queries_also_bai_field_with_wildcard_if_first_au
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_comma_and_dot(): # noqa E501
+def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_comma_and_dot():  # noqa E501
     query_str = "a gava,e."
 
     generated_es_query = _parse_query(query_str)
     assert ElasticSearchVisitor.AUTHORS_BAI_FIELD not in str(generated_es_query)
 
 
-def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_comma_and_dot(): # noqa E501
+def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_comma_and_dot():  # noqa E501
     query_str = "fa gava,e."
 
     generated_es_query = _parse_query(query_str)
@@ -1878,14 +1876,14 @@ def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_cont
     )
 
 
-def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_trailing_dot(): # noqa E501
+def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_trailing_dot():  # noqa E501
     query_str = "a mele."
 
     generated_es_query = _parse_query(query_str)
     assert ElasticSearchVisitor.AUTHORS_BAI_FIELD not in str(generated_es_query)
 
 
-def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_trailing_dot(): # noqa E501
+def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_trailing_dot():  # noqa E501
     query_str = "fa mele."
 
     generated_es_query = _parse_query(query_str)
@@ -1894,14 +1892,14 @@ def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_cont
     )
 
 
-def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_prefix_dot(): # noqa E501
+def test_elastic_search_visitor_queries_does_not_query_bai_field_if_name_contains_prefix_dot():  # noqa E501
     query_str = "a .mele"
 
     generated_es_query = _parse_query(query_str)
     assert ElasticSearchVisitor.AUTHORS_BAI_FIELD not in str(generated_es_query)
 
 
-def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_prefix_dot(): # noqa E501
+def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_contains_prefix_dot():  # noqa E501
     query_str = "fa .mele"
 
     generated_es_query = _parse_query(query_str)
@@ -1910,7 +1908,7 @@ def test_elastic_search_visitor_fa_queries_does_not_query_bai_field_if_name_cont
     )
 
 
-def test_elastic_search_visitor_does_not_query_bai_field_if_name_contains_dot_and_spaces(): # noqa E501
+def test_elastic_search_visitor_does_not_query_bai_field_if_name_contains_dot_and_spaces():  # noqa E501
     query_str = "a S. Mele"
     bai_field = "authors.ids.value.search"
 
@@ -1918,7 +1916,7 @@ def test_elastic_search_visitor_does_not_query_bai_field_if_name_contains_dot_an
     assert bai_field not in str(generated_es_query)
 
 
-def test_elastic_search_visitor_does_not_query_bai_field_if_fa_name_contains_dot_and_spaces(): # noqa E501
+def test_elastic_search_visitor_does_not_query_bai_field_if_fa_name_contains_dot_and_spaces():  # noqa E501
     query_str = "fa S. Mele"
     bai_field = "first_author.ids.value.search"
 
@@ -2012,7 +2010,7 @@ def test_elastic_search_visitor_with_word_and_symbol_containing_unicode_characte
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_document_type(): # noqa E501
+def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_document_type():  # noqa E501
     query_str = "tc c"
     expected_es_query = {
         "match": {"document_type": {"query": "conference paper", "operator": "and"}}
@@ -2022,7 +2020,7 @@ def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_doc
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_publication_type(): # noqa E501
+def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_publication_type():  # noqa E501
     query_str = "tc i"
     expected_es_query = {
         "match": {"publication_type": {"query": "introductory", "operator": "and"}}
@@ -2048,7 +2046,7 @@ def test_elastic_search_visitor_type_code_with_known_value_mapping_and_query_ref
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_with_unknown_value_searches_both_document_and_publication_type_fields(): # noqa E501
+def test_elastic_search_visitor_type_code_with_unknown_value_searches_both_document_and_publication_type_fields():  # noqa E501
     query_str = "tc note"
     expected_es_query = {
         "bool": {
@@ -2064,7 +2062,7 @@ def test_elastic_search_visitor_type_code_with_unknown_value_searches_both_docum
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_with_known_exact_value_mapping_and_query_refereed(): # noqa E501
+def test_elastic_search_visitor_type_code_with_known_exact_value_mapping_and_query_refereed():  # noqa E501
     query_str = 'tc "p"'
     expected_es_query = {"match": {"refereed": True}}
 
@@ -2072,7 +2070,7 @@ def test_elastic_search_visitor_type_code_with_known_exact_value_mapping_and_que
     assert generated_es_query == expected_es_query
 
 
-def test_elastic_search_visitor_type_code_with_known_partial_value_mapping_and_query_refereed(): # noqa E501
+def test_elastic_search_visitor_type_code_with_known_partial_value_mapping_and_query_refereed():  # noqa E501
     query_str = "tc 'p'"
     expected_es_query = {"match": {"refereed": True}}
 
@@ -2301,14 +2299,9 @@ def test_elastic_search_visitor_PDG_keyword_with_dot_digit():
 
 
 def test_elastic_search_visitor_PDG_keyword_with_dot_character_no_quotes():
-    query_str = 'keyword:S044.a'
+    query_str = "keyword:S044.a"
     expected_es_query = {
-        "match": {
-            "keywords.value": {
-                "query": "S044.a",
-                "operator": "and"
-            }
-        }
+        "match": {"keywords.value": {"query": "S044.a", "operator": "and"}}
     }
 
     generated_es_query = _parse_query(query_str)
@@ -2316,14 +2309,9 @@ def test_elastic_search_visitor_PDG_keyword_with_dot_character_no_quotes():
 
 
 def test_elastic_search_visitor_PDG_keyword_with_dot_digit_no_quotes():
-    query_str = 'keyword:S044.4'
+    query_str = "keyword:S044.4"
     expected_es_query = {
-        "match": {
-            "keywords.value": {
-                "query": "S044.4",
-                "operator": "and"
-            }
-        }
+        "match": {"keywords.value": {"query": "S044.4", "operator": "and"}}
     }
 
     generated_es_query = _parse_query(query_str)
@@ -2838,7 +2826,7 @@ def test_first_author_query_with_full_name():
                                                 {
                                                     "match": {
                                                         "first_author.first_name": {
-                                                            "analyzer": "names_initials_analyzer", # noqa E501
+                                                            "analyzer": "names_initials_analyzer",  # noqa E501
                                                             "operator": "AND",
                                                             "query": "John",
                                                         }
@@ -3210,7 +3198,7 @@ def test_journal_title_variants_regression_complex_journal_title():
 def test_elastic_search_visitor_fulltext():
     query_str = "fulltext FCC"
     expected_es_query = {
-        'match': {'documents.attachment.content': {'query': 'FCC', 'operator': 'and'}}
+        "match": {"documents.attachment.content": {"query": "FCC", "operator": "and"}}
     }
     generated_es_query = _parse_query(query_str)
     assert expected_es_query == generated_es_query
@@ -3219,17 +3207,17 @@ def test_elastic_search_visitor_fulltext():
 def test_elastic_search_visitor_fulltext_and_other_field():
     query_str = "ft something and t boson"
     expected_es_query = {
-        'bool': {
-            'must': [
+        "bool": {
+            "must": [
                 {
-                    'match': {
-                        'documents.attachment.content': {
-                            'query': 'something',
-                            'operator': 'and',
+                    "match": {
+                        "documents.attachment.content": {
+                            "query": "something",
+                            "operator": "and",
                         }
                     }
                 },
-                {'match': {'titles.full_title': {'query': 'boson', 'operator': 'and'}}},
+                {"match": {"titles.full_title": {"query": "boson", "operator": "and"}}},
             ]
         }
     }
@@ -3240,11 +3228,11 @@ def test_elastic_search_visitor_fulltext_and_other_field():
 def test_elastic_search_visitor_partial_match_fulltext():
     query_str = "ft 'this is a test'"
     expected_es_query = {
-        'query_string': {
-            'query': '*this is a test*',
-            'fields': ['documents.attachment.content'],
-            'default_operator': 'AND',
-            'analyze_wildcard': True,
+        "query_string": {
+            "query": "*this is a test*",
+            "fields": ["documents.attachment.content"],
+            "default_operator": "AND",
+            "analyze_wildcard": True,
         }
     }
     generated_es_query = _parse_query(query_str)
