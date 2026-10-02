@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -19,8 +18,6 @@
 # In applying this license, CERN does not waive the privileges and immunities
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
-
-from __future__ import absolute_import, unicode_literals
 
 import contextlib
 import json
@@ -46,7 +43,7 @@ NAME_INITIAL_FOLLOWED_BY_FIRSTNAME_WITHOUT_SPACE = re.compile(
     r"(\.[a-z])", re.IGNORECASE
 )
 QUERY_STRING_QUERY_SPECIAL_CHARACTERS = re.compile(
-    r'\/|\+|\-|\=|\&\&|\|\||\>|\<|\!|\(|\)|\{|\}|\[|\]|\^|\"|\~|\?|\:|\\'
+    r"\/|\+|\-|\=|\&\&|\|\||\>|\<|\!|\(|\)|\{|\}|\[|\]|\^|\"|\~|\?|\:|\\"
 )
 
 
@@ -63,14 +60,14 @@ def retokenize_first_names(names):
 
         match = NAME_INITIAL_FOLLOWED_BY_FIRSTNAME_WITHOUT_SPACE.search(name)
         if match:
-            names_filtered.extend(name.split('.'))
+            names_filtered.extend(name.split("."))
         else:
             names_filtered.append(name)
     return filter(None, names_filtered)
 
 
 def is_initial_of_a_name(name_part):
-    return len(name_part) == 1 or u'.' in name_part
+    return len(name_part) == 1 or "." in name_part
 
 
 def author_name_contains_fullnames(author_name):
@@ -93,7 +90,7 @@ def _name_variation_has_only_initials(name):
     """Detects whether the name variation consists only from initials."""
 
     def _is_initial(name_variation):
-        return len(name_variation) == 1 or u'.' in name_variation
+        return len(name_variation) == 1 or "." in name_variation
 
     parsed_name = ParsedName.loads(name)
 
@@ -123,31 +120,31 @@ def generate_minimal_name_variations(author_name):
     parsed_name = ParsedName.loads(unidecode(author_name))
 
     if len(parsed_name) > 1:
-        lastnames = parsed_name.last.replace('-', ' ')
+        lastnames = parsed_name.last.replace("-", " ")
 
-        non_lastnames = ' '.join(parsed_name.first_list + parsed_name.suffix_list)
+        non_lastnames = " ".join(parsed_name.first_list + parsed_name.suffix_list)
         # Strip extra whitespace added if any of middle_list and suffix_list are empty.
-        non_lastnames = non_lastnames.strip().replace('-', ' ')
+        non_lastnames = non_lastnames.strip().replace("-", " ")
 
         # Adding into a set first, so as to drop identical name variations.
         return list(
             {
                 name_variation.lower()
                 for name_variation in [
-                    lastnames + ' ' + non_lastnames,
-                    lastnames + ' ' + non_lastnames[0],
-                    non_lastnames + ' ' + lastnames,
-                    non_lastnames + ' ' + lastnames[0],
+                    lastnames + " " + non_lastnames,
+                    lastnames + " " + non_lastnames[0],
+                    non_lastnames + " " + lastnames,
+                    non_lastnames + " " + lastnames[0],
                 ]
                 if not _name_variation_has_only_initials(name_variation)
             }
         )
     else:
-        return [parsed_name.dumps().replace('-', ' ').lower()]
+        return [parsed_name.dumps().replace("-", " ").lower()]
 
 
 # #### Date specifiers related utils ####
-ANY_PREFIX_AND_A_NUMBER = re.compile('(.+)(\d+)')
+ANY_PREFIX_AND_A_NUMBER = re.compile("(.+)(\d+)")
 
 # ES query constants that provide rounding of dates on query time, according to the
 # date "resolution" the user gave.
@@ -258,11 +255,11 @@ def convert_last_month_date(relative_date_specifier_suffix):
 
 
 ES_MAPPING_HEP_DATE_ONLY_YEAR = {
-    'publication_info.year',
+    "publication_info.year",
 }
 """Contains all the dates that contain always only a year date."""
 
-ES_RANGE_EQ_OPERATOR = 'eq'
+ES_RANGE_EQ_OPERATOR = "eq"
 """Additional (internal to the parser) range operator, for handling date
 equality queries as ranges."""
 
@@ -280,10 +277,10 @@ def _truncate_wildcard_from_date(date_value):
     and do a range query on the     remaining parts, or some numbers are
     wildcards, where again, we ignore this part.
     """
-    if ' ' in date_value:
-        date_parts = date_value.split(' ')
-    elif '-' in date_value:
-        date_parts = date_value.split('-')
+    if " " in date_value:
+        date_parts = date_value.split(" ")
+    elif "-" in date_value:
+        date_parts = date_value.split("-")
     else:
         # Either unsupported separators or wildcard in year, e.g. '201*'.
         raise ValueError("Erroneous date value: %s.", date_value)
@@ -291,13 +288,13 @@ def _truncate_wildcard_from_date(date_value):
     if GenericValue.WILDCARD_TOKEN in date_parts[-1]:
         del date_parts[-1]
 
-    return '-'.join(date_parts)
+    return "-".join(date_parts)
 
 
 def _truncate_date_value_according_on_date_field(field, date_value):
     """Truncates date value (to year only) according to the given date field.
 
-    Args:     field (unicode): The field for which the date value will
+    Args:     field (str): The field for which the date value will
     be used to query on.     date_value (str): The date value that is
     going to be truncated to its year.
 
@@ -331,12 +328,12 @@ def _get_next_date_from_partial_date(partial_date):
 
     Returns:     PartialDate: The next date from the given partial date.
     """
-    relativedelta_arg = 'years'
+    relativedelta_arg = "years"
 
     if partial_date.month:
-        relativedelta_arg = 'months'
+        relativedelta_arg = "months"
     if partial_date.day:
-        relativedelta_arg = 'days'
+        relativedelta_arg = "days"
 
     next_date = parse(partial_date.dumps()) + relativedelta(**{relativedelta_arg: 1})
     return PartialDate.from_parts(
@@ -382,7 +379,7 @@ def update_date_value_in_operator_value_pairs_for_fieldname(
     """Updates (operator, date value) pairs by normalizing the date value
     according to the given field.
 
-    Args:     field (unicode): The fieldname for which the operator-
+    Args:     field (str): The fieldname for which the operator-
     value pairs are being generated.     operator_value_pairs (dict): ES
     range operator {'gt', 'gte', 'lt', 'lte'} along with a value.
     Additionally, if the operator is ``ES_RANGE_EQ_OPERATOR``, then it
@@ -399,23 +396,20 @@ def update_date_value_in_operator_value_pairs_for_fieldname(
             return {}
 
         if operator == ES_RANGE_EQ_OPERATOR:
-            updated_operator_value_pairs[
-                'gte'
-            ] = modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(
-                modified_date
+            updated_operator_value_pairs["gte"] = (
+                modified_date.dumps()
+                + _get_proper_elastic_search_date_rounding_format(modified_date)
             )
 
             next_date = _get_next_date_from_partial_date(modified_date)
-            updated_operator_value_pairs[
-                'lt'
-            ] = next_date.dumps() + _get_proper_elastic_search_date_rounding_format(
-                next_date
+            updated_operator_value_pairs["lt"] = (
+                next_date.dumps()
+                + _get_proper_elastic_search_date_rounding_format(next_date)
             )
         else:
-            updated_operator_value_pairs[
-                operator
-            ] = modified_date.dumps() + _get_proper_elastic_search_date_rounding_format(
-                modified_date
+            updated_operator_value_pairs[operator] = (
+                modified_date.dumps()
+                + _get_proper_elastic_search_date_rounding_format(modified_date)
             )
 
     return updated_operator_value_pairs
@@ -425,8 +419,8 @@ def update_date_value_in_operator_value_pairs_for_fieldname(
 def generate_match_query(field, value, with_operator_and):
     """Helper for generating a match query.
 
-    Args:     field (six.text_type): The ES field to be queried.
-    value (six.text_type/bool): The value of the query (bool for the
+    Args:     field (str): The ES field to be queried.
+    value (str/bool): The value of the query (bool for the
     case of type-code query ["core: true"]).     with_operator_and
     (bool): Flag that signifies whether to generate the explicit
     notation of the query, along         with '"operator": "and"', so
@@ -442,14 +436,14 @@ def generate_match_query(field, value, with_operator_and):
         parsed_value = json.loads(value.lower())
 
     if isinstance(value, bool):
-        return {'match': {field: value}}
+        return {"match": {field: value}}
     elif isinstance(parsed_value, bool):
-        return {'match': {field: value.lower()}}
+        return {"match": {field: value.lower()}}
 
     if with_operator_and:
-        return {'match': {field: {'query': value, 'operator': 'and'}}}
+        return {"match": {field: {"query": value, "operator": "and"}}}
 
-    return {'match': {field: value}}
+    return {"match": {field: value}}
 
 
 def generate_nested_query(path, queries):
@@ -461,7 +455,7 @@ def generate_nested_query(path, queries):
     if not queries:
         return {}
 
-    return {'nested': {'path': path, 'query': queries}}
+    return {"nested": {"path": path, "query": queries}}
 
 
 def wrap_queries_in_bool_clauses_if_more_than_one(
@@ -490,7 +484,7 @@ def wrap_queries_in_bool_clauses_if_more_than_one(
     if len(queries) == 1 and not preserve_bool_semantics_if_one_clause:
         return queries[0]
 
-    return {'bool': {('must' if use_must_clause else 'should'): queries}}
+    return {"bool": {("must" if use_must_clause else "should"): queries}}
 
 
 def wrap_query_in_nested_if_field_is_nested(query, field, nested_fields):
@@ -505,7 +499,7 @@ def wrap_query_in_nested_if_field_is_nested(query, field, nested_fields):
         return query
 
     for element in nested_fields:
-        match_pattern = r'^{}.'.format(element)
+        match_pattern = r"^{}.".format(element)
         if type(field) is list:
             if list(filter(lambda v: re.match(match_pattern, v), field)):
                 return generate_nested_query(element, query)

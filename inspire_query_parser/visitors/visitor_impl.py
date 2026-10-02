@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -21,22 +20,20 @@
 # or submit itself to any jurisdiction.
 """Encapsulates visitor pattern logic."""
 
-from __future__ import absolute_import, unicode_literals
-
 import re
 
 # #### Used for converting a class name to snake case ####
-first_cap_re = re.compile('(.)([A-Z][a-z]+)')
-all_cap_re = re.compile('([a-z0-9])([A-Z])')
+first_cap_re = re.compile("(.)([A-Z][a-z]+)")
+all_cap_re = re.compile("([a-z0-9])([A-Z])")
 
 
 def camel_to_snake_case(name):
-    s1 = first_cap_re.sub(r'\1_\2', name)
-    return all_cap_re.sub(r'\1_\2', s1).lower()
+    s1 = first_cap_re.sub(r"\1_\2", name)
+    return all_cap_re.sub(r"\1_\2", s1).lower()
 
 
 class Visitor(object):
     def visit(self, node, *args, **kwargs):
-        method_name = 'visit_{}'.format(camel_to_snake_case(type(node).__name__))
+        method_name = "visit_{}".format(camel_to_snake_case(type(node).__name__))
         visitor_method = getattr(self, method_name)
         return visitor_method(node, *args, **kwargs)

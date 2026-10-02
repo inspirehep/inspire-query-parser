@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -20,12 +19,9 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from __future__ import absolute_import
-
 from collections import OrderedDict
 
 import pytest
-from six import iteritems, iterkeys, itervalues, next, viewitems
 
 
 def parametrize(test_configurations):
@@ -43,23 +39,23 @@ def parametrize(test_configurations):
     """
     if not test_configurations:
         __tracebackhide__ = True
-        pytest.fail('In parametrize test configurations parameter cannot be empty.')
+        pytest.fail("In parametrize test configurations parameter cannot be empty.")
 
     if not isinstance(test_configurations, dict):
         __tracebackhide__ = True
         pytest.fail(
-            'In parametrize test configurations parameter must be a dictionary.'
+            "In parametrize test configurations parameter must be a dictionary."
         )
 
-    ordered_tests_config = OrderedDict(sorted(viewitems(test_configurations)))
+    ordered_tests_config = OrderedDict(sorted(test_configurations.items()))
 
-    for test_name, test_configuration in iteritems(ordered_tests_config):
+    for test_name, test_configuration in ordered_tests_config.items():
         ordered_tests_config[test_name] = OrderedDict(
-            sorted(viewitems(test_configuration))
+            sorted(test_configuration.items())
         )
 
     # Extract arg_names from a test configuration
-    arg_names = list(iterkeys(next(itervalues(ordered_tests_config))))
+    arg_names = list(next(iter(ordered_tests_config.values())))
 
     # Generate list of arg_values
     arg_values = [
@@ -68,5 +64,5 @@ def parametrize(test_configurations):
     ]
 
     # Generate ids list
-    ids = list(iterkeys(ordered_tests_config))
+    ids = list(ordered_tests_config)
     return pytest.mark.parametrize(argnames=arg_names, argvalues=arg_values, ids=ids)

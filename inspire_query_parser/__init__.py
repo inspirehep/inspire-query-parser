@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -20,8 +19,6 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 """A PEG-based query parser for INSPIRE."""
-
-from __future__ import absolute_import, print_function
 
 from inspire_query_parser import config  # noqa: F401
 from inspire_query_parser.parsing_driver import parse_query  # noqa: F401

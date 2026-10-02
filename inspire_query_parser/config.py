@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -26,166 +25,166 @@ to generate INSPIRE related keywords (i.e. qualifiers) and secondly,
 provides a normalization of the shortened keywords to their full
 version.
 """
-from __future__ import unicode_literals
 
 INSPIRE_PARSER_NONDATE_KEYWORDS = {
     # Abstract
-    'abstract': 'abstract',
+    "abstract": "abstract",
     # Address
-    'address': 'address',
+    "address": "address",
     # Affiliation
-    'affiliation': 'affiliation',
-    'affil': 'affiliation',
-    'aff': 'affiliation',
-    'af': 'affiliation',
-    'institution': 'affiliation',
-    'inst': 'affiliation',
+    "affiliation": "affiliation",
+    "affil": "affiliation",
+    "aff": "affiliation",
+    "af": "affiliation",
+    "institution": "affiliation",
+    "inst": "affiliation",
     # Affiliation Id
-    'affid': 'affiliation-id',
-    'affiliation-id': 'affiliation-id',
+    "affid": "affiliation-id",
+    "affiliation-id": "affiliation-id",
     # Author
-    'author': 'author',
-    'au': 'author',
-    'a': 'author',
-    'name': 'author',
+    "author": "author",
+    "au": "author",
+    "a": "author",
+    "name": "author",
     # Author-Count
-    'author-count': 'author-count',
-    'authorcount': 'author-count',
-    'ac': 'author-count',
+    "author-count": "author-count",
+    "authorcount": "author-count",
+    "ac": "author-count",
     # Cataloguer
-    'cat': 'cataloguer',
+    "cat": "cataloguer",
     # Caption
-    'caption': 'caption',
+    "caption": "caption",
     # Cite, i.e. records that cite the given search term
     # Cite and c: SPIRES syntax while reference is INVENIO syntax
-    'cite': 'cite',
-    'c': 'cite',
-    'reference': 'cite',
+    "cite": "cite",
+    "c": "cite",
+    "reference": "cite",
     # Citedby related
-    'citedby': 'citedby',  # nested keyword query
+    "citedby": "citedby",  # nested keyword query
     # Cited by excluding self sites, e.g. citedbyexcludingselfcites:author:M.E.Peskin.1
-    'citedbyexcludingselfcites': 'citedbyexcludingselfcites',
-    'citedbyx': 'citedbyexcludingselfcites',
+    "citedbyexcludingselfcites": "citedbyexcludingselfcites",
+    "citedbyx": "citedbyexcludingselfcites",
     # Cited excluding self sites, e.g. citedexcludingselfcites:50+
-    'citedexcludingselfcites': 'citedexcludingselfcites',
-    'cx': 'citedexcludingselfcites',
+    "citedexcludingselfcites": "citedexcludingselfcites",
+    "cx": "citedexcludingselfcites",
     # Collaboration
-    'collaboration': 'collaboration',
-    'cn': 'collaboration',
+    "collaboration": "collaboration",
+    "cn": "collaboration",
     # Conference number
-    'cnum': 'confnumber',
+    "cnum": "confnumber",
     # Control number
-    'control_number': 'control_number',
-    'recid': 'control_number',
+    "control_number": "control_number",
+    "recid": "control_number",
     # Country
-    'country': 'country',
-    'cc': 'country',
+    "country": "country",
+    "cc": "country",
     # DOI
-    'doi': 'doi',
+    "doi": "doi",
     # ePrint
-    'bb': 'eprint',
-    'bull': 'eprint',
-    'eprint': 'eprint',
-    'arxiv': 'eprint',
-    'arXiv': 'eprint',
+    "bb": "eprint",
+    "bull": "eprint",
+    "eprint": "eprint",
+    "arxiv": "eprint",
+    "arXiv": "eprint",
     # Exact-Author
-    'exact-author': 'exact-author',
-    'exactauthor': 'exact-author',
-    'ea': 'exact-author',
+    "exact-author": "exact-author",
+    "exactauthor": "exact-author",
+    "ea": "exact-author",
     # Experiment
-    'experiment': 'experiment',
-    'exp': 'experiment',
+    "experiment": "experiment",
+    "exp": "experiment",
     # Field-code
-    'fc': 'field-code',
-    'field-code': 'field-code',
+    "fc": "field-code",
+    "field-code": "field-code",
     # First-Author
-    'first-author': 'first_author',
-    'firstauthor': 'first_author',
-    'fa': 'first_author',
+    "first-author": "first_author",
+    "firstauthor": "first_author",
+    "fa": "first_author",
     # Fulltext
-    'fulltext': 'fulltext',
-    'ft': 'fulltext',
+    "fulltext": "fulltext",
+    "ft": "fulltext",
     # SPIRES identifiers
-    'irn': 'irn',
+    "irn": "irn",
     # Journal related
-    'coden': 'journal',
-    'journal': 'journal',
-    'j': 'journal',
-    'published_in': 'journal',
-    'volume': 'volume',
-    'vol': 'volume',
+    "coden": "journal",
+    "journal": "journal",
+    "j": "journal",
+    "published_in": "journal",
+    "volume": "volume",
+    "vol": "volume",
     # Keyword
     # keyword is Invenio style, while the rest are from SPIRES syntax.
-    'keyword': 'keyword',
-    'keywords': 'keyword',
-    'kw': 'keyword',
-    'k': 'keyword',
+    "keyword": "keyword",
+    "keywords": "keyword",
+    "kw": "keyword",
+    "k": "keyword",
     # Primary archive
-    'primarch': 'primary_arxiv_category',
+    "primarch": "primary_arxiv_category",
     # rawref
-    'rawref': 'rawref',
+    "rawref": "rawref",
     # Reference
-    'citation': 'reference',
-    'jour-vol-page': 'reference',
-    'jvp': 'reference',
+    "citation": "reference",
+    "jour-vol-page": "reference",
+    "jvp": "reference",
     # Refersto operator
     # Nested keyword query
-    'refersto': 'refersto',
+    "refersto": "refersto",
     # Refers to excluding self cites,
     # e.g. referstoexcludingselfcites:author:M.E.Peskin.1
     # Nested keyword queries
-    'referstoexcludingselfcites': 'referstoexcludingselfcites',
-    'referstox': 'referstoexcludingselfcites',
+    "referstoexcludingselfcites": "referstoexcludingselfcites",
+    "referstox": "referstoexcludingselfcites",
     # Report number
-    'reportnumber': 'reportnumber',
-    'report-num': 'reportnumber',
-    'report': 'reportnumber',
-    'rept': 'reportnumber',
-    'rn': 'reportnumber',
-    'r': 'reportnumber',
+    "reportnumber": "reportnumber",
+    "report-num": "reportnumber",
+    "report": "reportnumber",
+    "rept": "reportnumber",
+    "rn": "reportnumber",
+    "r": "reportnumber",
     # Subject
-    'subject': 'subject',
+    "subject": "subject",
     # Title
-    'title': 'title',
-    'ti': 'title',
-    't': 'title',
+    "title": "title",
+    "ti": "title",
+    "t": "title",
     # texkey
-    'texkey': 'texkeys.raw',
+    "texkey": "texkeys.raw",
     # Topcite, i.e. citation count
     # Cited used to be for Invenio style syntax while topcite for SPIRES
-    'cited': 'topcite',
-    'topcit': 'topcite',
-    'topcite': 'topcite',
+    "cited": "topcite",
+    "topcit": "topcite",
+    "topcite": "topcite",
     # Type-Code
-    'type-code': 'type-code',
-    'type': 'type-code',
-    'tc': 'type-code',
-    'ty': 'type-code',
-    'scl': 'type-code',
-    'ps': 'type-code',
-    'collection': 'type-code',# Queries for this one include "collection published" only
+    "type-code": "type-code",
+    "type": "type-code",
+    "tc": "type-code",
+    "ty": "type-code",
+    "scl": "type-code",
+    "ps": "type-code",
+    # Queries for this one include "collection published" only.
+    "collection": "type-code",
 }
 
 INSPIRE_PARSER_DATE_KEYWORDS = {
     # Date
-    'date': 'date',
-    'd': 'date',
+    "date": "date",
+    "d": "date",
     # From queries dataset, users seem to use year and date interchangeably.
-    'year': 'date',
+    "year": "date",
     # Date added
-    'date-added': 'date-added',
-    'dadd': 'date-added',
-    'da': 'date-added',
+    "date-added": "date-added",
+    "dadd": "date-added",
+    "da": "date-added",
     # Date earliest
-    'date-earliest': 'date-earliest',
-    'de': 'date-earliest',
+    "date-earliest": "date-earliest",
+    "de": "date-earliest",
     # Date updated
-    'date-updated': 'date-updated',
-    'dupd': 'date-updated',
-    'du': 'date-updated',
+    "date-updated": "date-updated",
+    "dupd": "date-updated",
+    "du": "date-updated",
     # Journal year
-    'journal-year': 'publication_info.year',
-    'jy': 'publication_info.year',
+    "journal-year": "publication_info.year",
+    "jy": "publication_info.year",
 }
 
 INSPIRE_PARSER_KEYWORDS = INSPIRE_PARSER_NONDATE_KEYWORDS.copy()
@@ -193,10 +192,10 @@ INSPIRE_PARSER_KEYWORDS.update(INSPIRE_PARSER_DATE_KEYWORDS)
 INSPIRE_KEYWORDS_SET = set(INSPIRE_PARSER_KEYWORDS.values())
 
 # #### Date specifiers #####
-DATE_TODAY_REGEX_PATTERN = 'today'
-DATE_YESTERDAY_REGEX_PATTERN = 'yesterday'
-DATE_LAST_MONTH_REGEX_PATTERN = 'last\s+month'
-DATE_THIS_MONTH_REGEX_PATTERN = 'this\s+month'
+DATE_TODAY_REGEX_PATTERN = "today"
+DATE_YESTERDAY_REGEX_PATTERN = "yesterday"
+DATE_LAST_MONTH_REGEX_PATTERN = "last\s+month"
+DATE_THIS_MONTH_REGEX_PATTERN = "this\s+month"
 
 DATE_SPECIFIERS_COLLECTION = (
     DATE_TODAY_REGEX_PATTERN,
@@ -216,7 +215,7 @@ MONTH_REGEX = "|".join(
         "apr",
         "may",
         "june",
-        'jun',
+        "jun",
         "july",
         "jul",
         "august",

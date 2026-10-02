@@ -26,12 +26,14 @@
 
 A PEG-based query parser for INSPIRE.
 
-### Install
+### Development
 
-To run the project
+Python 3.11 or newer and Poetry 2.2.1 are required.
 
-```bash
-pyenv virtualenv 3.11.0 query-parser
-pip install -e ".[tests]"
-./run-tests.sh
+```console
+poetry install
+poetry run pytest tests
 ```
+
+Dependencies are recorded in `poetry.lock`. After changing dependencies in
+`pyproject.toml`, run `poetry lock` and commit both files.

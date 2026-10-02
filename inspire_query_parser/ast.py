@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -32,8 +31,6 @@ BinaryOp     - ListOp
 The concrete AST nodes, represent higher level (domain specific) nodes.
 """
 
-from __future__ import unicode_literals
-
 
 # #### Abstract Syntax Tree classes ####
 class ASTElement(object):
@@ -52,7 +49,7 @@ class Leaf(ASTElement):
         return type(self) is type(other) and self.value == other.value
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.value)
+        return "%s(%r)" % (self.__class__.__name__, self.value)
 
     def __hash__(self):
         return hash(self.value)
@@ -185,7 +182,7 @@ class Keyword(Leaf):
 class GenericValue(Leaf):
     """Represents a generic value, which might contain a wildcard."""
 
-    WILDCARD_TOKEN = '*'
+    WILDCARD_TOKEN = "*"
 
     def __init__(self, value, contains_wildcard=False):
         super(GenericValue, self).__init__(value)

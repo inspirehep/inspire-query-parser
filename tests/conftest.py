@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -22,8 +21,6 @@
 
 """Pytest configuration."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import sys
 
@@ -33,7 +30,7 @@ from inspire_query_parser.utils.format_parse_tree import emit_tree_format
 
 # Use the helpers folder to store test helpers.
 # See: http://stackoverflow.com/a/33515264/374865
-sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "helpers"))
 
 
 def pytest_assertrepr_compare(op, left, right):
@@ -50,8 +47,8 @@ def pytest_assertrepr_compare(op, left, right):
         left_parse_tree = emit_tree_format(left).splitlines()
         right_parse_tree = emit_tree_format(right).splitlines()
         return (
-            ['that given parse trees are equal:']
+            ["that given parse trees are equal:"]
             + left_parse_tree
-            + ['', "──────── == ────────", '']
+            + ["", "──────── == ────────", ""]
             + right_parse_tree
         )

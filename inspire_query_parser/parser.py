@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -20,10 +19,7 @@
 # granted to it by virtue of its status as an Intergovernmental Organization
 # or submit itself to any jurisdiction.
 
-from __future__ import print_function, unicode_literals
-
 import datefinder
-import six
 from pypeg2 import (
     Enum,
     GrammarValueError,
@@ -66,7 +62,7 @@ class CaseInsensitiveKeyword(Keyword):
     def __init__(self, keyword):
         """Adds lowercase keyword to the keyword table."""
         try:
-            self.grammar # noqa B018
+            self.grammar  # noqa B018
         except AttributeError:
             raise GrammarValueError(
                 self.__class__.__name__ + " expects a grammar attribute (Enum)."
@@ -84,8 +80,13 @@ class CaseInsensitiveKeyword(Keyword):
         if match:
             # Check if match is is not in the grammar of the specific keyword class.
             if match.group(0).lower() not in cls.grammar:
-                result = text, SyntaxError(
-                    repr(match.group(0)) + " is not a member of " + repr(cls.grammar)
+                result = (
+                    text,
+                    SyntaxError(
+                        repr(match.group(0))
+                        + " is not a member of "
+                        + repr(cls.grammar)
+                    ),
                 )
             else:
                 result = text[len(match.group(0)) :], cls(match.group(0))
@@ -109,8 +110,8 @@ u_word = re.compile("\w+", re.UNICODE)
 class BooleanOperator(object):
     """Serves as the possible case for a boolean operator."""
 
-    AND = 'and'
-    OR = 'or'
+    AND = "and"
+    OR = "or"
 
 
 class LeafRule(ast.Leaf):
@@ -160,7 +161,7 @@ class BooleanRule(ast.BinaryOp):
         self.left = args[0]
 
         if len(args) == 3:
-            if isinstance(args[1], (And, Or)) :
+            if isinstance(args[1], (And, Or)):
                 self.bool_op = args[1]
             else:
                 raise ValueError("Unexpected boolean operator: " + repr(args[1]))
@@ -236,7 +237,7 @@ class Not(CIKeyword):
 
 # #### Lowest level operators #####
 class Whitespace(LeafRule):
-    grammar = attr('value', whitespace)
+    grammar = attr("value", whitespace)
 
 
 class InspireKeyword(LeafRule):
@@ -296,7 +297,7 @@ class SimpleValueUnit(LeafRule):
     token_regex = re.compile(r"[^\s:)(]+", re.UNICODE)
 
     date_specifiers_regex = re.compile(
-        r"({})\s*-\s*\d+".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE
+        r"({})\s*-\s*\d+".format("|".join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE
     )
 
     parenthesized_token_grammar = None  # is set after SimpleValue definition.
@@ -307,7 +308,7 @@ class SimpleValueUnit(LeafRule):
 
     def __init__(self, args):
         super(SimpleValueUnit, self).__init__()
-        if isinstance(args, six.string_types):
+        if isinstance(args, str):
             # Value was recognized by the 1st option of the list grammar (regex)
             self.value = args
         else:
@@ -352,15 +353,16 @@ class SimpleValueUnit(LeafRule):
             # and we shouldn't.
             if cls.starts_with_colon.match(remaining_text):
                 return text, SyntaxError(
-                    "parsing a keyword (token followed by \":\"): \""
+                    'parsing a keyword (token followed by ":"): "'
                     + repr(matched_token)
-                    + "\""
+                    + '"'
                 )
 
             result = remaining_text, matched_token
         else:
-            result = text, SyntaxError(
-                "expecting match on " + repr(cls.token_regex.pattern)
+            result = (
+                text,
+                SyntaxError("expecting match on " + repr(cls.token_regex.pattern)),
             )
         return result
 
@@ -431,13 +433,13 @@ class SimpleValueWithColonUnit(SimpleValueUnit):
 class SimpleDateValueUnit(LeafRule):
     grammar = re.compile(r"[\d*\-\.\/]{4,10}(?=($|\s|\)))", re.UNICODE)
     date_specifiers_regex = re.compile(
-        r"({})\s*(-\s*\d+)?".format('|'.join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE
+        r"({})\s*(-\s*\d+)?".format("|".join(DATE_SPECIFIERS_COLLECTION)), re.UNICODE
     )
     string_month_date_regex = re.compile(MONTH_REGEX, re.IGNORECASE)
 
     def __init__(self, args):
         super(SimpleDateValueUnit, self).__init__()
-        if isinstance(args, six.string_types):
+        if isinstance(args, str):
             # Value was recognized by the 1st option of the list grammar (regex)
             self.value = args
         else:
@@ -453,8 +455,11 @@ class SimpleDateValueUnit(LeafRule):
             remaining_text = text[date_end_index:]
             result = remaining_text, found_date_string
         except StopIteration:
-            result = text, SyntaxError(
-                "expecting match on " + repr(cls.string_month_date_regex.pattern)
+            result = (
+                text,
+                SyntaxError(
+                    "expecting match on " + repr(cls.string_month_date_regex.pattern)
+                ),
             )
         return result
 
@@ -488,10 +493,10 @@ class SimpleDateValueUnit(LeafRule):
 class SimpleValueGeneric(LeafRule):
     def __init__(self, values):
         super(SimpleValueGeneric, self).__init__()
-        if isinstance(values, six.string_types):
+        if isinstance(values, str):
             self.value = values
         else:
-            self.value = six.text_type.strip(''.join([v.value for v in values]))
+            self.value = str.strip("".join([v.value for v in values]))
 
     """Represents terminals as plaintext.
 
@@ -530,8 +535,8 @@ class SimpleValueGeneric(LeafRule):
         reconstructed_terminals = recognized_tokens[
             : complex_value_idx - slicing_start_idx
         ]
-        reconstructed_text = '{} {}'.format(
-            ''.join(
+        reconstructed_text = "{} {}".format(
+            "".join(
                 [
                     token.value
                     for token in recognized_tokens[
@@ -614,13 +619,13 @@ SimpleDateValueUnit.parenthesized_token_grammar = (
 class SimpleValueNegation(UnaryRule):
     """Negation accepting only SimpleValues."""
 
-    grammar = omit(Not), attr('op', SimpleValue)
+    grammar = omit(Not), attr("op", SimpleValue)
 
 
 class SimpleDateValueNegation(UnaryRule):
     """Negation accepting only SimpleValues."""
 
-    grammar = omit(Not), attr('op', SimpleDateValue)
+    grammar = omit(Not), attr("op", SimpleDateValue)
 
 
 class SimpleValueBooleanQuery(BooleanRule):
@@ -669,9 +674,12 @@ class SimpleValueBooleanQuery(BooleanRule):
             )
 
             # Identified something other than a SimpleValue, stop parsing this rule.
-            result = text, SyntaxError(
-                "expected simple value related rule as right operand of a "
-                + cls.__name__
+            result = (
+                text,
+                SyntaxError(
+                    "expected simple value related rule as right operand of a "
+                    + cls.__name__
+                ),
             )
 
         except SyntaxError as e:
@@ -683,8 +691,11 @@ class SimpleValueBooleanQuery(BooleanRule):
                     remaining_text, right_operand = parser.parse(
                         text_after_bool_op, cls.grammar[2]
                     )
-                    result = remaining_text, SimpleValueBooleanQuery(
-                        left_operand, bool_op=operator, right=right_operand
+                    result = (
+                        remaining_text,
+                        SimpleValueBooleanQuery(
+                            left_operand, bool_op=operator, right=right_operand
+                        ),
                     )
                 # Actual failure of parsing boolean query at terminals level
                 except SyntaxError as e:
@@ -755,15 +766,15 @@ class ComplexValue(LeafRule):
     """
 
     EXACT_VALUE_TOKEN = '"'
-    PARTIAL_VALUE_TOKEN = '\''
-    REGEX_VALUE_TOKEN = '/'
+    PARTIAL_VALUE_TOKEN = "'"
+    REGEX_VALUE_TOKEN = "/"
 
     regex = re.compile(r"((/.+?/)|('.*?')|(\".*?\"))")
-    grammar = attr('value', regex)
+    grammar = attr("value", regex)
 
 
 class SimpleRangeValue(LeafRule):
-    grammar = attr('value', re.compile(r"([^\s)(-]|-+[^\s)(>])+"))
+    grammar = attr("value", re.compile(r"([^\s)(-]|-+[^\s)(>])+"))
 
 
 class GreaterThanOp(UnaryRule):
@@ -772,8 +783,9 @@ class GreaterThanOp(UnaryRule):
     Supports queries like author-count > 2000 or date after 10-2000.
     """
 
-    grammar = omit(re.compile(r"after|>", re.IGNORECASE)), attr(
-        'op', [SimpleDateValue, SimpleValue]
+    grammar = (
+        omit(re.compile(r"after|>", re.IGNORECASE)),
+        attr("op", [SimpleDateValue, SimpleValue]),
     )
 
 
@@ -784,13 +796,13 @@ class GreaterEqualOp(UnaryRule):
     """
 
     grammar = [
-        (omit(Literal(">=")), attr('op', [SimpleDateValue, SimpleValue])),
+        (omit(Literal(">=")), attr("op", [SimpleDateValue, SimpleValue])),
         # Accept a number or numbers that are separated with (/ or -)
         # followed by a "-" which should be followed by \s or ) or
         # end of input so that you don't accept a value like 1-e.
         (
-            attr('op', re.compile(r"\d+([/-]\d+)*(?=\+)")),
-            omit(re.compile(r'\+(?=\s|\)|$)')),
+            attr("op", re.compile(r"\d+([/-]\d+)*(?=\+)")),
+            omit(re.compile(r"\+(?=\s|\)|$)")),
         ),
     ]
 
@@ -801,8 +813,9 @@ class LessThanOp(UnaryRule):
     Supports queries like author-count < 100 or date before 1984.
     """
 
-    grammar = omit(re.compile(r"before|<", re.IGNORECASE)), attr(
-        'op', [SimpleDateValue, SimpleValue]
+    grammar = (
+        omit(re.compile(r"before|<", re.IGNORECASE)),
+        attr("op", [SimpleDateValue, SimpleValue]),
     )
 
 
@@ -834,9 +847,9 @@ class RangeOp(BinaryRule):
     """
 
     grammar = (
-        attr('left', [ComplexValue, SimpleRangeValue]),
+        attr("left", [ComplexValue, SimpleRangeValue]),
         omit(Literal("->")),
-        attr('right', [ComplexValue, SimpleRangeValue]),
+        attr("right", [ComplexValue, SimpleRangeValue]),
     )
 
 
@@ -847,7 +860,7 @@ class Value(UnaryRule):
     """
 
     grammar = attr(
-        'op',
+        "op",
         [
             (optional(omit(Literal("="))), RangeOp),
             GreaterEqualOp,
@@ -874,7 +887,7 @@ class DateValue(UnaryRule):
     """
 
     grammar = attr(
-        'op',
+        "op",
         [
             (optional(omit(Literal("="))), RangeOp),
             GreaterEqualOp,
@@ -903,22 +916,22 @@ class InvenioKeywordQuery(BinaryRule):
     """
 
     grammar = (
-        attr('left', [[InspireKeyword, InspireDateKeyword], re.compile(r"[^\s:]+")]),
-        omit(':'),
-        attr('right', Value),
+        attr("left", [[InspireKeyword, InspireDateKeyword], re.compile(r"[^\s:]+")]),
+        omit(":"),
+        attr("right", Value),
     )
 
 
 class SpiresKeywordQuery(BinaryRule):
     """Keyword queries with space separator (i.e. Spires style)."""
 
-    grammar = attr('left', InspireKeyword), attr('right', Value)
+    grammar = attr("left", InspireKeyword), attr("right", Value)
 
 
 class SpiresDateKeywordQuery(BinaryRule):
     """Keyword queries with pace separator (i.e. Spires style)."""
 
-    grammar = attr('left', InspireDateKeyword), attr('right', DateValue)
+    grammar = attr("left", InspireDateKeyword), attr("right", DateValue)
 
 
 class SimpleQuery(UnaryRule):
@@ -928,7 +941,7 @@ class SimpleQuery(UnaryRule):
     """
 
     grammar = attr(
-        'op',
+        "op",
         [
             InvenioKeywordQuery,
             SpiresDateKeywordQuery,
@@ -962,13 +975,13 @@ class Expression(UnaryRule):
 class NotQuery(UnaryRule):
     """Negation query."""
 
-    grammar = omit(Not), attr('op', Expression)
+    grammar = omit(Not), attr("op", Expression)
 
 
 class ParenthesizedQuery(UnaryRule):
     """Parenthesized query for denoting precedence."""
 
-    grammar = omit(Literal('(')), attr('op', Statement), omit(Literal(')'))
+    grammar = omit(Literal("(")), attr("op", Statement), omit(Literal(")"))
 
 
 class NestedKeywordQuery(BinaryRule):
@@ -981,7 +994,7 @@ class NestedKeywordQuery(BinaryRule):
 
 
 Expression.grammar = attr(
-    'op',
+    "op",
     [
         NotQuery,
         NestedKeywordQuery,
@@ -993,19 +1006,19 @@ Expression.grammar = attr(
 
 NestedKeywordQuery.grammar = (
     attr(
-        'left',
+        "left",
         [
             # Most specific regex must be higher.
-            re.compile(r'citedbyexcludingselfcites', re.IGNORECASE),
-            re.compile(r'citedbyx', re.IGNORECASE),
-            re.compile(r'citedby', re.IGNORECASE),
-            re.compile(r'referstoexcludingselfcites', re.IGNORECASE),
-            re.compile(r'referstox', re.IGNORECASE),
-            re.compile(r'refersto', re.IGNORECASE),
+            re.compile(r"citedbyexcludingselfcites", re.IGNORECASE),
+            re.compile(r"citedbyx", re.IGNORECASE),
+            re.compile(r"citedby", re.IGNORECASE),
+            re.compile(r"referstoexcludingselfcites", re.IGNORECASE),
+            re.compile(r"referstox", re.IGNORECASE),
+            re.compile(r"refersto", re.IGNORECASE),
         ],
     ),
     optional(omit(":")),
-    attr('right', Expression),
+    attr("right", Expression),
 )
 
 
@@ -1019,7 +1032,7 @@ class BooleanQuery(BooleanRule):
 
 
 # #### Main productions ####
-Statement.grammar = attr('op', [BooleanQuery, Expression])
+Statement.grammar = attr("op", [BooleanQuery, Expression])
 
 
 class MalformedQueryWords(ListRule):
@@ -1039,7 +1052,7 @@ class EmptyQuery(LeafRule):
         self.value = None
 
     def __repr__(self):
-        return '%s()' % self.__class__.__name__
+        return "%s()" % self.__class__.__name__
 
 
 class Query(ListRule):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is part of INSPIRE.
 # Copyright (C) 2014-2017 CERN.
@@ -23,13 +22,10 @@
 output of the parser and restructuring visitor and converts it to an
 ElasticSearch query."""
 
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import re
 from unicodedata import normalize
 
-import six
 from inspire_schemas.utils import convert_old_publication_info_to_new
 from inspire_utils.helpers import force_list
 from inspire_utils.name import ParsedName, normalize_name
@@ -57,8 +53,8 @@ logger = logging.getLogger(__name__)
 
 
 class FieldVariations(object):
-    search = 'search'
-    raw = 'raw'
+    search = "search"
+    raw = "raw"
 
 
 class ElasticSearchVisitor(Visitor):
@@ -70,73 +66,73 @@ class ElasticSearchVisitor(Visitor):
 
     # ##### Configuration #####
     # ## Journal queries ##
-    JOURNAL_FIELDS_PREFIX = 'publication_info'
-    JOURNAL_TITLE = 'journal_title_variants'
-    JOURNAL_TITLE_FOR_OLD_PUBLICATION_INFO = 'journal_title'
-    JOURNAL_VOLUME = 'journal_volume'
-    JOURNAL_PAGE_START = 'page_start'
-    JOURNAL_ART_ID = 'artid'
-    JOURNAL_YEAR = 'year'
+    JOURNAL_FIELDS_PREFIX = "publication_info"
+    JOURNAL_TITLE = "journal_title_variants"
+    JOURNAL_TITLE_FOR_OLD_PUBLICATION_INFO = "journal_title"
+    JOURNAL_VOLUME = "journal_volume"
+    JOURNAL_PAGE_START = "page_start"
+    JOURNAL_ART_ID = "artid"
+    JOURNAL_YEAR = "year"
     JOURNAL_FIELDS_MAPPING = {
-        JOURNAL_TITLE: '.'.join(
+        JOURNAL_TITLE: ".".join(
             (JOURNAL_FIELDS_PREFIX, JOURNAL_TITLE_FOR_OLD_PUBLICATION_INFO)
         ),
-        JOURNAL_VOLUME: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_VOLUME)),
-        JOURNAL_PAGE_START: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_PAGE_START)),
-        JOURNAL_ART_ID: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_ART_ID)),
-        JOURNAL_YEAR: '.'.join((JOURNAL_FIELDS_PREFIX, JOURNAL_YEAR)),
+        JOURNAL_VOLUME: ".".join((JOURNAL_FIELDS_PREFIX, JOURNAL_VOLUME)),
+        JOURNAL_PAGE_START: ".".join((JOURNAL_FIELDS_PREFIX, JOURNAL_PAGE_START)),
+        JOURNAL_ART_ID: ".".join((JOURNAL_FIELDS_PREFIX, JOURNAL_ART_ID)),
+        JOURNAL_YEAR: ".".join((JOURNAL_FIELDS_PREFIX, JOURNAL_YEAR)),
     }
     # ########################################
 
     # TODO This is a temporary solution for handling the Inspire keyword to ElasticSearch fieldname mapping, since
     # TODO Inspire mappings aren't in their own repository. Currently using the `records-hep` mapping.
     KEYWORD_TO_ES_FIELDNAME = {
-        'author': 'authors.full_name',
-        'first_author': 'first_author.full_name',
-        'author_first_name': 'authors.first_name',
-        'author_last_name': 'authors.last_name',
-        'author_bai': 'authors.ids.value',
-        'author_first_name_initials': 'authors.first_name.initials',
-        'first_author_first_name': 'first_author.first_name',
-        'first_author_last_name': 'first_author.last_name',
-        'first_author_first_name_initials': 'first_author.first_name.initials',
-        'first_author_bai': 'first_author.ids.value',
-        'author-count': 'author_count',
-        'collaboration': 'collaborations.value',
-        'date': [
-            'earliest_date',
-            'imprints.date',
-            'preprint_date',
-            'publication_info.year',
-            'thesis_info.date',
+        "author": "authors.full_name",
+        "first_author": "first_author.full_name",
+        "author_first_name": "authors.first_name",
+        "author_last_name": "authors.last_name",
+        "author_bai": "authors.ids.value",
+        "author_first_name_initials": "authors.first_name.initials",
+        "first_author_first_name": "first_author.first_name",
+        "first_author_last_name": "first_author.last_name",
+        "first_author_first_name_initials": "first_author.first_name.initials",
+        "first_author_bai": "first_author.ids.value",
+        "author-count": "author_count",
+        "collaboration": "collaborations.value",
+        "date": [
+            "earliest_date",
+            "imprints.date",
+            "preprint_date",
+            "publication_info.year",
+            "thesis_info.date",
         ],
-        'date-added': '_created',
-        'date-earliest': 'earliest_date',
-        'date-updated': '_updated',
-        'doi': 'dois.value.raw',
-        'eprint': 'arxiv_eprints.value.raw',
-        'exact-author': 'authors.full_name_unicode_normalized',
-        'irn': 'external_system_identifiers.value.raw',
-        'journal': [*JOURNAL_FIELDS_MAPPING.values()],
-        'keyword': 'keywords.value',
-        'refersto': 'references.record.$ref',
-        'reportnumber': 'report_numbers.value.fuzzy',
-        'subject': 'facet_inspire_categories',
-        'texkey': 'texkeys.raw',
-        'title': 'titles.full_title',
-        'type-code': 'document_type',
-        'topcite': 'citation_count',
-        'affiliation': 'authors.affiliations.value',
-        'affiliation-id': [
-            'authors.affiliations.record.$ref',
-            'supervisors.affiliations.record.$ref',
-            'thesis_info.institutions.record.$ref',
-            'record_affiliations.record.$ref',
+        "date-added": "_created",
+        "date-earliest": "earliest_date",
+        "date-updated": "_updated",
+        "doi": "dois.value.raw",
+        "eprint": "arxiv_eprints.value.raw",
+        "exact-author": "authors.full_name_unicode_normalized",
+        "irn": "external_system_identifiers.value.raw",
+        "journal": [*JOURNAL_FIELDS_MAPPING.values()],
+        "keyword": "keywords.value",
+        "refersto": "references.record.$ref",
+        "reportnumber": "report_numbers.value.fuzzy",
+        "subject": "facet_inspire_categories",
+        "texkey": "texkeys.raw",
+        "title": "titles.full_title",
+        "type-code": "document_type",
+        "topcite": "citation_count",
+        "affiliation": "authors.affiliations.value",
+        "affiliation-id": [
+            "authors.affiliations.record.$ref",
+            "supervisors.affiliations.record.$ref",
+            "thesis_info.institutions.record.$ref",
+            "record_affiliations.record.$ref",
         ],
-        'fulltext': 'documents.attachment.content',
-        'citedby': {
-            'path': 'references.record.$ref',
-            'search_path': 'self.$ref.raw',
+        "fulltext": "documents.attachment.content",
+        "citedby": {
+            "path": "references.record.$ref",
+            "search_path": "self.$ref.raw",
         },
     }
     """Mapping from keywords to ElasticSearch fields.
@@ -146,23 +142,23 @@ class ElasticSearchVisitor(Visitor):
     ``multi_match`` query. Otherwise a ``match`` query is generated.
     """
     TYPECODE_VALUE_TO_FIELD_AND_VALUE_PAIRS_MAPPING = {
-        'b': ('document_type', 'book'),
-        'book': ('document_type', 'book'),
-        'c': ('document_type', 'conference paper'),
-        'conferencepaper': ('document_type', 'conference paper'),
-        'citeable': ('citeable', True),
-        'core': ('core', True),
-        'i': ('publication_type', 'introductory'),
-        'introductory': ('publication_type', 'introductory'),
-        'l': ('publication_type', 'lectures'),
-        'lectures': ('publication_type', 'lectures'),
-        'p': ('refereed', True),
-        'published': ('refereed', True),
-        'r': ('publication_type', 'review'),
-        'review': ('publication_type', 'review'),
-        't': ('document_type', 'thesis'),
-        'thesis': ('document_type', 'thesis'),
-        'proceedings': ('document_type', 'proceedings'),
+        "b": ("document_type", "book"),
+        "book": ("document_type", "book"),
+        "c": ("document_type", "conference paper"),
+        "conferencepaper": ("document_type", "conference paper"),
+        "citeable": ("citeable", True),
+        "core": ("core", True),
+        "i": ("publication_type", "introductory"),
+        "introductory": ("publication_type", "introductory"),
+        "l": ("publication_type", "lectures"),
+        "lectures": ("publication_type", "lectures"),
+        "p": ("refereed", True),
+        "published": ("refereed", True),
+        "r": ("publication_type", "review"),
+        "review": ("publication_type", "review"),
+        "t": ("document_type", "thesis"),
+        "thesis": ("document_type", "thesis"),
+        "proceedings": ("document_type", "proceedings"),
     }
     """Mapping from type-code query values to field and value pairs.
 
@@ -170,20 +166,20 @@ class ElasticSearchVisitor(Visitor):
     given value).
     """
 
-    AUTHORS_NAME_VARIATIONS_FIELD = 'authors.name_variations'
-    AUTHORS_BAI_FIELD = 'authors.ids.value'
-    BAI_REGEX = re.compile(r'^((\w|-|\')+\.)+\d+$', re.UNICODE | re.IGNORECASE)
-    TEXKEY_REGEX = re.compile(r'^[a-zA-Z\.-]+:\d{4}[a-z]{2,3}$', re.UNICODE)
-    AUTHORS_NESTED_QUERY_PATH = 'authors'
-    FIRST_AUTHOR_NESTED_QUERY_PATH = 'first_author'
+    AUTHORS_NAME_VARIATIONS_FIELD = "authors.name_variations"
+    AUTHORS_BAI_FIELD = "authors.ids.value"
+    BAI_REGEX = re.compile(r"^((\w|-|\')+\.)+\d+$", re.UNICODE | re.IGNORECASE)
+    TEXKEY_REGEX = re.compile(r"^[a-zA-Z\.-]+:\d{4}[a-z]{2,3}$", re.UNICODE)
+    AUTHORS_NESTED_QUERY_PATH = "authors"
+    FIRST_AUTHOR_NESTED_QUERY_PATH = "first_author"
     DATE_NESTED_FIELDS = [
-        'publication_info.year',
+        "publication_info.year",
     ]
-    DATE_NESTED_QUERY_PATH = 'publication_info'
-    JOURNAL_NESTED_QUERY_PATH = 'publication_info'
-    TITLE_SYMBOL_INDICATING_CHARACTER = ['-', '(', ')']
-    NESTED_FIELDS = ['authors', 'publication_info', 'first_author', 'supervisors']
-    RECORD_RELATION_FIELD = 'related_records.relation'
+    DATE_NESTED_QUERY_PATH = "publication_info"
+    JOURNAL_NESTED_QUERY_PATH = "publication_info"
+    TITLE_SYMBOL_INDICATING_CHARACTER = ["-", "(", ")"]
+    NESTED_FIELDS = ["authors", "publication_info", "first_author", "supervisors"]
+    RECORD_RELATION_FIELD = "related_records.relation"
 
     # ################
 
@@ -195,16 +191,16 @@ class ElasticSearchVisitor(Visitor):
         Defaults to author
         """
         return (
-            'first_author'
-            if fieldnames and self.KEYWORD_TO_ES_FIELDNAME['first_author'] in fieldnames
-            else 'author'
+            "first_author"
+            if fieldnames and self.KEYWORD_TO_ES_FIELDNAME["first_author"] in fieldnames
+            else "author"
         )
 
     def _generate_nested_author_query(self, query, fieldnames=None):
         """Generates nested query with path for authors or first_author."""
         nested_path = (
             self.FIRST_AUTHOR_NESTED_QUERY_PATH
-            if fieldnames and self.KEYWORD_TO_ES_FIELDNAME['first_author'] in fieldnames
+            if fieldnames and self.KEYWORD_TO_ES_FIELDNAME["first_author"] in fieldnames
             else self.AUTHORS_NESTED_QUERY_PATH
         )
         return generate_nested_query(nested_path, query)
@@ -212,12 +208,12 @@ class ElasticSearchVisitor(Visitor):
     def _are_fieldnames_author_or_first_author(self, fieldnames):
         if isinstance(fieldnames, list):
             return (
-                self.KEYWORD_TO_ES_FIELDNAME['author'] in fieldnames
-                or self.KEYWORD_TO_ES_FIELDNAME['first_author'] in fieldnames
+                self.KEYWORD_TO_ES_FIELDNAME["author"] in fieldnames
+                or self.KEYWORD_TO_ES_FIELDNAME["first_author"] in fieldnames
             )
         return (
-            self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldnames
-            or self.KEYWORD_TO_ES_FIELDNAME['first_author'] == fieldnames
+            self.KEYWORD_TO_ES_FIELDNAME["author"] == fieldnames
+            or self.KEYWORD_TO_ES_FIELDNAME["first_author"] == fieldnames
         )
 
     def _generate_fieldnames_if_bai_query(
@@ -230,8 +226,8 @@ class ElasticSearchVisitor(Visitor):
         """Generates new fieldnames in case of BAI query.
 
         Args:     fieldnames : names of the fields of the node.
-        node_value (six.text_type): The node's value (i.e. author name).
-        bai_field_variation (six.text_type): Which field variation to
+        node_value (str): The node's value (i.e. author name).
+        bai_field_variation (str): Which field variation to
         query ('search' or 'raw').     query_bai_field_if_dots_in_name
         (bool): Whether to query BAI field (in addition to author's name
         field)         if dots exist in the name and name contains no
@@ -244,19 +240,19 @@ class ElasticSearchVisitor(Visitor):
                 'Non supported field variation "{}".'.format(bai_field_variation)
             )
         keyword = self._get_author_or_first_author_keyword_from_fieldnames(fieldnames)
-        normalized_author_name = normalize_name(node_value).strip('.')
-        bai_fieldname = self.KEYWORD_TO_ES_FIELDNAME['{}_bai'.format(keyword)]
+        normalized_author_name = normalize_name(node_value).strip(".")
+        bai_fieldname = self.KEYWORD_TO_ES_FIELDNAME["{}_bai".format(keyword)]
         if self.KEYWORD_TO_ES_FIELDNAME[keyword] and self.BAI_REGEX.match(node_value):
-            return [bai_fieldname + '.' + bai_field_variation]
+            return [bai_fieldname + "." + bai_field_variation]
 
         elif (
             not whitespace.search(normalized_author_name)
             and query_bai_field_if_dots_in_name
             and self.KEYWORD_TO_ES_FIELDNAME[keyword]
-            and '.' in normalized_author_name
+            and "." in normalized_author_name
         ):
             # Case of partial BAI, e.g. ``J.Smith``.
-            return [bai_fieldname + '.' + bai_field_variation] + force_list(
+            return [bai_fieldname + "." + bai_field_variation] + force_list(
                 self.KEYWORD_TO_ES_FIELDNAME[keyword]
             )
         return None
@@ -296,12 +292,12 @@ class ElasticSearchVisitor(Visitor):
         if self.BAI_REGEX.match(author_name_or_bai):
             bai = author_name_or_bai.lower()
             query = self._generate_term_query(
-                '.'.join((self.AUTHORS_BAI_FIELD, FieldVariations.search)), bai
+                ".".join((self.AUTHORS_BAI_FIELD, FieldVariations.search)), bai
             )
         else:
-            author_name = normalize('NFKC', normalize_name(author_name_or_bai)).lower()
+            author_name = normalize("NFKC", normalize_name(author_name_or_bai)).lower()
             query = self._generate_term_query(
-                self.KEYWORD_TO_ES_FIELDNAME['exact-author'], author_name
+                self.KEYWORD_TO_ES_FIELDNAME["exact-author"], author_name
             )
 
         return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
@@ -323,7 +319,7 @@ class ElasticSearchVisitor(Visitor):
                 return {}
 
             return self._generate_range_queries(
-                self.KEYWORD_TO_ES_FIELDNAME['date'], {ES_RANGE_EQ_OPERATOR: date_value}
+                self.KEYWORD_TO_ES_FIELDNAME["date"], {ES_RANGE_EQ_OPERATOR: date_value}
             )
         else:
             # Drop date query with wildcard not as suffix, e.g. 2000-1*-31
@@ -353,7 +349,7 @@ class ElasticSearchVisitor(Visitor):
             ):
                 symbol_queries.append(
                     generate_match_query(
-                        '.'.join([title_field, FieldVariations.search]),
+                        ".".join([title_field, FieldVariations.search]),
                         value,
                         with_operator_and=False,
                     )
@@ -364,7 +360,7 @@ class ElasticSearchVisitor(Visitor):
         )
 
     def _generate_title_queries(self, value):
-        title_field = self.KEYWORD_TO_ES_FIELDNAME['title']
+        title_field = self.KEYWORD_TO_ES_FIELDNAME["title"]
         q = generate_match_query(title_field, value, with_operator_and=True)
 
         symbol_queries = self._generate_queries_for_title_symbols(title_field, value)
@@ -391,14 +387,14 @@ class ElasticSearchVisitor(Visitor):
             return generate_match_query(*mapping_for_value, with_operator_and=True)
         else:
             return {
-                'bool': {
-                    'minimum_should_match': 1,
-                    'should': [
+                "bool": {
+                    "minimum_should_match": 1,
+                    "should": [
                         generate_match_query(
-                            'document_type', value, with_operator_and=True
+                            "document_type", value, with_operator_and=True
                         ),
                         generate_match_query(
-                            'publication_type', value, with_operator_and=True
+                            "publication_type", value, with_operator_and=True
                         ),
                     ],
                 }
@@ -407,34 +403,34 @@ class ElasticSearchVisitor(Visitor):
     # TODO Move it to visitor utils
     def _generate_query_string_query(self, value, fieldnames, analyze_wildcard):
         if not fieldnames:
-            field_specifier, field_specifier_value = 'default_field', '_all'
+            field_specifier, field_specifier_value = "default_field", "_all"
         else:
-            field_specifier = 'fields'
+            field_specifier = "fields"
             field_specifier_value = (
                 fieldnames if isinstance(fieldnames, list) else [fieldnames]
             )
             # Can only use prefix queries on keyword, text and wildcard
             # fields so in journal * searches with type date need to be removed
-            if 'publication_info.year' in field_specifier_value:
-                field_specifier_value.remove('publication_info.year')
+            if "publication_info.year" in field_specifier_value:
+                field_specifier_value.remove("publication_info.year")
         query = {
-            'query_string': {
-                'query': escape_query_string_special_characters(value),
+            "query_string": {
+                "query": escape_query_string_special_characters(value),
                 field_specifier: field_specifier_value,
-                'default_operator': "AND",
+                "default_operator": "AND",
             }
         }
         if analyze_wildcard:
-            query['query_string']['analyze_wildcard'] = True
+            query["query_string"]["analyze_wildcard"] = True
 
         return query
 
     # TODO Move it to visitor utils and write tests for it.
     def _generate_term_query(self, fieldname, value, boost=None):
         if not boost:
-            return {'term': {fieldname: value}}
+            return {"term": {fieldname: value}}
 
-        return {'term': {fieldname: {'value': value, 'boost': boost}}}
+        return {"term": {fieldname: {"value": value, "boost": boost}}}
 
     def _generate_boolean_query(self, node):
         condition_a = node.left.accept(self)
@@ -466,12 +462,12 @@ class ElasticSearchVisitor(Visitor):
         has been given, then the the method will     return an empty
         dictionary.
         """
-        if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames or all(
+        if self.KEYWORD_TO_ES_FIELDNAME["date"] == fieldnames or all(
             field
             in [
-                self.KEYWORD_TO_ES_FIELDNAME['date-added'],
-                self.KEYWORD_TO_ES_FIELDNAME['date-updated'],
-                self.KEYWORD_TO_ES_FIELDNAME['date-earliest'],
+                self.KEYWORD_TO_ES_FIELDNAME["date-added"],
+                self.KEYWORD_TO_ES_FIELDNAME["date-updated"],
+                self.KEYWORD_TO_ES_FIELDNAME["date-earliest"],
             ]
             for field in fieldnames
         ):
@@ -485,25 +481,25 @@ class ElasticSearchVisitor(Visitor):
                 if not updated_operator_value_pairs:
                     break  # Malformed date
                 else:
-                    range_query = {'range': {fieldname: updated_operator_value_pairs}}
+                    range_query = {"range": {fieldname: updated_operator_value_pairs}}
 
                     range_queries.append(
                         generate_nested_query(self.DATE_NESTED_QUERY_PATH, range_query)
                         if fieldname in self.DATE_NESTED_FIELDS
                         else range_query
                     )
-        elif 'publication_info.year' in fieldnames:
+        elif "publication_info.year" in fieldnames:
             range_queries = [
                 generate_nested_query(
                     self.DATE_NESTED_QUERY_PATH,
-                    {'range': {fieldname: operator_value_pairs}},
+                    {"range": {fieldname: operator_value_pairs}},
                 )
                 for fieldname in fieldnames
             ]
 
         else:
             range_queries = [
-                {'range': {fieldname: operator_value_pairs}} for fieldname in fieldnames
+                {"range": {fieldname: operator_value_pairs}} for fieldname in fieldnames
             ]
 
         return wrap_queries_in_bool_clauses_if_more_than_one(
@@ -514,17 +510,17 @@ class ElasticSearchVisitor(Visitor):
     def _generate_malformed_query(data):
         """Generates a query on the ``_all`` field with all the query content.
 
-        Args:     data (six.text_type or list): The query in the format
-        of ``six.text_type`` (when used from parsing driver)         or
+        Args:     data (str or list): The query in the format
+        of ``str`` (when used from parsing driver)         or
         ``list`` when used from withing the ES visitor.
         """
-        if isinstance(data, six.text_type):
+        if isinstance(data, str):
             # Remove colon character (special character for ES)
-            query_str = data.replace(':', ' ')
+            query_str = data.replace(":", " ")
         else:
-            query_str = ' '.join([word.strip(':') for word in data.children])
+            query_str = " ".join([word.strip(":") for word in data.children])
 
-        return {'simple_query_string': {'fields': ['_all'], 'query': query_str}}
+        return {"simple_query_string": {"fields": ["_all"], "query": query_str}}
 
     def _preprocess_journal_query_value(
         self, third_journal_field, old_publication_info_values
@@ -532,9 +528,9 @@ class ElasticSearchVisitor(Visitor):
         """Transforms the given journal query value (old publication info) to
         the new one.
 
-        Args:     third_journal_field (six.text_type): The final field
+        Args:     third_journal_field (str): The final field
         to be used for populating the old publication info.
-        old_publication_info_values (six.text_type): The old publication
+        old_publication_info_values (str): The old publication
         info. It must be one of {only title, title         & volume,
         title & volume & artid/page_start}. Returns:     (dict) The new
         publication info.
@@ -547,7 +543,7 @@ class ElasticSearchVisitor(Visitor):
             third_journal_field,
         ]
         values_list = [
-            value.strip() for value in old_publication_info_values.split(',') if value
+            value.strip() for value in old_publication_info_values.split(",") if value
         ]
 
         old_publication_info = [
@@ -652,7 +648,7 @@ class ElasticSearchVisitor(Visitor):
     # ################
 
     def visit_empty_query(self, node):
-        return {'match_all': {}}
+        return {"match_all": {}}
 
     def visit_value_op(self, node):
         return node.op.accept(self)
@@ -662,22 +658,22 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_query_with_malformed_part(self, node):
         query = {
-            'bool': {
-                'must': [
+            "bool": {
+                "must": [
                     node.left.accept(self),
                 ],
             }
         }
 
         if DEFAULT_ES_OPERATOR_FOR_MALFORMED_QUERIES == ES_MUST_QUERY:
-            query['bool']['must'].append(node.right.accept(self))
+            query["bool"]["must"].append(node.right.accept(self))
         else:
-            query['bool']['should'] = [node.right.accept(self)]
+            query["bool"]["should"] = [node.right.accept(self)]
 
         return query
 
     def visit_not_op(self, node):
-        return {'bool': {'must_not': [node.op.accept(self)]}}
+        return {"bool": {"must_not": [node.op.accept(self)]}}
 
     def visit_and_op(self, node):
         return self._generate_boolean_query(node)
@@ -695,66 +691,66 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_range_op(self, node, fieldnames):
         return self._generate_range_queries(
-            force_list(fieldnames), {'gte': node.left.value, 'lte': node.right.value}
+            force_list(fieldnames), {"gte": node.left.value, "lte": node.right.value}
         )
 
     def visit_greater_than_op(self, node, fieldnames):
         return self._generate_range_queries(
-            force_list(fieldnames), {'gt': node.op.value}
+            force_list(fieldnames), {"gt": node.op.value}
         )
 
     def visit_greater_equal_than_op(self, node, fieldnames):
         return self._generate_range_queries(
-            force_list(fieldnames), {'gte': node.op.value}
+            force_list(fieldnames), {"gte": node.op.value}
         )
 
     def visit_less_than_op(self, node, fieldnames):
         return self._generate_range_queries(
-            force_list(fieldnames), {'lt': node.op.value}
+            force_list(fieldnames), {"lt": node.op.value}
         )
 
     def visit_less_equal_than_op(self, node, fieldnames):
         return self._generate_range_queries(
-            force_list(fieldnames), {'lte': node.op.value}
+            force_list(fieldnames), {"lte": node.op.value}
         )
 
     def visit_nested_keyword_op(self, node):  # TODO Cannot be completed as of yet.
         # FIXME: quick and dirty implementation of refersto:recid:<recid>
         right = node.right
-        if hasattr(right, 'left') and hasattr(right, 'right'):
-            if node.left.value == 'citedby':
+        if hasattr(right, "left") and hasattr(right, "right"):
+            if node.left.value == "citedby":
                 record_id = right.right.value
                 return self._generate_terms_lookup(
-                    self.KEYWORD_TO_ES_FIELDNAME['citedby']['path'],
-                    self.KEYWORD_TO_ES_FIELDNAME['citedby']['search_path'],
+                    self.KEYWORD_TO_ES_FIELDNAME["citedby"]["path"],
+                    self.KEYWORD_TO_ES_FIELDNAME["citedby"]["search_path"],
                     record_id,
                 )
-            if node.left.value == 'refersto' and right.left.value == 'control_number':
+            if node.left.value == "refersto" and right.left.value == "control_number":
                 recid = right.right.value
                 citing_records_query = generate_match_query(
-                    self.KEYWORD_TO_ES_FIELDNAME['refersto'],
+                    self.KEYWORD_TO_ES_FIELDNAME["refersto"],
                     recid,
                     with_operator_and=False,
                 )
                 records_with_collection_literature_query = generate_match_query(
-                    '_collections', 'Literature', with_operator_and=False
+                    "_collections", "Literature", with_operator_and=False
                 )
                 superseded_records_query = generate_match_query(
-                    self.RECORD_RELATION_FIELD, 'successor', with_operator_and=False
+                    self.RECORD_RELATION_FIELD, "successor", with_operator_and=False
                 )
                 self_citation = generate_match_query(
                     "control_number", recid, with_operator_and=False
                 )
                 return {
-                    'bool': {
-                        'must': [
+                    "bool": {
+                        "must": [
                             citing_records_query,
                             records_with_collection_literature_query,
                         ],
-                        'must_not': [superseded_records_query, self_citation],
+                        "must_not": [superseded_records_query, self_citation],
                     }
                 }
-            if right.left.value == 'author':
+            if right.left.value == "author":
                 return generate_match_query(
                     "referenced_authors_bais",
                     right.right.value,
@@ -767,7 +763,7 @@ class ElasticSearchVisitor(Visitor):
         return self.KEYWORD_TO_ES_FIELDNAME.get(node.value, node.value)
 
     def handle_value_wildcard(self, node, fieldnames=None):
-        if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+        if self.KEYWORD_TO_ES_FIELDNAME["date"] == fieldnames:
             return self._generate_date_with_wildcard_query(node.value)
         if self._are_fieldnames_author_or_first_author(fieldnames):
             bai_fieldnames = self._generate_fieldnames_if_bai_query(
@@ -810,15 +806,15 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_value(self, node, fieldnames=None):
         if not fieldnames:
-            return generate_match_query('_all', node.value, with_operator_and=True)
+            return generate_match_query("_all", node.value, with_operator_and=True)
 
         if node.contains_wildcard:
             return self.handle_value_wildcard(node, fieldnames=fieldnames)
         if fieldnames in [
-            self.KEYWORD_TO_ES_FIELDNAME['date'],
-            self.KEYWORD_TO_ES_FIELDNAME['date-added'],
-            self.KEYWORD_TO_ES_FIELDNAME['date-updated'],
-            self.KEYWORD_TO_ES_FIELDNAME['date-earliest'],
+            self.KEYWORD_TO_ES_FIELDNAME["date"],
+            self.KEYWORD_TO_ES_FIELDNAME["date-added"],
+            self.KEYWORD_TO_ES_FIELDNAME["date-updated"],
+            self.KEYWORD_TO_ES_FIELDNAME["date-earliest"],
         ]:
             # Date queries with simple values are transformed into range queries,
             # among the given and the exact
@@ -827,10 +823,10 @@ class ElasticSearchVisitor(Visitor):
                 force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value}
             )
         if isinstance(fieldnames, list):
-            if self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
+            if self.KEYWORD_TO_ES_FIELDNAME["journal"] == fieldnames:
                 return self._generate_journal_queries(node.value)
 
-            if self.KEYWORD_TO_ES_FIELDNAME['affiliation-id'] == fieldnames:
+            if self.KEYWORD_TO_ES_FIELDNAME["affiliation-id"] == fieldnames:
                 match_queries = [
                     wrap_query_in_nested_if_field_is_nested(
                         generate_match_query(
@@ -846,59 +842,58 @@ class ElasticSearchVisitor(Visitor):
                 )
 
             return {
-                'multi_match': {
-                    'fields': fieldnames,
-                    'query': node.value,
+                "multi_match": {
+                    "fields": fieldnames,
+                    "query": node.value,
                 }
             }
         else:
             if self._are_fieldnames_author_or_first_author(fieldnames):
                 return self.handle_author_query(node, fieldnames=fieldnames)
 
-            elif self.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
+            elif self.KEYWORD_TO_ES_FIELDNAME["exact-author"] == fieldnames:
                 return self._generate_exact_author_query(node.value)
 
-            elif self.KEYWORD_TO_ES_FIELDNAME['irn'] == fieldnames:
-                return {'term': {fieldnames: ''.join(('SPIRES-', node.value))}}
+            elif self.KEYWORD_TO_ES_FIELDNAME["irn"] == fieldnames:
+                return {"term": {fieldnames: "".join(("SPIRES-", node.value))}}
 
-            elif self.KEYWORD_TO_ES_FIELDNAME['title'] == fieldnames:
+            elif self.KEYWORD_TO_ES_FIELDNAME["title"] == fieldnames:
                 return self._generate_title_queries(node.value)
 
-            elif self.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
+            elif self.KEYWORD_TO_ES_FIELDNAME["type-code"] == fieldnames:
                 return self._generate_type_code_query(node.value)
 
-            elif self.KEYWORD_TO_ES_FIELDNAME['affiliation'] == fieldnames:
+            elif self.KEYWORD_TO_ES_FIELDNAME["affiliation"] == fieldnames:
                 query = generate_match_query(
-                    self.KEYWORD_TO_ES_FIELDNAME['affiliation'],
+                    self.KEYWORD_TO_ES_FIELDNAME["affiliation"],
                     node.value,
                     with_operator_and=True,
                 )
                 return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
 
-            elif self.KEYWORD_TO_ES_FIELDNAME['eprint'] == fieldnames:
-
+            elif self.KEYWORD_TO_ES_FIELDNAME["eprint"] == fieldnames:
                 return generate_match_query(
                     fieldnames,
-                    re.sub('ar[xX]iv:', "", node.value),
+                    re.sub("ar[xX]iv:", "", node.value),
                     with_operator_and=True,
                 )
 
-            elif self.KEYWORD_TO_ES_FIELDNAME['texkey'] == fieldnames:
+            elif self.KEYWORD_TO_ES_FIELDNAME["texkey"] == fieldnames:
                 return generate_match_query(
-                    'texkeys.raw', node.value, with_operator_and=False
+                    "texkeys.raw", node.value, with_operator_and=False
                 )
 
             elif fieldnames not in self.KEYWORD_TO_ES_FIELDNAME.values():
-                colon_value = ':'.join([fieldnames, node.value])
+                colon_value = ":".join([fieldnames, node.value])
                 given_field_query = generate_match_query(
                     fieldnames, node.value, with_operator_and=True
                 )
                 if self.TEXKEY_REGEX.match(colon_value):
                     return generate_match_query(
-                        'texkeys.raw', colon_value, with_operator_and=False
+                        "texkeys.raw", colon_value, with_operator_and=False
                     )
                 _all_field_query = generate_match_query(
-                    '_all', colon_value, with_operator_and=True
+                    "_all", colon_value, with_operator_and=True
                 )
                 query = wrap_queries_in_bool_clauses_if_more_than_one(
                     [given_field_query, _all_field_query], use_must_clause=False
@@ -910,15 +905,15 @@ class ElasticSearchVisitor(Visitor):
 
     def visit_exact_match_value(self, node, fieldnames=None):
         """Generates a term query (exact search in ElasticSearch)."""
-        fieldnames = ['_all'] if not fieldnames else force_list(fieldnames)
+        fieldnames = ["_all"] if not fieldnames else force_list(fieldnames)
 
-        if self.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames[0]:
+        if self.KEYWORD_TO_ES_FIELDNAME["exact-author"] == fieldnames[0]:
             return self._generate_exact_author_query(node.value)
 
-        elif self.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames[0]:
+        elif self.KEYWORD_TO_ES_FIELDNAME["type-code"] == fieldnames[0]:
             return self._generate_type_code_query(node.value)
 
-        elif self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
+        elif self.KEYWORD_TO_ES_FIELDNAME["journal"] == fieldnames:
             return self._generate_journal_queries(node.value)
 
         bai_fieldnames = self._generate_fieldnames_if_bai_query(
@@ -928,11 +923,11 @@ class ElasticSearchVisitor(Visitor):
             query_bai_field_if_dots_in_name=False,
         )
 
-        if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+        if self.KEYWORD_TO_ES_FIELDNAME["date"] == fieldnames:
             exact_match_queries = []
             for field in fieldnames:
                 term_query = {
-                    'term': {
+                    "term": {
                         field: _truncate_date_value_according_on_date_field(
                             field, node.value
                         ).dumps()
@@ -947,14 +942,13 @@ class ElasticSearchVisitor(Visitor):
         elif self._are_fieldnames_author_or_first_author(fieldnames):
             exact_match_queries = [
                 self._generate_nested_author_query(
-                    {'match_phrase': {field: node.value}}, fieldnames
+                    {"match_phrase": {field: node.value}}, fieldnames
                 )
                 for field in (bai_fieldnames or fieldnames)
             ]
         else:
             exact_match_queries = [
-                {'match_phrase': {field: node.value}}
-                for field in (fieldnames)
+                {"match_phrase": {field: node.value}} for field in (fieldnames)
             ]
             query = wrap_queries_in_bool_clauses_if_more_than_one(
                 exact_match_queries, use_must_clause=False
@@ -970,7 +964,7 @@ class ElasticSearchVisitor(Visitor):
     def visit_partial_match_value(self, node, fieldnames=None):
         """Generates a query which looks for a substring of the node's value in
         the given fieldname."""
-        if self.KEYWORD_TO_ES_FIELDNAME['date'] == fieldnames:
+        if self.KEYWORD_TO_ES_FIELDNAME["date"] == fieldnames:
             # Date queries with partial values are transformed into range queries,
             # among the given and the exact
             # next date, according to the granularity of the given date.
@@ -981,20 +975,20 @@ class ElasticSearchVisitor(Visitor):
                 force_list(fieldnames), {ES_RANGE_EQ_OPERATOR: node.value}
             )
 
-        if self.KEYWORD_TO_ES_FIELDNAME['exact-author'] == fieldnames:
+        if self.KEYWORD_TO_ES_FIELDNAME["exact-author"] == fieldnames:
             return self._generate_exact_author_query(node.value)
 
-        elif self.KEYWORD_TO_ES_FIELDNAME['type-code'] == fieldnames:
+        elif self.KEYWORD_TO_ES_FIELDNAME["type-code"] == fieldnames:
             return self._generate_type_code_query(node.value)
 
-        elif self.KEYWORD_TO_ES_FIELDNAME['journal'] == fieldnames:
+        elif self.KEYWORD_TO_ES_FIELDNAME["journal"] == fieldnames:
             return self._generate_journal_queries(node.value)
 
         # Add wildcard token as prefix and suffix.
         value = (
-            ('' if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
+            ("" if node.value.startswith(ast.GenericValue.WILDCARD_TOKEN) else "*")
             + node.value
-            + ('' if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else '*')
+            + ("" if node.value.endswith(ast.GenericValue.WILDCARD_TOKEN) else "*")
         )
 
         if self._are_fieldnames_author_or_first_author(fieldnames):
@@ -1017,9 +1011,9 @@ class ElasticSearchVisitor(Visitor):
         )
 
     def visit_regex_value(self, node, fieldname="_all"):
-        query = {'regexp': {fieldname: node.value}}
+        query = {"regexp": {fieldname: node.value}}
 
-        if self.KEYWORD_TO_ES_FIELDNAME['author'] == fieldname:
+        if self.KEYWORD_TO_ES_FIELDNAME["author"] == fieldname:
             return generate_nested_query(self.AUTHORS_NESTED_QUERY_PATH, query)
 
         return wrap_query_in_nested_if_field_is_nested(
