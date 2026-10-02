@@ -1,6 +1,6 @@
 [project]
 name = "inspire-query-parser"
-version = "6.0.62"
+version = "6.0.63"
 description = "A PEG-based query parser for INSPIRE."
 authors = [{ name = "CERN", email = "admin@inspirehep.net" }]
 license = "GPL-3.0-or-later"
