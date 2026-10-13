@@ -240,7 +240,7 @@ class ElasticSearchVisitor(Visitor):
                 'Non supported field variation "{}".'.format(bai_field_variation)
             )
         keyword = self._get_author_or_first_author_keyword_from_fieldnames(fieldnames)
-        normalized_author_name = normalize_name(node_value).strip(".")
+        normalized_author_name = (normalize_name(node_value) or "").strip(".")
         bai_fieldname = self.KEYWORD_TO_ES_FIELDNAME["{}_bai".format(keyword)]
         if self.KEYWORD_TO_ES_FIELDNAME[keyword] and self.BAI_REGEX.match(node_value):
             return [bai_fieldname + "." + bai_field_variation]
@@ -916,13 +916,6 @@ class ElasticSearchVisitor(Visitor):
         elif self.KEYWORD_TO_ES_FIELDNAME["journal"] == fieldnames:
             return self._generate_journal_queries(node.value)
 
-        bai_fieldnames = self._generate_fieldnames_if_bai_query(
-            fieldnames,
-            node.value,
-            bai_field_variation=FieldVariations.raw,
-            query_bai_field_if_dots_in_name=False,
-        )
-
         if self.KEYWORD_TO_ES_FIELDNAME["date"] == fieldnames:
             exact_match_queries = []
             for field in fieldnames:
@@ -940,6 +933,12 @@ class ElasticSearchVisitor(Visitor):
                     else term_query
                 )
         elif self._are_fieldnames_author_or_first_author(fieldnames):
+            bai_fieldnames = self._generate_fieldnames_if_bai_query(
+                fieldnames,
+                node.value,
+                bai_field_variation=FieldVariations.raw,
+                query_bai_field_if_dots_in_name=False,
+            )
             exact_match_queries = [
                 self._generate_nested_author_query(
                     {"match_phrase": {field: node.value}}, fieldnames

@@ -22,6 +22,7 @@
 
 from unittest import mock
 
+import pytest
 from inspire_utils.query import ordered
 
 from inspire_query_parser import parse_query, parser
@@ -3313,3 +3314,47 @@ def test_elastic_search_visitor_texkeys_regression_bool_query():
     }
     generated_es_query = _parse_query(query_str)
     assert generated_es_query == expected_es_query
+
+
+@pytest.mark.parametrize(
+    ("query_str", "expected_es_query"),
+    [
+        (
+            'a ""',
+            {
+                "nested": {
+                    "path": "authors",
+                    "query": {"match_phrase": {"authors.full_name": ""}},
+                }
+            },
+        ),
+        (
+            'fa ""',
+            {
+                "nested": {
+                    "path": "first_author",
+                    "query": {"match_phrase": {"first_author.full_name": ""}},
+                }
+            },
+        ),
+        ('t ""', {"match_phrase": {"titles.full_title": ""}}),
+        ('eprint ""', {"match_phrase": {"arxiv_eprints.value.raw": ""}}),
+        ('""', {"match_phrase": {"_all": ""}}),
+        (
+            'not t ""',
+            {"bool": {"must_not": [{"match_phrase": {"titles.full_title": ""}}]}},
+        ),
+    ],
+)
+def test_elastic_search_visitor_empty_quoted_value_does_not_crash(
+    query_str, expected_es_query, caplog
+):
+    # The visitor is called directly (not through ``parse_query``), so a crash
+    # would raise instead of silently falling back to a free-text query.
+    assert _parse_query(query_str) == expected_es_query
+
+    # Going through the driver must not log a visitor crash or fall back
+    # to the malformed query either.
+    caplog.clear()
+    assert parse_query(query_str) == expected_es_query
+    assert "ElasticSearchVisitor crashed" not in caplog.text
